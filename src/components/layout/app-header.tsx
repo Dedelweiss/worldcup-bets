@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Trophy } from "lucide-react";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { SiteLogo } from "@/components/layout/site-logo";
 import { UserMenu } from "@/components/layout/user-menu";
 import { getProfile, hasSupabaseConfig } from "@/lib/auth-server";
 import { buttonVariants } from "@/components/ui/button";
@@ -25,9 +25,7 @@ export async function AppHeader() {
           href="/dashboard"
           className="flex min-w-0 items-center gap-2 font-semibold tracking-tight"
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Trophy className="size-4" />
-          </span>
+          <SiteLogo size={32} className="size-8" priority />
           <span className="truncate text-sm sm:text-base">
             WC<span className="text-primary">2026</span>
             <span className="hidden min-[380px]:inline"> Pool</span>

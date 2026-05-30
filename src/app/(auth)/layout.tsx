@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Trophy } from "lucide-react";
+import { SiteLogo } from "@/components/layout/site-logo";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -8,9 +8,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         href="/"
         className="mb-8 flex items-center gap-2 text-lg font-semibold tracking-tight"
       >
-        <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Trophy className="size-5" />
-        </span>
+        <SiteLogo size={36} className="size-9" priority />
         WC<span className="text-primary">2026</span> Pool
       </Link>
       {children}
