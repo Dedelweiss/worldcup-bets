@@ -9,12 +9,23 @@ import {
 } from "react";
 import {
   addUnreadFunMarket,
+  EMPTY_UNREAD_FUN_MARKETS,
   getUnreadFunCount,
-  loadUnreadFunMarkets,
+  getUnreadFunMarketsSnapshot,
   markFunMarketsSeen,
   markFunMatchSeen,
   type UnreadFunMarket,
 } from "@/lib/fun-bets/storage";
+
+const SERVER_UNREAD_COUNT = 0;
+
+function getServerUnreadCount(): number {
+  return SERVER_UNREAD_COUNT;
+}
+
+function getServerUnreadMarkets(): UnreadFunMarket[] {
+  return EMPTY_UNREAD_FUN_MARKETS;
+}
 
 interface FunBetsNotificationsContextValue {
   unreadCount: number;
@@ -56,13 +67,13 @@ export function FunBetsNotificationsProvider({
   const unreadCount = useSyncExternalStore(
     subscribe,
     getUnreadFunCount,
-    () => 0,
+    getServerUnreadCount,
   );
 
   const unreadMarkets = useSyncExternalStore(
     subscribe,
-    loadUnreadFunMarkets,
-    () => [] as UnreadFunMarket[],
+    getUnreadFunMarketsSnapshot,
+    getServerUnreadMarkets,
   );
 
   const registerUnread = useCallback((entry: UnreadFunMarket) => {

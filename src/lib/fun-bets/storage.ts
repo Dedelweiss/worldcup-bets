@@ -6,6 +6,9 @@ export interface UnreadFunMarket {
   createdAt: string;
 }
 
+/** Référence stable pour useSyncExternalStore (SSR + liste vide). */
+export const EMPTY_UNREAD_FUN_MARKETS: UnreadFunMarket[] = [];
+
 interface UnreadStore {
   markets: Record<string, UnreadFunMarket>;
 }
@@ -30,9 +33,31 @@ function writeStore(store: UnreadStore) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
 }
 
+let unreadSnapshotCache: UnreadFunMarket[] = EMPTY_UNREAD_FUN_MARKETS;
+let unreadSnapshotKey = "";
+
+function unreadMarketsCacheKey(markets: UnreadFunMarket[]): string {
+  return markets
+    .map((m) => m.marketId)
+    .sort()
+    .join("|");
+}
+
+/** Snapshot stable pour useSyncExternalStore (évite les boucles infinies). */
+export function getUnreadFunMarketsSnapshot(): UnreadFunMarket[] {
+  const markets = Object.values(readStore().markets);
+  const key = unreadMarketsCacheKey(markets);
+  if (key === unreadSnapshotKey) {
+    return unreadSnapshotCache;
+  }
+  unreadSnapshotKey = key;
+  unreadSnapshotCache =
+    markets.length === 0 ? EMPTY_UNREAD_FUN_MARKETS : markets;
+  return unreadSnapshotCache;
+}
+
 export function loadUnreadFunMarkets(): UnreadFunMarket[] {
-  const store = readStore();
-  return Object.values(store.markets);
+  return getUnreadFunMarketsSnapshot();
 }
 
 export function getUnreadFunCount(): number {
