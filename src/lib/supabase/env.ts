@@ -11,6 +11,9 @@ export function getSupabaseAnonKey(): string {
   return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 }
 
+export const hasSupabaseConfig =
+  Boolean(getSupabaseUrl()) && Boolean(getSupabaseAnonKey());
+
 export function assertSupabaseEnv(): void {
   const url = getSupabaseUrl();
   const key = getSupabaseAnonKey();

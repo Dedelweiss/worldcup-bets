@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { BetSlip } from "@/components/bets/bet-slip";
 import { FunBetSlip } from "@/components/bets/fun-bet-slip";
+import { MarkFunBetsSeen } from "@/components/fun-bets/mark-fun-bets-seen";
 import { MatchHeader } from "@/components/matches/match-header";
 import { requireAuth } from "@/lib/auth-server";
 import { getFunMarketsByMatch } from "@/lib/fun-markets";
@@ -40,12 +41,13 @@ export default async function MatchBetPage({
 
   return (
     <div className="mx-auto max-w-lg space-y-8">
+      <MarkFunBetsSeen matchId={matchId} />
       <MatchHeader match={match} adminEditHref={adminEditHref} />
 
       <BetSlip match={match} balance={profile.balance} />
 
       {(funMarkets.length > 0 || openFunMarkets.length > 0) && (
-        <section className="space-y-4">
+        <section id="paris-fun" className="scroll-mt-24 space-y-4">
           <div>
             <h2 className="text-lg font-semibold">Paris fun</h2>
             <p className="text-sm text-muted-foreground">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AppNavLinks } from "@/components/layout/app-nav-links";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -9,6 +10,7 @@ import { cn } from "@/lib/utils";
 export const appNav = [
   { href: "/dashboard", label: "Paris" },
   { href: "/matches", label: "Calendrier" },
+  { href: "/matches/fun", label: "Paris fun" },
   { href: "/bracket", label: "Tournoi" },
   { href: "/leaderboard", label: "Classement" },
   { href: "/leagues", label: "Ligues" },
@@ -36,24 +38,8 @@ export async function AppHeader() {
             items={appNav}
             showAdmin={profile?.role === "admin"}
           />
-          <nav className="hidden items-center gap-1 text-sm sm:flex">
-            {appNav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                {item.label}
-              </Link>
-            ))}
-            {profile?.role === "admin" && (
-              <Link
-                href="/admin"
-                className="rounded-md px-3 py-1.5 text-primary transition-colors hover:bg-primary/10"
-              >
-                Admin
-              </Link>
-            )}
+          <nav className="hidden items-center gap-1 text-sm lg:flex">
+            <AppNavLinks items={appNav} showAdmin={profile?.role === "admin"} />
           </nav>
           {profile ? (
             <UserMenu profile={profile} />

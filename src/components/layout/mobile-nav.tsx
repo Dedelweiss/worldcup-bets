@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Menu, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { AppNavLinks } from "@/components/layout/app-nav-links";
 
 export interface NavItem {
   href: string;
@@ -20,15 +18,10 @@ interface MobileNavProps {
 export function MobileNav({ items, showAdmin }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const pathname = usePathname();
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
@@ -72,44 +65,12 @@ export function MobileNav({ items, showAdmin }: MobileNavProps) {
               </div>
 
               <ul className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-                {items.map((item) => {
-                  const active =
-                    pathname === item.href ||
-                    (item.href !== "/dashboard" &&
-                      pathname.startsWith(item.href));
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        onClick={() => setOpen(false)}
-                        className={cn(
-                          "block rounded-lg px-4 py-3 text-base font-medium transition-colors",
-                          active
-                            ? "bg-primary/15 text-primary"
-                            : "text-foreground hover:bg-muted",
-                        )}
-                      >
-                        {item.label}
-                      </Link>
-                    </li>
-                  );
-                })}
-                {showAdmin && (
-                  <li>
-                    <Link
-                      href="/admin"
-                      onClick={() => setOpen(false)}
-                      className={cn(
-                        "block rounded-lg px-4 py-3 text-base font-medium transition-colors",
-                        pathname.startsWith("/admin")
-                          ? "bg-primary/15 text-primary"
-                          : "text-primary hover:bg-primary/10",
-                      )}
-                    >
-                      Admin
-                    </Link>
-                  </li>
-                )}
+                <AppNavLinks
+                  items={items}
+                  showAdmin={showAdmin}
+                  variant="mobile"
+                  onNavigate={() => setOpen(false)}
+                />
               </ul>
             </nav>
           </div>,

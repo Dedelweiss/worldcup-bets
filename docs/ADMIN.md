@@ -23,6 +23,7 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 15. `014_leagues_invite_and_my_leagues.sql` (mes ligues au classement + invitation par code)
 16. `015_leaderboard_league_labels.sql` (badges ligue au classement)
 17. `016_single_league_self_service.sql` (une seule ligue / joueur sauf ajout admin)
+18. `017_fun_markets_realtime.sql` (notifications temps réel des nouveaux paris fun)
 
 ### Workflow admin CDM 2026
 
