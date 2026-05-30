@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
-import { updateSession } from "@/lib/supabase/middleware";
+import { updateSession } from "@/lib/supabase/update-session";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const hasSupabase = Boolean(getSupabaseUrl()) && Boolean(getSupabaseAnonKey());
 
   if (!hasSupabase) {

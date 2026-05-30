@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
+import { LiveMatchAnimation } from "@/components/matches/live-match-animation";
 import { formatKickoff, formatKickoffRelative, formatOdd } from "@/lib/format";
 import type { MatchWithTeams } from "@/types/database";
 
@@ -46,45 +47,66 @@ export function MatchCard({ match }: MatchCardProps) {
   const isLive = match.status === "live";
 
   return (
-    <Card className="overflow-hidden transition-colors hover:border-primary/40">
+    <Card
+      className={cn(
+        "overflow-hidden transition-colors hover:border-primary/40",
+        isLive && "border-primary ring-2 ring-primary/30 animate-pulse",
+      )}
+    >
       <CardContent className="p-0">
-        <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-4 py-2">
-          <Badge variant={isLive ? "default" : "secondary"} className="text-[10px]">
+        <div
+          className={cn(
+            "flex items-center justify-between border-b border-border/60 px-4 py-2",
+            isLive ? "bg-primary/15" : "bg-muted/30",
+          )}
+        >
+          <Badge
+            variant={isLive ? "default" : "secondary"}
+            className={cn(isLive && "animate-pulse")}
+          >
             {isLive ? "EN DIRECT" : match.round ?? "Coupe du Monde"}
           </Badge>
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Clock className="size-3" />
             {formatKickoff(match.kickoff_at)}
-            <span className="hidden sm:inline">· {formatKickoffRelative(match.kickoff_at)}</span>
+            <span className="hidden sm:inline">
+              · {formatKickoffRelative(match.kickoff_at)}
+            </span>
           </span>
         </div>
 
         <div className="space-y-3 px-4 py-4">
-          <div className="flex items-center gap-3">
-            <TeamRow
-              name={match.home_team.name}
-              code={match.home_team.code}
-              logoUrl={match.home_team.logo_url}
+          {isLive ? (
+            <LiveMatchAnimation
+              homeTeam={match.home_team}
+              awayTeam={match.away_team}
             />
-            <span className="text-xs font-semibold text-muted-foreground">vs</span>
-            <TeamRow
-              name={match.away_team.name}
-              code={match.away_team.code}
-              logoUrl={match.away_team.logo_url}
-            />
-          </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <TeamRow
+                name={match.home_team.name}
+                code={match.home_team.code}
+                logoUrl={match.home_team.logo_url}
+              />
+              <span className="text-xs font-semibold text-muted-foreground">vs</span>
+              <TeamRow
+                name={match.away_team.name}
+                code={match.away_team.code}
+                logoUrl={match.away_team.logo_url}
+              />
+            </div>
+          )}
 
-          {match.odd_home && match.odd_draw && match.odd_away && (
+          {!isLive && match.odd_home && match.odd_draw && match.odd_away && (
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: "1", odd: match.odd_home },
                 { label: "N", odd: match.odd_draw },
                 { label: "2", odd: match.odd_away },
               ].map((outcome) => (
-                <button
+                <div
                   key={outcome.label}
-                  type="button"
-                  className="flex flex-col items-center rounded-lg border border-border bg-muted/20 py-2 transition-colors hover:border-primary hover:bg-primary/10"
+                  className="flex flex-col items-center rounded-lg border border-border bg-muted/20 py-2"
                 >
                   <span className="text-[10px] font-medium text-muted-foreground">
                     {outcome.label}
@@ -92,9 +114,15 @@ export function MatchCard({ match }: MatchCardProps) {
                   <span className="text-sm font-bold tabular-nums text-primary">
                     {formatOdd(outcome.odd)}
                   </span>
-                </button>
+                </div>
               ))}
             </div>
+          )}
+
+          {isLive && (
+            <p className="text-center text-xs text-primary">
+              Paris 1N2 fermés — paris fun toujours possibles
+            </p>
           )}
         </div>
 
@@ -103,7 +131,7 @@ export function MatchCard({ match }: MatchCardProps) {
             href={`/matches/${match.id}`}
             className={cn(buttonVariants({ size: "sm" }), "w-full")}
           >
-            Parier sur ce match
+            {isLive ? "Voir le match en direct" : "Parier sur ce match"}
           </Link>
         </div>
       </CardContent>

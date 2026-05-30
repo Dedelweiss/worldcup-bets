@@ -112,7 +112,7 @@ begin
   ) values (
     v_match_id, p_round, 'scheduled', p_kickoff_at, p_venue,
     v_home_id, v_away_id,
-    p_odd_home, p_odd_draw, p_away,
+    p_odd_home, p_odd_draw, p_odd_away,
     auth.uid()
   );
 

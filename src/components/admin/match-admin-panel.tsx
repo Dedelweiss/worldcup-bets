@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ExternalLink } from "lucide-react";
 import {
   deleteMatchAction,
   settleMatchAction,
@@ -95,14 +97,23 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-bold">
-          {match.home_team.name} vs {match.away_team.name}
-        </h1>
-        <Badge variant={match.status === "live" ? "default" : "secondary"}>
-          {STATUS_OPTIONS.find((s) => s.value === match.status)?.label ??
-            match.status}
-        </Badge>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-bold">
+            {match.home_team.name} vs {match.away_team.name}
+          </h1>
+          <Badge variant={match.status === "live" ? "default" : "secondary"}>
+            {STATUS_OPTIONS.find((s) => s.value === match.status)?.label ??
+              match.status}
+          </Badge>
+        </div>
+        <Link
+          href={`/matches/${match.id}`}
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
+        >
+          <ExternalLink className="size-3.5" />
+          Vue joueur
+        </Link>
       </div>
       <p className="text-sm text-muted-foreground">
         {formatKickoff(match.kickoff_at)}

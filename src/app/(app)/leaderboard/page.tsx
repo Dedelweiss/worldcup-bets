@@ -1,87 +1,88 @@
+import { LeaderboardExplorer } from "@/components/leaderboard/leaderboard-explorer";
 import { requireAuth, hasSupabaseConfig } from "@/lib/auth-server";
-import { createClient } from "@/lib/supabase/server";
+import { getLeaderboard, parseLeaderboardSort } from "@/lib/leaderboard";
+import { getLeagueById, getLeaguesForUser } from "@/lib/leagues";
 import { MOCK_DASHBOARD } from "@/lib/mock-matches";
-import { formatCurrency } from "@/lib/format";
+import type { LeaderboardEntry, LeaderboardScope } from "@/types/database";
 
 export const metadata = { title: "Classement · WC2026 Pool" };
 
-export default async function LeaderboardPage() {
-  await requireAuth();
+export default async function LeaderboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ scope?: string; league?: string; sort?: string }>;
+}) {
+  const profile = await requireAuth();
+  const params = await searchParams;
 
-  if (!hasSupabaseConfig) {
-    const { profile } = MOCK_DASHBOARD;
-    return (
-      <LeaderboardView
-        players={[
-          {
-            id: profile.id,
-            display_name: profile.display_name,
-            username: profile.username,
-            balance: profile.balance,
-          },
-        ]}
-      />
-    );
+  const sort = parseLeaderboardSort(params.sort);
+  const scope: LeaderboardScope =
+    params.scope === "league" ? "league" : "general";
+
+  let leagues = hasSupabaseConfig ? await getLeaguesForUser(profile.id) : [];
+  let leagueId: string | null =
+    scope === "league" ? (params.league ?? leagues[0]?.id ?? null) : null;
+
+  if (scope === "league" && leagueId && !leagues.some((l) => l.id === leagueId)) {
+    leagueId = leagues[0]?.id ?? null;
   }
 
-  const supabase = await createClient();
+  let players: LeaderboardEntry[] = [];
+  let warning: string | undefined;
+  let leagueName: string | null = null;
 
-  const { data: players } = await supabase
-    .from("profiles")
-    .select("id, display_name, username, balance")
-    .order("balance", { ascending: false })
-    .limit(50);
+  if (hasSupabaseConfig) {
+    const result = await getLeaderboard({
+      leagueId: scope === "league" ? leagueId : null,
+      sort,
+    });
+    players = result.players;
+    warning = result.warning;
 
-  return <LeaderboardView players={players ?? []} />;
-}
+    if (leagueId) {
+      const league = await getLeagueById(leagueId);
+      leagueName = league?.name ?? null;
+    }
+  } else {
+    const { profile: mockProfile } = MOCK_DASHBOARD;
+    players = [
+      {
+        id: mockProfile.id,
+        display_name: mockProfile.display_name,
+        username: mockProfile.username,
+        balance: mockProfile.balance,
+        classic_won: 0,
+        classic_lost: 0,
+        fun_won: 0,
+        fun_lost: 0,
+        total_won: 0,
+        total_lost: 0,
+      },
+    ];
+    leagues = [];
+  }
 
-type LeaderboardPlayer = {
-  id: string;
-  display_name: string | null;
-  username: string | null;
-  balance: number;
-};
-
-function LeaderboardView({ players }: { players: LeaderboardPlayer[] }) {
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Classement</h1>
         <p className="text-sm text-muted-foreground">
-          Classement global par bankroll virtuelle
+          Filtrez par ligue et par type de performance — les critères se cumulent.
         </p>
       </div>
-      <div className="overflow-hidden rounded-xl border border-border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/40 text-left text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 font-medium">#</th>
-              <th className="px-4 py-3 font-medium">Joueur</th>
-              <th className="px-4 py-3 font-medium text-right">Bankroll</th>
-            </tr>
-          </thead>
-          <tbody>
-            {players.map((player, index) => (
-              <tr key={player.id} className="border-t border-border/60">
-                <td className="px-4 py-3 tabular-nums text-muted-foreground">
-                  {index + 1}
-                </td>
-                <td className="px-4 py-3 font-medium">
-                  {player.display_name ?? player.username ?? "Joueur"}
-                </td>
-                <td className="px-4 py-3 text-right font-semibold tabular-nums text-primary">
-                  {formatCurrency(Number(player.balance))}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!players.length && (
-          <p className="p-8 text-center text-muted-foreground">
-            Aucun joueur inscrit pour le moment.
-          </p>
-        )}
-      </div>
+      {warning && (
+        <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          {warning}
+        </p>
+      )}
+      <LeaderboardExplorer
+        players={players}
+        leagues={leagues}
+        scope={scope}
+        leagueId={leagueId}
+        sort={sort}
+        leagueName={leagueName}
+      />
     </div>
   );
 }

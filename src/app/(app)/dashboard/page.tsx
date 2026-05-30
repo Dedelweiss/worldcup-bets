@@ -1,3 +1,4 @@
+import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
 import { WalletCard } from "@/components/dashboard/wallet-card";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { getDashboardData } from "@/lib/dashboard";
@@ -13,6 +14,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {!isDemo && <LiveStatusPoller />}
       <section className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-bold tracking-tight">

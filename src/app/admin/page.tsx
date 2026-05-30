@@ -23,12 +23,20 @@ export default async function AdminPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Gestion des matchs</h1>
-        <Link
-          href="/admin/matches/new"
-          className={cn(buttonVariants({ size: "sm" }))}
-        >
-          + Nouveau match
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/admin/teams"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            Équipes
+          </Link>
+          <Link
+            href="/admin/matches/new"
+            className={cn(buttonVariants({ size: "sm" }))}
+          >
+            Créateur de match
+          </Link>
+        </div>
       </div>
 
       {matches.length === 0 ? (

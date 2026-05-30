@@ -1,5 +1,8 @@
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistance } from "date-fns";
 import { fr } from "date-fns/locale";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
+
+const PARIS_TZ = "Europe/Paris";
 
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("fr-FR", {
@@ -10,14 +13,25 @@ export function formatCurrency(amount: number): string {
 }
 
 export function formatKickoff(isoDate: string): string {
-  return format(new Date(isoDate), "EEE d MMM · HH:mm", { locale: fr });
+  return formatInTimeZone(new Date(isoDate), PARIS_TZ, "EEE d MMM · HH:mm", {
+    locale: fr,
+  });
 }
 
 export function formatKickoffRelative(isoDate: string): string {
-  return formatDistanceToNow(new Date(isoDate), {
+  const zonedNow = toZonedTime(new Date(), PARIS_TZ);
+  const zonedKickoff = toZonedTime(new Date(isoDate), PARIS_TZ);
+  return formatDistance(zonedKickoff, zonedNow, {
     addSuffix: true,
     locale: fr,
   });
+}
+
+/** Coup d'envoi atteint ou dépassé (heure de Paris) */
+export function hasKickoffStarted(isoDate: string): boolean {
+  const nowParis = toZonedTime(new Date(), PARIS_TZ).getTime();
+  const kickoffParis = toZonedTime(new Date(isoDate), PARIS_TZ).getTime();
+  return kickoffParis <= nowParis;
 }
 
 export function formatOdd(odd: number): string {

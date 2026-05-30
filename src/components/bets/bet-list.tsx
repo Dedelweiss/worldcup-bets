@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { BetResultAnimation } from "@/components/bets/bet-result-animation";
 import { formatCurrency, formatKickoff, formatOdd } from "@/lib/format";
 import type { BetRow, BetStatus } from "@/types/database";
 
@@ -26,7 +27,18 @@ const SELECTION_LABEL: Record<string, string> = {
   home: "Victoire domicile (1)",
   draw: "Match nul (N)",
   away: "Victoire extérieur (2)",
+  yes: "Oui",
+  no: "Non",
 };
+
+function betLabel(bet: BetRow): string {
+  if (bet.bet_type === "fun" && bet.fun_market?.question) {
+    const out = bet.selection?.outcome ?? "";
+    return `${bet.fun_market.question} — ${SELECTION_LABEL[out] ?? out}`;
+  }
+  const sel = bet.selection?.selection ?? "";
+  return SELECTION_LABEL[sel] ?? sel;
+}
 
 interface BetListProps {
   bets: BetRow[];
@@ -47,35 +59,43 @@ export function BetList({ bets }: BetListProps) {
   return (
     <div className="space-y-3">
       {bets.map((bet) => {
-        const sel = bet.selection?.selection ?? "";
         const match = bet.match;
-        return (
+        const settled = bet.status === "won" || bet.status === "lost";
+
+        const card = (
           <Link
-            key={bet.id}
             href={`/matches/${bet.match_id}`}
             className="block rounded-xl border border-border p-4 transition-colors hover:border-primary/40"
           >
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="font-medium">
-                  {match?.home_team?.name} vs {match?.away_team?.name}
-                </p>
+                <div className="flex items-center gap-2">
+                  {bet.bet_type === "fun" && (
+                    <Badge variant="outline" className="text-[10px]">
+                      Fun
+                    </Badge>
+                  )}
+                  <p className="font-medium">
+                    {match?.home_team?.name} vs {match?.away_team?.name}
+                  </p>
+                </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {match?.kickoff_at
                     ? formatKickoff(match.kickoff_at)
                     : "Match"}
                 </p>
               </div>
-              <Badge variant={STATUS_VARIANT[bet.status]} className="shrink-0 text-[10px]">
+              <Badge
+                variant={STATUS_VARIANT[bet.status]}
+                className="shrink-0 text-[10px]"
+              >
                 {STATUS_LABEL[bet.status]}
               </Badge>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
               <div>
                 <p className="text-xs text-muted-foreground">Pari</p>
-                <p className="font-medium">
-                  {SELECTION_LABEL[sel] ?? sel}
-                </p>
+                <p className="font-medium line-clamp-2">{betLabel(bet)}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Cote</p>
@@ -94,16 +114,22 @@ export function BetList({ bets }: BetListProps) {
                   {bet.status === "won" ? "Gain" : "Gain potentiel"}
                 </p>
                 <p className="font-semibold tabular-nums text-primary">
-                  {formatCurrency(
-                    bet.status === "won"
-                      ? bet.potential_payout
-                      : bet.potential_payout,
-                  )}
+                  {formatCurrency(bet.potential_payout)}
                 </p>
               </div>
             </div>
           </Link>
         );
+
+        if (settled) {
+          return (
+            <BetResultAnimation key={bet.id} status={bet.status}>
+              {card}
+            </BetResultAnimation>
+          );
+        }
+
+        return <div key={bet.id}>{card}</div>;
       })}
     </div>
   );

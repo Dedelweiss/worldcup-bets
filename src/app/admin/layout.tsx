@@ -5,7 +5,10 @@ import { AppHeader } from "@/components/layout/app-header";
 
 const adminNav = [
   { href: "/admin", label: "Matchs" },
-  { href: "/admin/matches/new", label: "Nouveau match" },
+  { href: "/admin/leagues", label: "Ligues" },
+  { href: "/admin/teams", label: "Équipes" },
+  { href: "/admin/matches/new", label: "Créateur" },
+  { href: "/admin/users", label: "Joueurs" },
 ];
 
 export default async function AdminLayout({

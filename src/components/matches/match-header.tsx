@@ -1,7 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Clock } from "lucide-react";
+import { ArrowLeft, Clock, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { LiveMatchAnimation } from "@/components/matches/live-match-animation";
+import { cn } from "@/lib/utils";
 import { formatKickoff, formatKickoffRelative } from "@/lib/format";
 import type { MatchStatus, MatchWithTeams } from "@/types/database";
 
@@ -15,20 +18,35 @@ const STATUS_LABEL: Record<MatchStatus, string> = {
 
 interface MatchHeaderProps {
   match: MatchWithTeams;
+  adminEditHref?: string;
 }
 
-export function MatchHeader({ match }: MatchHeaderProps) {
+export function MatchHeader({ match, adminEditHref }: MatchHeaderProps) {
   const isLive = match.status === "live";
 
   return (
     <div className="space-y-4">
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" />
-        Retour
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" />
+          Retour
+        </Link>
+        {adminEditHref && (
+          <Link
+            href={adminEditHref}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "gap-1.5 border-primary/40 text-primary hover:bg-primary/10",
+            )}
+          >
+            <Pencil className="size-3.5" />
+            Modifier
+          </Link>
+        )}
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant={isLive ? "default" : "secondary"}>
@@ -39,25 +57,45 @@ export function MatchHeader({ match }: MatchHeaderProps) {
         )}
       </div>
 
-      <div className="flex items-center justify-center gap-4 py-2">
-        <TeamBlock team={match.home_team} />
-        <div className="text-center">
-          {match.home_score !== null && match.away_score !== null ? (
-            <p className="text-3xl font-bold tabular-nums">
-              {match.home_score} - {match.away_score}
-            </p>
-          ) : (
-            <p className="text-lg font-semibold text-muted-foreground">vs</p>
-          )}
+      {isLive && match.home_score === null ? (
+        <LiveMatchAnimation
+          homeTeam={match.home_team}
+          awayTeam={match.away_team}
+          className="my-2"
+        />
+      ) : (
+        <div className="flex items-center justify-center gap-4 py-2">
+          <TeamBlock team={match.home_team} />
+          <div className="text-center">
+            {match.home_score !== null && match.away_score !== null ? (
+              <p className="text-3xl font-bold tabular-nums">
+                {match.home_score} - {match.away_score}
+              </p>
+            ) : (
+              <p className="text-lg font-semibold text-muted-foreground">vs</p>
+            )}
+          </div>
+          <TeamBlock team={match.away_team} align="right" />
         </div>
-        <TeamBlock team={match.away_team} align="right" />
-      </div>
+      )}
+
+      {isLive && (
+        <p className={cn("text-center text-sm font-medium text-primary")}>
+          Match en cours
+        </p>
+      )}
 
       <p className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
         <Clock className="size-3.5" />
         {formatKickoff(match.kickoff_at)} · {formatKickoffRelative(match.kickoff_at)}
         {match.venue ? ` · ${match.venue}` : ""}
       </p>
+
+      {match.bet_scope_note && match.stage && match.stage !== "group" && (
+        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs text-amber-100/90">
+          {match.bet_scope_note}
+        </p>
+      )}
     </div>
   );
 }

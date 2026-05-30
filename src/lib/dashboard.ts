@@ -1,5 +1,6 @@
 import { MOCK_DASHBOARD } from "@/lib/mock-matches";
 import { hasSupabaseConfig, requireAuth } from "@/lib/auth-server";
+import { syncLiveMatches } from "@/lib/matches/sync-live";
 import { createClient } from "@/lib/supabase/server";
 import type { DashboardData, MatchWithTeams } from "@/types/database";
 
@@ -25,6 +26,7 @@ export async function getDashboardData(): Promise<DashboardData> {
   }
 
   const profile = await requireAuth();
+  await syncLiveMatches();
   const supabase = await createClient();
 
   const { data: matches } = await supabase

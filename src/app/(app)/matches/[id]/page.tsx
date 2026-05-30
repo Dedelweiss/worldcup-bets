@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { BetSlip } from "@/components/bets/bet-slip";
+import { FunBetSlip } from "@/components/bets/fun-bet-slip";
 import { MatchHeader } from "@/components/matches/match-header";
 import { requireAuth } from "@/lib/auth-server";
-import { canPlaceBetOnMatch, getMatchById } from "@/lib/matches";
-import { Card, CardContent } from "@/components/ui/card";
+import { getFunMarketsByMatch } from "@/lib/fun-markets";
+import { getMatchById } from "@/lib/matches";
 
 export async function generateMetadata({
   params,
@@ -31,27 +32,36 @@ export default async function MatchBetPage({
   const match = await getMatchById(matchId);
   if (!match) notFound();
 
-  const { allowed, reason } = canPlaceBetOnMatch(match);
+  const adminEditHref =
+    profile.role === "admin" ? `/admin/matches/${matchId}` : undefined;
+
+  const funMarkets = await getFunMarketsByMatch(matchId);
+  const openFunMarkets = funMarkets.filter((m) => m.status === "open");
 
   return (
     <div className="mx-auto max-w-lg space-y-8">
-      <MatchHeader match={match} />
+      <MatchHeader match={match} adminEditHref={adminEditHref} />
 
-      {allowed ? (
-        <BetSlip match={match} balance={profile.balance} />
-      ) : (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            <p>{reason}</p>
-            {match.status === "finished" &&
-              match.home_score !== null &&
-              match.away_score !== null && (
-                <p className="mt-2 text-sm">
-                  Score final : {match.home_score} - {match.away_score}
-                </p>
-              )}
-          </CardContent>
-        </Card>
+      <BetSlip match={match} balance={profile.balance} />
+
+      {(funMarkets.length > 0 || openFunMarkets.length > 0) && (
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold">Paris fun</h2>
+            <p className="text-sm text-muted-foreground">
+              Ouverts pendant le match jusqu&apos;à clôture par l&apos;admin
+            </p>
+          </div>
+          <div className="space-y-3">
+            {funMarkets.map((market) => (
+              <FunBetSlip
+                key={market.id}
+                market={market}
+                balance={profile.balance}
+              />
+            ))}
+          </div>
+        </section>
       )}
     </div>
   );

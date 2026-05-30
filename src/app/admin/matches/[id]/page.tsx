@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
+import { FunMarketsAdmin } from "@/components/admin/fun-markets-admin";
 import { MatchAdminPanel } from "@/components/admin/match-admin-panel";
 import { getAdminMatch, getPendingBetsCount } from "@/lib/admin/matches";
+import { getFunMarketsForAdmin } from "@/lib/fun-markets";
 
 export const metadata = { title: "Admin · Détail match" };
 
@@ -17,8 +19,12 @@ export default async function AdminMatchPage({
   if (!match) notFound();
 
   const pendingBetsCount = await getPendingBetsCount(matchId);
+  const funMarkets = await getFunMarketsForAdmin(matchId);
 
   return (
-    <MatchAdminPanel match={match} pendingBetsCount={pendingBetsCount} />
+    <div className="space-y-8">
+      <MatchAdminPanel match={match} pendingBetsCount={pendingBetsCount} />
+      <FunMarketsAdmin matchId={matchId} markets={funMarkets} />
+    </div>
   );
 }
