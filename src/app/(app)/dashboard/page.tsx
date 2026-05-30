@@ -1,7 +1,6 @@
 import { WalletCard } from "@/components/dashboard/wallet-card";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { getDashboardData } from "@/lib/dashboard";
-import { hasSupabaseConfig } from "@/lib/auth-server";
 import { Badge } from "@/components/ui/badge";
 
 export const metadata = {
@@ -10,8 +9,7 @@ export const metadata = {
 };
 
 export default async function DashboardPage() {
-  const { profile, upcomingMatches } = await getDashboardData();
-  const isDemo = !hasSupabaseConfig;
+  const { profile, upcomingMatches, isDemo } = await getDashboardData();
 
   return (
     <div className="space-y-8">
@@ -54,7 +52,14 @@ export default async function DashboardPage() {
             Coupe du Monde FIFA 2026 · Paris 1N2
           </p>
         </div>
-        <UpcomingMatches matches={upcomingMatches} />
+        {upcomingMatches.length === 0 && !isDemo ? (
+          <p className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
+            Aucun match à venir. Un administrateur peut en créer depuis{" "}
+            <strong className="text-foreground">/admin</strong>.
+          </p>
+        ) : (
+          <UpcomingMatches matches={upcomingMatches} />
+        )}
       </section>
     </div>
   );

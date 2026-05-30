@@ -3,9 +3,25 @@ import { hasSupabaseConfig, requireAuth } from "@/lib/auth-server";
 import { createClient } from "@/lib/supabase/server";
 import type { DashboardData, MatchWithTeams } from "@/types/database";
 
+function normalizeMatches(
+  rows: unknown[] | null,
+): MatchWithTeams[] {
+  if (!rows?.length) return [];
+  return rows.map((row) => {
+    const m = row as Record<string, unknown>;
+    const home = m.home_team;
+    const away = m.away_team;
+    return {
+      ...m,
+      home_team: Array.isArray(home) ? home[0] : home,
+      away_team: Array.isArray(away) ? away[0] : away,
+    } as MatchWithTeams;
+  });
+}
+
 export async function getDashboardData(): Promise<DashboardData> {
   if (!hasSupabaseConfig) {
-    return MOCK_DASHBOARD;
+    return { ...MOCK_DASHBOARD, isDemo: true };
   }
 
   const profile = await requireAuth();
@@ -22,14 +38,17 @@ export async function getDashboardData(): Promise<DashboardData> {
     `,
     )
     .in("status", ["scheduled", "live"])
-    .gte("kickoff_at", new Date().toISOString())
     .order("kickoff_at", { ascending: true })
-    .limit(20);
+    .limit(30);
 
-  const upcomingMatches =
-    matches && matches.length > 0
-      ? (matches as unknown as MatchWithTeams[])
-      : MOCK_DASHBOARD.upcomingMatches;
+  const upcoming = normalizeMatches(matches).filter((m) => {
+    if (m.status === "live") return true;
+    return new Date(m.kickoff_at) >= new Date();
+  });
 
-  return { profile, upcomingMatches };
+  return {
+    profile,
+    upcomingMatches: upcoming,
+    isDemo: false,
+  };
 }

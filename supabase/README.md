@@ -49,7 +49,13 @@ npm run dev
 - Créer un compte sur `/signup`
 - Vérifier dans **Table Editor → profiles** : `balance = 100`
 - Vérifier **transactions** : ligne `signup_bonus`
-- Dashboard : matchs issus de `seed.sql`
+- Dashboard : matchs créés par un admin (voir ci-dessous)
+
+## 6. Mode administrateur (matchs manuels)
+
+1. Exécuter `migrations/002_admin_roles_manual.sql`
+2. Te promouvoir admin : `update profiles set role = 'admin' where id = '...'`
+3. Guide complet : **[docs/ADMIN.md](../docs/ADMIN.md)**
 
 ## Tables principales
 

@@ -36,6 +36,14 @@ export async function AppHeader() {
                 {item.label}
               </Link>
             ))}
+            {profile?.role === "admin" && (
+              <Link
+                href="/admin"
+                className="rounded-md px-3 py-1.5 text-primary transition-colors hover:bg-primary/10"
+              >
+                Admin
+              </Link>
+            )}
           </nav>
           {profile ? (
             <UserMenu profile={profile} />

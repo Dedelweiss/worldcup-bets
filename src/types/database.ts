@@ -9,12 +9,15 @@ export type BetType = "match_result" | "exact_score" | "goalscorer";
 
 export type BetStatus = "pending" | "won" | "lost" | "void" | "cancelled";
 
+export type UserRole = "user" | "admin";
+
 export interface Profile {
   id: string;
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
   balance: number;
+  role?: UserRole;
 }
 
 export interface Team {
@@ -42,4 +45,5 @@ export interface MatchWithTeams {
 export interface DashboardData {
   profile: Profile;
   upcomingMatches: MatchWithTeams[];
+  isDemo?: boolean;
 }
