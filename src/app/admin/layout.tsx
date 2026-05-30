@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { Shield } from "lucide-react";
-import { requireAdmin } from "@/lib/auth-server";
+import { AdminNav } from "@/components/layout/admin-nav";
 import { AppHeader } from "@/components/layout/app-header";
+import { requireAdmin } from "@/lib/auth-server";
 
 const adminNav = [
   { href: "/admin", label: "Matchs" },
@@ -26,17 +26,7 @@ export default async function AdminLayout({
           <Shield className="size-5" />
           <span className="font-semibold">Administration</span>
         </div>
-        <nav className="mb-8 flex gap-2">
-          {adminNav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <AdminNav items={adminNav} />
         {children}
       </div>
     </div>
