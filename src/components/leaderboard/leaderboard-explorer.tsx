@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { Suspense } from "react";
+import { LeagueInvitePanel } from "@/components/leagues/league-invite-panel";
 import { LeaderboardFilters } from "@/components/leaderboard/leaderboard-filters";
 import { LeaderboardTable } from "@/components/leaderboard/leaderboard-table";
+import type { LeagueWithMeta } from "@/lib/leagues";
 import type {
-  League,
   LeaderboardEntry,
   LeaderboardScope,
   LeaderboardSort,
@@ -10,7 +12,7 @@ import type {
 
 interface LeaderboardExplorerProps {
   players: LeaderboardEntry[];
-  leagues: League[];
+  leagues: LeagueWithMeta[];
   scope: LeaderboardScope;
   leagueId: string | null;
   sort: LeaderboardSort;
@@ -35,6 +37,29 @@ export function LeaderboardExplorer({
           sort={sort}
         />
       </Suspense>
+
+      {scope === "league" && leagues.length === 0 && (
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Vous n&apos;êtes dans aucune ligue. Rejoignez-en une avec un code ou{" "}
+            <Link href="/leagues" className="text-primary underline">
+              gérez vos ligues
+            </Link>
+            .
+          </p>
+          <LeagueInvitePanel myLeagues={[]} />
+        </div>
+      )}
+
+      {scope === "league" && leagues.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Code d&apos;invitation : voir{" "}
+          <Link href="/leagues" className="text-primary underline">
+            Mes ligues
+          </Link>{" "}
+          pour inviter des amis.
+        </p>
+      )}
 
       {(scope !== "league" || leagueId) && (
         <p className="text-sm text-muted-foreground">

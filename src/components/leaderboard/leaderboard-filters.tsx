@@ -4,7 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useTransition } from "react";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type { League, LeaderboardScope, LeaderboardSort } from "@/types/database";
+import type { LeagueWithMeta } from "@/lib/leagues";
+import type { LeaderboardScope, LeaderboardSort } from "@/types/database";
 
 const SCOPE_OPTIONS: { value: LeaderboardScope; label: string }[] = [
   { value: "general", label: "Général" },
@@ -18,7 +19,7 @@ const SORT_OPTIONS: { value: LeaderboardSort; label: string; short: string }[] =
 ];
 
 interface LeaderboardFiltersProps {
-  leagues: League[];
+  leagues: LeagueWithMeta[];
   scope: LeaderboardScope;
   leagueId: string | null;
   sort: LeaderboardSort;
@@ -104,11 +105,6 @@ export function LeaderboardFilters({
             </div>
           )}
         </div>
-        {scope === "league" && leagues.length === 0 && (
-          <p className="text-xs text-muted-foreground">
-            Vous n&apos;êtes dans aucune ligue pour le moment.
-          </p>
-        )}
       </div>
 
       <div className="space-y-2">

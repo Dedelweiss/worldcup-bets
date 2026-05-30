@@ -1,20 +1,47 @@
 import { createClient } from "@/lib/supabase/server";
 import type { League, LeagueWithMemberCount } from "@/types/database";
 
-export async function getLeaguesForUser(userId: string): Promise<League[]> {
+export interface LeagueWithMeta extends League {
+  is_creator?: boolean;
+}
+
+export async function getLeaguesForUser(
+  _userId?: string,
+): Promise<LeagueWithMeta[]> {
   const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("get_my_leagues");
+
+  if (error) {
+    if (error.message.includes("Could not find")) {
+      return getLeaguesForUserFallback();
+    }
+    console.error("get_my_leagues", error);
+    return [];
+  }
+
+  return (data ?? []) as LeagueWithMeta[];
+}
+
+/** Fallback si migration 014 pas encore appliquée */
+async function getLeaguesForUserFallback(): Promise<LeagueWithMeta[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
 
   const { data: memberRows } = await supabase
     .from("league_members")
     .select("league_id")
-    .eq("user_id", userId);
+    .eq("user_id", user.id);
 
   const memberIds = (memberRows ?? []).map((r) => r.league_id);
 
   const { data: owned } = await supabase
     .from("leagues")
     .select("id, name, slug, invite_code, created_by, created_at")
-    .eq("created_by", userId);
+    .eq("created_by", user.id);
 
   const ids = new Set<string>([
     ...memberIds,
@@ -30,7 +57,10 @@ export async function getLeaguesForUser(userId: string): Promise<League[]> {
     .order("name");
 
   if (error) return [];
-  return data as League[];
+  return (data ?? []).map((l) => ({
+    ...(l as League),
+    is_creator: l.created_by === user.id,
+  }));
 }
 
 export async function getAllLeaguesAdmin(): Promise<LeagueWithMemberCount[]> {
@@ -77,7 +107,7 @@ export async function getLeagueById(leagueId: string): Promise<League | null> {
     .from("leagues")
     .select("id, name, slug, invite_code, created_by, created_at")
     .eq("id", leagueId)
-    .single();
+    .maybeSingle();
 
   if (error || !data) return null;
   return data as League;

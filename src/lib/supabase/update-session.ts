@@ -7,6 +7,7 @@ const PROTECTED_PREFIXES = [
   "/dashboard",
   "/bets",
   "/leaderboard",
+  "/leagues",
   "/matches",
   "/admin",
 ];

@@ -20,6 +20,9 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 12. `011_tournament_groups_stages.sql` (groupes A–L, phases, arbre, créateur de match)
 13. `012_private_leagues_leaderboard.sql` (ligues privées + classement filtré)
 14. `013_fix_leagues_rls_admin_read.sql` (si 404 après création d’une ligue)
+15. `014_leagues_invite_and_my_leagues.sql` (mes ligues au classement + invitation par code)
+16. `015_leaderboard_league_labels.sql` (badges ligue au classement)
+17. `016_single_league_self_service.sql` (une seule ligue / joueur sauf ajout admin)
 
 ### Workflow admin CDM 2026
 
@@ -34,7 +37,8 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 2. **Gérer** — cocher les joueurs membres → Enregistrer.
 3. **`/leaderboard`** — périmètre « Mes ligues » + menu déroulant + thème (Bankroll / Paris matchs / Paris fun).
 
-Code invitation : affiché sur la fiche ligue (RPC `join_league_by_invite_code` prête pour une future UI joueur).
+**Joueurs** : `/leagues` — rejoindre avec un code, créer une ligue, copier le code à partager.  
+**Admin** : cochez les membres sur `/admin/leagues/[id]` ; le créateur est ajouté automatiquement à la création. L’admin peut mettre un joueur dans **plusieurs** ligues ; un joueur seul ne peut rejoindre/créer qu’**une** ligue.
 
 > Erreur `unsafe use of new value "fun"` → vous avez sauté l’étape **004a** ou tout collé en une seule requête.
 

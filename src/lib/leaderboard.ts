@@ -76,6 +76,35 @@ async function getLeaderboardFallback(options: {
   };
 }
 
+async function attachLeagueLabels(
+  players: LeaderboardEntry[],
+): Promise<LeaderboardEntry[]> {
+  if (players.length === 0) return players;
+
+  const supabase = await createClient();
+  const userIds = players.map((p) => p.id);
+
+  const { data, error } = await supabase.rpc("get_users_league_labels", {
+    p_user_ids: userIds,
+  });
+
+  if (error || !data) {
+    return players;
+  }
+
+  const byUser = new Map<string, { id: string; name: string }[]>();
+  for (const row of data as { user_id: string; league_id: string; league_name: string }[]) {
+    const list = byUser.get(row.user_id) ?? [];
+    list.push({ id: row.league_id, name: row.league_name });
+    byUser.set(row.user_id, list);
+  }
+
+  return players.map((p) => ({
+    ...p,
+    leagues: byUser.get(p.id) ?? [],
+  }));
+}
+
 export async function getLeaderboard(options?: {
   leagueId?: string | null;
   sort?: LeaderboardSort;
@@ -108,16 +137,23 @@ export async function getLeaderboard(options?: {
           const ids = new Set((members ?? []).map((m) => m.user_id));
           players = players.filter((p) => ids.has(p.id));
         }
-        return { players: sortPlayers(players, sort) };
+        return {
+          players: await attachLeagueLabels(sortPlayers(players, sort)),
+        };
       }
-      return getLeaderboardFallback({ leagueId, sort });
+      const fallback = await getLeaderboardFallback({ leagueId, sort });
+      return {
+        ...fallback,
+        players: await attachLeagueLabels(fallback.players),
+      };
     }
     console.error("get_leaderboard_filtered", error);
     return { players: [] };
   }
 
+  const players = (data ?? []).map((row: Record<string, unknown>) => mapRow(row));
   return {
-    players: (data ?? []).map((row: Record<string, unknown>) => mapRow(row)),
+    players: await attachLeagueLabels(players),
   };
 }
 

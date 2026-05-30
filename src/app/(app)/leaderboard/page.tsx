@@ -19,7 +19,7 @@ export default async function LeaderboardPage({
   const scope: LeaderboardScope =
     params.scope === "league" ? "league" : "general";
 
-  let leagues = hasSupabaseConfig ? await getLeaguesForUser(profile.id) : [];
+  let leagues = hasSupabaseConfig ? await getLeaguesForUser() : [];
   let leagueId: string | null =
     scope === "league" ? (params.league ?? leagues[0]?.id ?? null) : null;
 

@@ -120,6 +120,11 @@ export interface LeagueWithMemberCount extends League {
   member_count: number;
 }
 
+export interface LeaderboardLeagueTag {
+  id: string;
+  name: string;
+}
+
 export interface LeaderboardEntry {
   id: string;
   display_name: string | null;
@@ -131,6 +136,7 @@ export interface LeaderboardEntry {
   fun_lost: number;
   total_won: number;
   total_lost: number;
+  leagues?: LeaderboardLeagueTag[];
 }
 
 export interface BetRow {

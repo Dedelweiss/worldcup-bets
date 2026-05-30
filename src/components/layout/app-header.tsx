@@ -10,6 +10,7 @@ const nav = [
   { href: "/matches", label: "Calendrier" },
   { href: "/bracket", label: "Arbre" },
   { href: "/leaderboard", label: "Classement" },
+  { href: "/leagues", label: "Ligues" },
   { href: "/bets", label: "Mes paris" },
 ];
 
