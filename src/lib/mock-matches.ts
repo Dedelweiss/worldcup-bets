@@ -1,0 +1,86 @@
+import type { DashboardData } from "@/types/database";
+
+/** Données de démo tant que Supabase / API-Football ne sont pas branchés */
+export const MOCK_DASHBOARD: DashboardData = {
+  profile: {
+    id: "demo-user",
+    username: "joueur_demo",
+    display_name: "Joueur Démo",
+    avatar_url: null,
+    balance: 100,
+  },
+  upcomingMatches: [
+    {
+      id: 1001,
+      round: "Groupe A · J1",
+      status: "scheduled",
+      kickoff_at: "2026-06-11T19:00:00Z",
+      venue: "Estadio Azteca, Mexico City",
+      home_score: null,
+      away_score: null,
+      odd_home: 2.1,
+      odd_draw: 3.2,
+      odd_away: 3.5,
+      home_team: {
+        id: 1,
+        name: "Mexique",
+        code: "MEX",
+        logo_url: "https://media.api-sports.io/football/teams/16.png",
+      },
+      away_team: {
+        id: 2,
+        name: "Afrique du Sud",
+        code: "RSA",
+        logo_url: "https://media.api-sports.io/football/teams/1531.png",
+      },
+    },
+    {
+      id: 1002,
+      round: "Groupe A · J1",
+      status: "scheduled",
+      kickoff_at: "2026-06-12T01:00:00Z",
+      venue: "SoFi Stadium, Los Angeles",
+      home_score: null,
+      away_score: null,
+      odd_home: 1.45,
+      odd_draw: 4.5,
+      odd_away: 7.0,
+      home_team: {
+        id: 3,
+        name: "États-Unis",
+        code: "USA",
+        logo_url: "https://media.api-sports.io/football/teams/2384.png",
+      },
+      away_team: {
+        id: 4,
+        name: "Paraguay",
+        code: "PAR",
+        logo_url: "https://media.api-sports.io/football/teams/2380.png",
+      },
+    },
+    {
+      id: 1003,
+      round: "Groupe B · J1",
+      status: "scheduled",
+      kickoff_at: "2026-06-12T18:00:00Z",
+      venue: "BMO Field, Toronto",
+      home_score: null,
+      away_score: null,
+      odd_home: 1.85,
+      odd_draw: 3.4,
+      odd_away: 4.2,
+      home_team: {
+        id: 5,
+        name: "Canada",
+        code: "CAN",
+        logo_url: "https://media.api-sports.io/football/teams/5529.png",
+      },
+      away_team: {
+        id: 6,
+        name: "Qatar",
+        code: "QAT",
+        logo_url: "https://media.api-sports.io/football/teams/1569.png",
+      },
+    },
+  ],
+};
