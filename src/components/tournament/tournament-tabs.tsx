@@ -1,0 +1,57 @@
+"use client";
+
+import { useState } from "react";
+import { BracketView } from "@/components/bracket/bracket-view";
+import { GroupStandingsView } from "@/components/tournament/group-standings";
+import { cn } from "@/lib/utils";
+import type { BracketSlotWithMatch } from "@/types/database";
+import type { GroupStandings } from "@/lib/tournament/standings";
+
+type Tab = "groups" | "knockout";
+
+interface TournamentTabsProps {
+  standings: GroupStandings[];
+  slots: BracketSlotWithMatch[];
+  isAdmin?: boolean;
+}
+
+export function TournamentTabs({
+  standings,
+  slots,
+  isAdmin,
+}: TournamentTabsProps) {
+  const [tab, setTab] = useState<Tab>("groups");
+
+  return (
+    <div className="space-y-6">
+      <div className="flex gap-2 rounded-lg border border-border p-1">
+        {(
+          [
+            ["groups", "Classement poules"],
+            ["knockout", "Phase finale"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTab(id)}
+            className={cn(
+              "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              tab === id
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "groups" ? (
+        <GroupStandingsView standings={standings} />
+      ) : (
+        <BracketView slots={slots} isAdmin={isAdmin} />
+      )}
+    </div>
+  );
+}

@@ -1,12 +1,16 @@
 import Link from "next/link";
-import { BracketView } from "@/components/bracket/bracket-view";
+import { TournamentTabs } from "@/components/tournament/tournament-tabs";
 import { getProfile, hasSupabaseConfig } from "@/lib/auth-server";
 import { getBracketSlots } from "@/lib/tournament/queries";
+import { getAllGroupStandings } from "@/lib/tournament/standings";
 
-export const metadata = { title: "Arbre du tournoi" };
+export const metadata = { title: "Tournoi · Poules & arbre" };
 
 export default async function BracketPage() {
-  const slots = await getBracketSlots();
+  const [slots, standings] = await Promise.all([
+    getBracketSlots(),
+    getAllGroupStandings(),
+  ]);
   const profile = hasSupabaseConfig ? await getProfile() : null;
   const isAdmin = profile?.role === "admin";
 
@@ -14,18 +18,22 @@ export default async function BracketPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Arbre éliminatoire</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Tournoi</h1>
           <p className="text-muted-foreground">
-            Se remplit au fur et à mesure que l&apos;admin crée les matchs et valide
-            les scores.
+            Classements de poule et arbre éliminatoire (mis à jour après chaque
+            match terminé).
           </p>
         </div>
-        <Link href="/matches?view=knockout" className="text-sm text-primary hover:underline">
-          Calendrier phase finale →
+        <Link href="/matches?view=group" className="text-sm text-primary hover:underline">
+          Calendrier poules →
         </Link>
       </div>
 
-      <BracketView slots={slots} isAdmin={isAdmin} />
+      <TournamentTabs
+        standings={standings}
+        slots={slots}
+        isAdmin={isAdmin}
+      />
     </div>
   );
 }
