@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { Trophy } from "lucide-react";
+import { UserMenu } from "@/components/layout/user-menu";
+import { getProfile, hasSupabaseConfig } from "@/lib/auth-server";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const nav = [
   { href: "/dashboard", label: "Paris" },
@@ -7,7 +11,9 @@ const nav = [
   { href: "/bets", label: "Mes paris" },
 ];
 
-export function AppHeader() {
+export async function AppHeader() {
+  const profile = hasSupabaseConfig ? await getProfile() : null;
+
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
@@ -19,17 +25,26 @@ export function AppHeader() {
             WC<span className="text-primary">2026</span> Pool
           </span>
         </Link>
-        <nav className="flex items-center gap-1 text-sm">
-          {nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              {item.label}
+        <div className="flex items-center gap-2">
+          <nav className="hidden items-center gap-1 text-sm sm:flex">
+            {nav.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          {profile ? (
+            <UserMenu profile={profile} />
+          ) : (
+            <Link href="/login" className={cn(buttonVariants({ size: "sm" }))}>
+              Connexion
             </Link>
-          ))}
-        </nav>
+          )}
+        </div>
       </div>
     </header>
   );

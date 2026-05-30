@@ -1,6 +1,7 @@
 import { WalletCard } from "@/components/dashboard/wallet-card";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { getDashboardData } from "@/lib/dashboard";
+import { hasSupabaseConfig } from "@/lib/auth-server";
 import { Badge } from "@/components/ui/badge";
 
 export const metadata = {
@@ -10,18 +11,18 @@ export const metadata = {
 
 export default async function DashboardPage() {
   const { profile, upcomingMatches } = await getDashboardData();
-  const usingMock =
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const isDemo = !hasSupabaseConfig;
 
   return (
     <div className="space-y-8">
       <section className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Tableau de bord</h1>
-          {usingMock && (
+          <h1 className="text-2xl font-bold tracking-tight">
+            Bonjour, {profile.display_name ?? "Joueur"}
+          </h1>
+          {isDemo && (
             <Badge variant="outline" className="text-[10px]">
-              Mode démo
+              Mode démo — configurez Supabase
             </Badge>
           )}
         </div>
@@ -47,13 +48,11 @@ export default async function DashboardPage() {
       </section>
 
       <section className="space-y-4">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold">Prochains matchs</h2>
-            <p className="text-sm text-muted-foreground">
-              Coupe du Monde FIFA 2026 · Paris 1N2
-            </p>
-          </div>
+        <div>
+          <h2 className="text-lg font-semibold">Prochains matchs</h2>
+          <p className="text-sm text-muted-foreground">
+            Coupe du Monde FIFA 2026 · Paris 1N2
+          </p>
         </div>
         <UpcomingMatches matches={upcomingMatches} />
       </section>

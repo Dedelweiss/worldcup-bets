@@ -1,30 +1,15 @@
 import { MOCK_DASHBOARD } from "@/lib/mock-matches";
+import { hasSupabaseConfig, requireAuth } from "@/lib/auth-server";
 import { createClient } from "@/lib/supabase/server";
 import type { DashboardData, MatchWithTeams } from "@/types/database";
 
-const hasSupabase =
-  Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
-  Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-
 export async function getDashboardData(): Promise<DashboardData> {
-  if (!hasSupabase) {
+  if (!hasSupabaseConfig) {
     return MOCK_DASHBOARD;
   }
 
+  const profile = await requireAuth();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return MOCK_DASHBOARD;
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, username, display_name, avatar_url, balance")
-    .eq("id", user.id)
-    .single();
 
   const { data: matches } = await supabase
     .from("matches")
@@ -41,8 +26,10 @@ export async function getDashboardData(): Promise<DashboardData> {
     .order("kickoff_at", { ascending: true })
     .limit(20);
 
-  return {
-    profile: profile ?? MOCK_DASHBOARD.profile,
-    upcomingMatches: (matches as MatchWithTeams[] | null) ?? MOCK_DASHBOARD.upcomingMatches,
-  };
+  const upcomingMatches =
+    matches && matches.length > 0
+      ? (matches as unknown as MatchWithTeams[])
+      : MOCK_DASHBOARD.upcomingMatches;
+
+  return { profile, upcomingMatches };
 }
