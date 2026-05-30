@@ -36,7 +36,7 @@ where id = 'TON-UUID-ICI';
 ## 4. Workflow admin
 
 1. **Nouveau match** — équipes, date/heure, cotes 1N2
-2. Les joueurs parient depuis le dashboard (phase suivante : page `/matches/[id]`)
+2. Les joueurs parient sur `/matches/[id]` (1N2, mise en €)
 3. Pendant / après le match — passer en **En direct** ou saisir le **score final**
 4. **Clôturer le match & payer les gagnants** — crédite automatiquement les bankrolls (paris 1N2 `pending`)
 

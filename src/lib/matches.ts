@@ -1,0 +1,54 @@
+import { createClient } from "@/lib/supabase/server";
+import type { MatchWithTeams } from "@/types/database";
+
+export function normalizeMatch(row: unknown): MatchWithTeams {
+  const m = row as Record<string, unknown>;
+  const home = m.home_team;
+  const away = m.away_team;
+  return {
+    ...m,
+    home_team: Array.isArray(home) ? home[0] : home,
+    away_team: Array.isArray(away) ? away[0] : away,
+  } as MatchWithTeams;
+}
+
+export const MATCH_SELECT = `
+  id, round, status, kickoff_at, venue,
+  home_score, away_score, odd_home, odd_draw, odd_away,
+  home_team:teams!matches_home_team_id_fkey (id, name, code, logo_url),
+  away_team:teams!matches_away_team_id_fkey (id, name, code, logo_url)
+`;
+
+export async function getMatchById(id: number): Promise<MatchWithTeams | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("matches")
+    .select(MATCH_SELECT)
+    .eq("id", id)
+    .single();
+
+  if (error || !data) return null;
+  return normalizeMatch(data);
+}
+
+export function canPlaceBetOnMatch(match: MatchWithTeams): {
+  allowed: boolean;
+  reason?: string;
+} {
+  if (match.status !== "scheduled") {
+    return {
+      allowed: false,
+      reason:
+        match.status === "finished"
+          ? "Ce match est terminé."
+          : "Les paris sont fermés pour ce match.",
+    };
+  }
+  if (new Date(match.kickoff_at) <= new Date()) {
+    return { allowed: false, reason: "Le coup d'envoi est passé." };
+  }
+  if (!match.odd_home || !match.odd_draw || !match.odd_away) {
+    return { allowed: false, reason: "Les cotes ne sont pas encore disponibles." };
+  }
+  return { allowed: true };
+}

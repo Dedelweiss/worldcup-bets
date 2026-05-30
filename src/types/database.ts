@@ -7,6 +7,8 @@ export type MatchStatus =
 
 export type BetType = "match_result" | "exact_score" | "goalscorer";
 
+export type MatchResultSelection = "home" | "draw" | "away";
+
 export type BetStatus = "pending" | "won" | "lost" | "void" | "cancelled";
 
 export type UserRole = "user" | "admin";
@@ -46,4 +48,20 @@ export interface DashboardData {
   profile: Profile;
   upcomingMatches: MatchWithTeams[];
   isDemo?: boolean;
+}
+
+export interface BetRow {
+  id: string;
+  match_id: number;
+  bet_type: BetType;
+  selection: { selection?: MatchResultSelection };
+  odd_at_placement: number;
+  stake: number;
+  potential_payout: number;
+  status: BetStatus;
+  placed_at: string;
+  match: Pick<
+    MatchWithTeams,
+    "id" | "round" | "status" | "kickoff_at" | "home_team" | "away_team"
+  >;
 }
