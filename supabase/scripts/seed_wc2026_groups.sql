@@ -9,6 +9,8 @@
 -- Usage : Supabase → SQL Editor → coller ce fichier → Run.
 -- Idempotent : ré-exécutable (met à jour nom, code, drapeau par slot de poule).
 --
+-- Ensuite : seed_wc2026_group_matches.sql (poules), puis seed_wc2026_knockout_matches.sql (finale).
+--
 -- ⚠️  Les matchs déjà créés qui référencent des équipes de poule ne sont PAS
 --     supprimés. Pour repartir de zéro, décommentez la section « reset » ci-dessous.
 

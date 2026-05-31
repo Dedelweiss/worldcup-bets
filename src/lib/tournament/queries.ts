@@ -1,6 +1,7 @@
 import { hasSupabaseConfig } from "@/lib/auth-server";
 import { normalizeMatch, MATCH_SELECT } from "@/lib/matches";
 import { syncLiveMatches } from "@/lib/matches/sync-live";
+import { enrichBracketSlotsWithKnockoutMatches } from "@/lib/tournament/bracket-slots";
 import { createClient } from "@/lib/supabase/server";
 import type {
   BracketSlotWithMatch,
@@ -125,21 +126,29 @@ export async function getBracketSlots(): Promise<BracketSlotWithMatch[]> {
   if (!hasSupabaseConfig) return [];
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("bracket_slots")
-    .select(
-      `
-      id, stage, label, bracket_order, match_id,
-      match:matches (
-        ${MATCH_SELECT},
-        stage, home_score, away_score, status
-      )
-    `,
-    )
-    .order("stage")
-    .order("bracket_order");
 
-  if (error || !data) return [];
+  const [slotsRes, knockoutRes] = await Promise.all([
+    supabase
+      .from("bracket_slots")
+      .select(
+        `
+        id, stage, label, bracket_order, match_id,
+        match:matches (
+          ${MATCH_SELECT},
+          home_score, away_score
+        )
+      `,
+      )
+      .order("stage")
+      .order("bracket_order"),
+    supabase
+      .from("matches")
+      .select(MATCH_SELECT)
+      .neq("stage", "group")
+      .order("id", { ascending: true }),
+  ]);
+
+  if (slotsRes.error || !slotsRes.data) return [];
 
   const stageOrder: MatchStage[] = [
     "r32",
@@ -150,12 +159,10 @@ export async function getBracketSlots(): Promise<BracketSlotWithMatch[]> {
     "final",
   ];
 
-  const rows = data.map((row) => {
+  const rows = slotsRes.data.map((row) => {
     const r = row as Record<string, unknown>;
     const matchRaw = r.match;
-    const match = matchRaw
-      ? normalizeMatch(matchRaw)
-      : null;
+    const match = matchRaw ? normalizeMatch(matchRaw) : null;
     return {
       id: r.id as string,
       stage: r.stage as MatchStage,
@@ -163,14 +170,19 @@ export async function getBracketSlots(): Promise<BracketSlotWithMatch[]> {
       bracket_order: r.bracket_order as number,
       match_id: r.match_id as number | null,
       match,
+      scheduled_kickoff: match?.kickoff_at ?? null,
     } as BracketSlotWithMatch;
   });
 
-  return rows.sort(
+  const sorted = rows.sort(
     (a, b) =>
       stageOrder.indexOf(a.stage) - stageOrder.indexOf(b.stage) ||
       a.bracket_order - b.bracket_order,
   );
+
+  const knockout = (knockoutRes.data ?? []).map((row) => normalizeMatch(row));
+
+  return enrichBracketSlotsWithKnockoutMatches(sorted, knockout);
 }
 
 export async function getOpenBracketSlots(

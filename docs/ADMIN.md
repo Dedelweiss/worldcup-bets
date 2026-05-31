@@ -55,9 +55,10 @@ select public.recompute_classic_heat(id) from public.profiles;
 ### Workflow admin CDM 2026
 
 1. **Poules (option rapide)** — exécuter `supabase/scripts/seed_wc2026_groups.sql` dans le SQL Editor pour importer les **48 équipes** (groupes A–L, tirage FIFA 2026). Sinon : **`/admin/teams`** manuellement (nom + code ISO flagcdn, ex. `FR`).
-2. **`/admin/matches/new`** — onglet **Poules** : groupe → 2 équipes → date/cotes → « Ajouter au calendrier ».
-3. **Phase finale** — même page, onglet **Phase finale** : tour (16es, quarts…), équipes libres, emplacement dans l’arbre, note paris temps réglementaire.
-4. Joueurs : **`/matches`** (filtres groupes / finale) et **`/bracket`** (arbre qui se remplit).
+2. **Calendrier poules** — exécuter `supabase/scripts/seed_wc2026_group_matches.sql` pour créer/mettre à jour les **72 matchs** (11–27 juin 2026, horaires UTC). Ré-exécutable ; décommenter le bloc « RESET POULES » si vous les avez supprimés.
+3. **Phase finale** — exécuter `supabase/scripts/seed_wc2026_knockout_matches.sql` pour les **32 matchs** M73–M104 (28 juin – 19 juillet). Équipes « À déterminer » jusqu’aux qualifiés ; lier l’arbre (`/bracket`). Ré-exécutable ; bloc « RESET phase finale » si suppression.
+4. **`/admin/matches/new`** — onglet **Poules** ou **Phase finale** : corriger cotes, date ou équipes.
+5. Joueurs : **`/matches`** (filtres groupes / finale) et **`/bracket`** (arbre qui se remplit).
 
 ### Ligues privées
 

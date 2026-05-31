@@ -52,6 +52,8 @@ export interface BracketSlotWithMatch {
   bracket_order: number;
   match_id: number | null;
   match: MatchWithTeams | null;
+  /** Date de coup d'envoi (depuis le match lié, pour affichage dans l'arbre). */
+  scheduled_kickoff?: string | null;
 }
 
 export interface Profile {

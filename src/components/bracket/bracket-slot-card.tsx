@@ -23,6 +23,7 @@ export function BracketSlotCard({
   highlight = false,
 }: BracketSlotCardProps) {
   const m = slot.match;
+  const kickoffAt = m?.kickoff_at ?? slot.scheduled_kickoff ?? null;
 
   if (!m) {
     return (
@@ -36,7 +37,14 @@ export function BracketSlotCard({
         <p className="truncate text-[10px] font-medium text-muted-foreground">
           {slot.label}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground/80">À définir</p>
+        {kickoffAt ? (
+          <p className="mt-1.5 text-[10px] font-medium tabular-nums text-primary">
+            {formatKickoff(kickoffAt)}
+          </p>
+        ) : null}
+        <p className="mt-1 text-xs text-muted-foreground/80">
+          {kickoffAt ? "Équipes à déterminer" : "À définir"}
+        </p>
       </div>
     );
   }
@@ -59,9 +67,19 @@ export function BracketSlotCard({
           goldenMatchCardClass(m.is_golden ?? false, m.status === "live"),
         )}
       >
-        <p className="mb-1.5 truncate text-[10px] font-medium text-muted-foreground">
+        <p className="truncate text-[10px] font-medium text-muted-foreground">
           {slot.label}
         </p>
+        {kickoffAt && (
+          <p
+            className={cn(
+              "mb-1.5 font-medium tabular-nums text-primary",
+              compact ? "text-[10px]" : "text-[11px]",
+            )}
+          >
+            {formatKickoff(kickoffAt)}
+          </p>
+        )}
         <div className="space-y-1">
           <TeamLine
             team={m.home_team}
@@ -81,10 +99,7 @@ export function BracketSlotCard({
             <GoldenMatchBadge compact className="text-[9px] h-4 px-1.5" />
           </div>
         )}
-        <div className="mt-2 flex items-center justify-between gap-1 border-t border-border/50 pt-1.5">
-          <span className="text-[9px] text-muted-foreground">
-            {formatKickoff(m.kickoff_at)}
-          </span>
+        <div className="mt-2 flex items-center justify-end gap-1 border-t border-border/50 pt-1.5">
           <Badge
             variant={m.status === "live" ? "default" : "secondary"}
             className="h-4 px-1 text-[9px]"
