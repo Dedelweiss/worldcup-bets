@@ -12,6 +12,13 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+/** Affichage des points (classement / gains potentiels). */
+export function formatPoints(points: number): string {
+  return new Intl.NumberFormat("fr-FR", {
+    maximumFractionDigits: 0,
+  }).format(points);
+}
+
 export function formatKickoff(isoDate: string): string {
   return formatInTimeZone(new Date(isoDate), PARIS_TZ, "EEE d MMM · HH:mm", {
     locale: fr,

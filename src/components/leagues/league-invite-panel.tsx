@@ -41,7 +41,7 @@ export function LeagueInvitePanel({ myLeagues }: LeagueInvitePanelProps) {
       setInviteCode("");
       if (result.leagueId) {
         router.push(
-          `/leaderboard?scope=league&league=${result.leagueId}&sort=balance`,
+          `/leaderboard?scope=league&league=${result.leagueId}&sort=points`,
         );
       }
       router.refresh();

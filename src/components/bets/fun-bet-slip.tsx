@@ -5,30 +5,32 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { placeFunBetAction } from "@/app/(app)/matches/fun-actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatOdd } from "@/lib/format";
+import { formatOdd, formatPoints } from "@/lib/format";
+import { pointsFromOdd } from "@/lib/points";
 import { cn } from "@/lib/utils";
 import type { FunMarket, FunOutcome } from "@/types/database";
 
 interface FunBetSlipProps {
   market: FunMarket;
-  balance: number;
 }
 
-export function FunBetSlip({ market, balance }: FunBetSlipProps) {
+export function FunBetSlip({ market }: FunBetSlipProps) {
   const router = useRouter();
   const open = market.status === "open";
   const [outcome, setOutcome] = useState<FunOutcome | null>(null);
-  const [stake, setStake] = useState("5");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
 
-  const odd = outcome === "yes" ? market.odd_yes : outcome === "no" ? market.odd_no : null;
-  const stakeNum = parseFloat(stake) || 0;
-  const payout = odd && stakeNum > 0 ? Math.round(stakeNum * odd * 100) / 100 : 0;
+  const odd =
+    outcome === "yes"
+      ? market.odd_yes
+      : outcome === "no"
+        ? market.odd_no
+        : null;
+  const pointsIfWin = odd != null ? pointsFromOdd(odd) : 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,7 +41,6 @@ export function FunBetSlip({ market, balance }: FunBetSlipProps) {
       market.id,
       market.match_id,
       outcome,
-      stakeNum,
     );
     if (!result.success) {
       setError(result.error);
@@ -69,7 +70,7 @@ export function FunBetSlip({ market, balance }: FunBetSlipProps) {
   return (
     <motion.div
       layout
-      className="rounded-xl border border-border bg-card overflow-hidden"
+      className="overflow-hidden rounded-xl border border-border bg-card"
     >
       <button
         type="button"
@@ -91,7 +92,8 @@ export function FunBetSlip({ market, balance }: FunBetSlipProps) {
           </div>
           <p className="mt-2 font-medium">{market.question}</p>
           <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-            Oui {formatOdd(market.odd_yes)} · Non {formatOdd(market.odd_no)}
+            Oui {formatOdd(market.odd_yes)} (+{formatPoints(pointsFromOdd(market.odd_yes))} pts) · Non{" "}
+            {formatOdd(market.odd_no)} (+{formatPoints(pointsFromOdd(market.odd_no))} pts)
           </p>
         </div>
         <span className="text-muted-foreground">{expanded ? "−" : "+"}</span>
@@ -129,25 +131,17 @@ export function FunBetSlip({ market, balance }: FunBetSlipProps) {
                     <span className="font-bold text-primary tabular-nums">
                       {formatOdd(o.odd)}
                     </span>
+                    <span className="mt-0.5 block text-[10px] text-muted-foreground">
+                      +{formatPoints(pointsFromOdd(o.odd))} pts
+                    </span>
                   </button>
                 ))}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor={`stake-${market.id}`}>Mise (€)</Label>
-                <Input
-                  id={`stake-${market.id}`}
-                  type="number"
-                  min={1}
-                  max={balance}
-                  value={stake}
-                  onChange={(e) => setStake(e.target.value)}
-                />
-              </div>
-              {outcome && stakeNum > 0 && (
+              {outcome && (
                 <p className="text-sm text-muted-foreground">
-                  Gain potentiel :{" "}
+                  Points si gagné :{" "}
                   <span className="font-semibold text-primary">
-                    {formatCurrency(payout)}
+                    +{formatPoints(pointsIfWin)}
                   </span>
                 </p>
               )}
@@ -155,9 +149,9 @@ export function FunBetSlip({ market, balance }: FunBetSlipProps) {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={loading || !outcome || stakeNum < 1}
+                disabled={loading || !outcome}
               >
-                {loading ? "…" : "Parier"}
+                {loading ? "…" : "Valider mon pronostic"}
               </Button>
             </form>
           </motion.div>

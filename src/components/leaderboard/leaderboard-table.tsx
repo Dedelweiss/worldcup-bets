@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/format";
+import { formatPoints } from "@/lib/format";
 import type { LeaderboardEntry, LeaderboardSort } from "@/types/database";
 
 interface LeaderboardTableProps {
@@ -11,18 +11,18 @@ interface LeaderboardTableProps {
 function sortLabel(sort: LeaderboardSort): string {
   if (sort === "classic_won") return "Paris matchs gagnés";
   if (sort === "fun_won") return "Paris fun gagnés";
-  return "Bankroll";
+  return "Points";
 }
 
 function primaryValue(player: LeaderboardEntry, sort: LeaderboardSort): string {
   if (sort === "classic_won") return String(player.classic_won);
   if (sort === "fun_won") return String(player.fun_won);
-  return formatCurrency(player.balance);
+  return formatPoints(player.balance);
 }
 
 export function LeaderboardTable({
   players,
-  highlightSort = "balance",
+  highlightSort = "points",
 }: LeaderboardTableProps) {
   if (players.length === 0) {
     return (
@@ -87,9 +87,9 @@ export function LeaderboardTable({
 
             <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border/60 pt-3 text-center text-xs">
               <StatCell
-                label="Bankroll"
-                value={formatCurrency(player.balance)}
-                active={highlightSort === "balance"}
+                label="Points"
+                value={formatPoints(player.balance)}
+                active={highlightSort === "points"}
               />
               <StatCell
                 label="1N2"
@@ -116,10 +116,10 @@ export function LeaderboardTable({
               <th
                 className={cn(
                   "px-3 py-3 font-medium text-right",
-                  highlightSort === "balance" && "text-primary",
+                  highlightSort === "points" && "text-primary",
                 )}
               >
-                Bankroll
+                Points
               </th>
               <th
                 className={cn(
@@ -195,12 +195,12 @@ export function LeaderboardTable({
                 <td
                   className={cn(
                     "px-3 py-3 text-right font-semibold tabular-nums",
-                    highlightSort === "balance"
+                    highlightSort === "points"
                       ? "text-primary text-base"
                       : "text-foreground",
                   )}
                 >
-                  {formatCurrency(player.balance)}
+                  {formatPoints(player.balance)}
                 </td>
                 <td
                   className={cn(

@@ -50,7 +50,7 @@ export default async function LeaderboardPage({
         id: mockProfile.id,
         display_name: mockProfile.display_name,
         username: mockProfile.username,
-        balance: mockProfile.balance,
+        balance: mockProfile.points,
         classic_won: 0,
         classic_lost: 0,
         fun_won: 0,

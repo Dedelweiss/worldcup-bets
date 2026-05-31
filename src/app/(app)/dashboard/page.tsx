@@ -27,7 +27,7 @@ export default async function DashboardPage() {
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          Pariez entre amis sur la Coupe du Monde 2026 avec votre bankroll virtuelle.
+          Pariez entre amis sur la Coupe du Monde 2026 et cumulez des points selon les cotes.
         </p>
       </section>
 

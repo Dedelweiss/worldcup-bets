@@ -24,10 +24,11 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 16. `015_leaderboard_league_labels.sql` (badges ligue au classement)
 17. `016_single_league_self_service.sql` (une seule ligue / joueur sauf ajout admin)
 18. `017_fun_markets_realtime.sql` (notifications temps réel des nouveaux paris fun)
+19. `018_points_system_live_bets.sql` (points selon cotes, sans mise · paris visibles en direct)
 
 ### Workflow admin CDM 2026
 
-1. **`/admin/teams`** — enregistrer les 4 équipes de chaque groupe (nom + code ISO pour flagcdn, ex. `FR`).
+1. **Poules (option rapide)** — exécuter `supabase/scripts/seed_wc2026_groups.sql` dans le SQL Editor pour importer les **48 équipes** (groupes A–L, tirage FIFA 2026). Sinon : **`/admin/teams`** manuellement (nom + code ISO flagcdn, ex. `FR`).
 2. **`/admin/matches/new`** — onglet **Poules** : groupe → 2 équipes → date/cotes → « Ajouter au calendrier ».
 3. **Phase finale** — même page, onglet **Phase finale** : tour (16es, quarts…), équipes libres, emplacement dans l’arbre, note paris temps réglementaire.
 4. Joueurs : **`/matches`** (filtres groupes / finale) et **`/bracket`** (arbre qui se remplit).

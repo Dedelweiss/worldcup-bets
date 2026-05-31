@@ -69,8 +69,8 @@ export function LeaderboardExplorer({
               ? `Ligue « ${leagueName} »`
               : "Ligue sélectionnée"}
           {" · "}
-          {sort === "balance"
-            ? "tri par bankroll"
+          {sort === "points"
+            ? "tri par points"
             : sort === "classic_won"
               ? "tri par paris matchs gagnés"
               : "tri par paris fun gagnés"}

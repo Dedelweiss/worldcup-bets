@@ -11,7 +11,7 @@ export default async function AdminUsersPage() {
   const supabase = await createClient();
   const { data: players } = await supabase
     .from("profiles")
-    .select("id, display_name, username, balance, role")
+    .select("id, display_name, username, points, role")
     .order("display_name", { ascending: true });
 
   return (
@@ -19,7 +19,7 @@ export default async function AdminUsersPage() {
       <div>
         <h1 className="text-2xl font-bold">Joueurs & soldes</h1>
         <p className="text-sm text-muted-foreground">
-          Ajuster les bankrolls ou supprimer un compte de test
+          Ajuster les points ou supprimer un compte de test
         </p>
       </div>
 

@@ -11,7 +11,6 @@ export type PlaceFunBetResult =
 
 function mapError(message: string): string {
   const m = message.toLowerCase();
-  if (m.includes("insufficient")) return "Solde insuffisant.";
   if (m.includes("closed")) return "Ce pari fun est fermé.";
   if (m.includes("odds have changed")) return "Cotes modifiées — actualisez.";
   return message;
@@ -21,13 +20,8 @@ export async function placeFunBetAction(
   marketId: string,
   matchId: number,
   outcome: FunOutcome,
-  stake: number,
 ): Promise<PlaceFunBetResult> {
   await requireAuth();
-
-  if (stake < 1) {
-    return { success: false, error: "Mise minimum : 1 €." };
-  }
 
   const supabase = await createClient();
   const { data: market } = await supabase
@@ -46,7 +40,7 @@ export async function placeFunBetAction(
     p_market_id: marketId,
     p_outcome: outcome,
     p_odd: odd,
-    p_stake: stake,
+    p_stake: 0,
   });
 
   if (error) {
@@ -56,5 +50,6 @@ export async function placeFunBetAction(
   revalidatePath(`/matches/${matchId}`);
   revalidatePath("/bets");
   revalidatePath("/dashboard");
+  revalidatePath("/leaderboard");
   return { success: true, betId: betId as string };
 }

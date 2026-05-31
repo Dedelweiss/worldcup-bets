@@ -7,7 +7,7 @@ export const MOCK_DASHBOARD: DashboardData = {
     username: "joueur_demo",
     display_name: "Joueur Démo",
     avatar_url: null,
-    balance: 100,
+    points: 120,
   },
   upcomingMatches: [
     {

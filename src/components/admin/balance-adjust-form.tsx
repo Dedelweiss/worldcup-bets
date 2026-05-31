@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/format";
+import { formatPoints } from "@/lib/format";
 
 interface PlayerOption {
   id: string;
   display_name: string | null;
   username: string | null;
-  balance: number;
+  points: number;
 }
 
 export function BalanceAdjustForm({ players }: { players: PlayerOption[] }) {
@@ -33,7 +33,7 @@ export function BalanceAdjustForm({ players }: { players: PlayerOption[] }) {
       setError(result.error);
     } else {
       setMessage(
-        `Nouveau solde : ${formatCurrency(result.newBalance ?? 0)}`,
+        `Nouveau total : ${formatPoints(result.newBalance ?? 0)} points`,
       );
       router.refresh();
     }
@@ -43,7 +43,7 @@ export function BalanceAdjustForm({ players }: { players: PlayerOption[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Ajuster un solde</CardTitle>
+        <CardTitle className="text-base">Ajuster les points</CardTitle>
         <p className="text-xs text-muted-foreground">
           Montant positif = bonus · négatif = malus (ex: -20)
         </p>
@@ -62,18 +62,18 @@ export function BalanceAdjustForm({ players }: { players: PlayerOption[] }) {
               {players.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.display_name ?? p.username ?? p.id.slice(0, 8)} —{" "}
-                  {formatCurrency(p.balance)}
+                  {formatPoints(p.points)} pts
                 </option>
               ))}
             </select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="amount">Montant (€)</Label>
+            <Label htmlFor="amount">Points (+ / −)</Label>
             <Input
               id="amount"
               name="amount"
               type="number"
-              step="0.01"
+              step="1"
               required
               placeholder="50 ou -20"
             />

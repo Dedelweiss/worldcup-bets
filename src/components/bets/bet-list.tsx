@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { BetResultAnimation } from "@/components/bets/bet-result-animation";
-import { formatCurrency, formatKickoff, formatOdd } from "@/lib/format";
+import { formatKickoff, formatOdd, formatPoints } from "@/lib/format";
 import type { BetRow, BetStatus } from "@/types/database";
 
 const STATUS_LABEL: Record<BetStatus, string> = {
@@ -92,7 +92,7 @@ export function BetList({ bets }: BetListProps) {
                 {STATUS_LABEL[bet.status]}
               </Badge>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+            <div className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
               <div>
                 <p className="text-xs text-muted-foreground">Pari</p>
                 <p className="font-medium line-clamp-2">{betLabel(bet)}</p>
@@ -104,17 +104,11 @@ export function BetList({ bets }: BetListProps) {
                 </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Mise</p>
-                <p className="font-medium tabular-nums">
-                  {formatCurrency(bet.stake)}
-                </p>
-              </div>
-              <div>
                 <p className="text-xs text-muted-foreground">
-                  {bet.status === "won" ? "Gain" : "Gain potentiel"}
+                  {bet.status === "won" ? "Points gagnés" : "Points si gagné"}
                 </p>
                 <p className="font-semibold tabular-nums text-primary">
-                  {formatCurrency(bet.potential_payout)}
+                  +{formatPoints(bet.potential_payout)}
                 </p>
               </div>
             </div>

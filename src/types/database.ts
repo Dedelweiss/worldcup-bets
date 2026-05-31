@@ -56,7 +56,8 @@ export interface Profile {
   username: string | null;
   display_name: string | null;
   avatar_url: string | null;
-  balance: number;
+  /** Total de points (ex-colonne balance). */
+  points: number;
   role?: UserRole;
 }
 
@@ -103,7 +104,7 @@ export interface DashboardData {
   isDemo?: boolean;
 }
 
-export type LeaderboardSort = "balance" | "classic_won" | "fun_won";
+export type LeaderboardSort = "points" | "classic_won" | "fun_won";
 
 export type LeaderboardScope = "general" | "league";
 
@@ -129,6 +130,7 @@ export interface LeaderboardEntry {
   id: string;
   display_name: string | null;
   username: string | null;
+  /** Points totaux (RPC renvoie encore la colonne `balance`). */
   balance: number;
   classic_won: number;
   classic_lost: number;

@@ -12,17 +12,11 @@ export type PlaceBetResult =
 
 function mapBetError(message: string): string {
   const m = message.toLowerCase();
-  if (m.includes("insufficient balance")) {
-    return "Solde insuffisant.";
-  }
   if (m.includes("betting is closed") || m.includes("already started")) {
     return "Les paris sont fermés pour ce match.";
   }
   if (m.includes("odds have changed")) {
     return "Les cotes ont changé. Actualisez la page.";
-  }
-  if (m.includes("minimum stake")) {
-    return "Mise minimum : 1 €.";
   }
   return message;
 }
@@ -30,7 +24,6 @@ function mapBetError(message: string): string {
 export async function placeBetAction(
   matchId: number,
   selection: MatchResultSelection,
-  stake: number,
 ): Promise<PlaceBetResult> {
   await requireAuth();
 
@@ -51,17 +44,13 @@ export async function placeBetAction(
   };
   const odd = oddMap[selection];
 
-  if (stake < 1) {
-    return { success: false, error: "Mise minimum : 1 €." };
-  }
-
   const supabase = await createClient();
   const { data: betId, error } = await supabase.rpc("place_bet", {
     p_match_id: matchId,
     p_bet_type: "match_result",
     p_selection: { selection },
     p_odd: odd,
-    p_stake: stake,
+    p_stake: 0,
   });
 
   if (error) {

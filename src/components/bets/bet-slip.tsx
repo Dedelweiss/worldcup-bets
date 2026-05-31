@@ -6,25 +6,22 @@ import { motion, AnimatePresence } from "framer-motion";
 import { placeBetAction } from "@/app/(app)/matches/actions";
 import { useClassicBettingOpen } from "@/hooks/use-match-betting-open";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, formatOdd } from "@/lib/format";
+import { formatOdd, formatPoints } from "@/lib/format";
+import { pointsFromOdd } from "@/lib/points";
 import { cn } from "@/lib/utils";
 import type { MatchResultSelection, MatchWithTeams } from "@/types/database";
 
-const QUICK_STAKES = [5, 10, 25, 50];
-
 interface BetSlipProps {
   match: MatchWithTeams;
-  balance: number;
+  points: number;
 }
 
-export function BetSlip({ match, balance }: BetSlipProps) {
+export function BetSlip({ match, points }: BetSlipProps) {
   const router = useRouter();
   const bettingOpen = useClassicBettingOpen(match);
   const [selection, setSelection] = useState<MatchResultSelection | null>(null);
-  const [stake, setStake] = useState("10");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -63,11 +60,8 @@ export function BetSlip({ match, balance }: BetSlipProps) {
           ? match.odd_away
           : null;
 
-  const stakeNum = parseFloat(stake.replace(",", ".")) || 0;
-  const potentialPayout =
-    selectedOdd && stakeNum > 0
-      ? Math.round(stakeNum * selectedOdd * 100) / 100
-      : 0;
+  const pointsIfWin =
+    selectedOdd != null ? pointsFromOdd(selectedOdd) : 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -82,7 +76,7 @@ export function BetSlip({ match, balance }: BetSlipProps) {
     setLoading(true);
     setError(null);
 
-    const result = await placeBetAction(match.id, selection, stakeNum);
+    const result = await placeBetAction(match.id, selection);
 
     if (!result.success) {
       setError(result.error);
@@ -127,8 +121,7 @@ export function BetSlip({ match, balance }: BetSlipProps) {
                 Pari enregistré
               </motion.p>
               <p className="text-sm text-muted-foreground">
-                Mise de {formatCurrency(stakeNum)} — gain potentiel{" "}
-                {formatCurrency(potentialPayout)}
+                Si vous avez raison : +{formatPoints(pointsIfWin)} points
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => router.push("/bets")}>
@@ -153,10 +146,12 @@ export function BetSlip({ match, balance }: BetSlipProps) {
             <CardHeader>
               <CardTitle className="text-base">Paris classique (1N2)</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Solde :{" "}
+                Vos points :{" "}
                 <span className="font-semibold text-primary tabular-nums">
-                  {formatCurrency(balance)}
+                  {formatPoints(points)}
                 </span>
+                {" · "}
+                Pas de mise — gain selon la cote si bon pronostic
               </p>
             </CardHeader>
             <CardContent>
@@ -187,46 +182,16 @@ export function BetSlip({ match, balance }: BetSlipProps) {
                         <span className="mt-1 text-sm font-bold tabular-nums text-primary">
                           {formatOdd(outcome.odd!)}
                         </span>
+                        <span className="mt-0.5 text-[10px] text-muted-foreground">
+                          +{formatPoints(pointsFromOdd(outcome.odd!))} pts
+                        </span>
                       </motion.button>
                     ))}
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="stake">Mise (€)</Label>
-                  <Input
-                    id="stake"
-                    type="number"
-                    min={1}
-                    max={balance}
-                    step="0.01"
-                    value={stake}
-                    onChange={(e) => setStake(e.target.value)}
-                    required
-                  />
-                  <div className="flex flex-wrap gap-2">
-                    {QUICK_STAKES.filter((a) => a <= balance).map((amount) => (
-                      <button
-                        key={amount}
-                        type="button"
-                        onClick={() => setStake(String(amount))}
-                        className="rounded-md border border-border px-2.5 py-1 text-xs hover:border-primary hover:bg-primary/10"
-                      >
-                        {amount} €
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => setStake(String(Math.floor(balance)))}
-                      className="rounded-md border border-border px-2.5 py-1 text-xs hover:border-primary hover:bg-primary/10"
-                    >
-                      Max
-                    </button>
-                  </div>
-                </div>
-
                 <AnimatePresence>
-                  {selection && stakeNum > 0 && (
+                  {selection && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
@@ -234,9 +199,11 @@ export function BetSlip({ match, balance }: BetSlipProps) {
                       className="overflow-hidden rounded-lg bg-muted/40 p-3 text-sm"
                     >
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Gain potentiel</span>
+                        <span className="text-muted-foreground">
+                          Points si gagné
+                        </span>
                         <span className="font-bold tabular-nums text-primary">
-                          {formatCurrency(potentialPayout)}
+                          +{formatPoints(pointsIfWin)}
                         </span>
                       </div>
                     </motion.div>
@@ -252,16 +219,9 @@ export function BetSlip({ match, balance }: BetSlipProps) {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={
-                    loading ||
-                    !selection ||
-                    stakeNum < 1 ||
-                    stakeNum > balance
-                  }
+                  disabled={loading || !selection}
                 >
-                  {loading
-                    ? "Validation…"
-                    : `Parier ${stakeNum > 0 ? formatCurrency(stakeNum) : ""}`}
+                  {loading ? "Validation…" : "Valider mon pronostic"}
                 </Button>
               </form>
             </CardContent>

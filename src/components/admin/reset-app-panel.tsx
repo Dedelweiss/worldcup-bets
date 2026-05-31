@@ -14,7 +14,7 @@ export function ResetAppPanel() {
   const router = useRouter();
   const [confirm, setConfirm] = useState("");
   const [deleteMatches, setDeleteMatches] = useState(false);
-  const [startingBalance, setStartingBalance] = useState("100");
+  const [startingBalance, setStartingBalance] = useState("0");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
@@ -26,8 +26,8 @@ export function ResetAppPanel() {
     }
 
     const msg = deleteMatches
-      ? "Supprimer TOUS les matchs, paris, transactions et remettre chaque joueur à 100 € ?"
-      : "Effacer tous les paris et transactions, remettre les scores à zéro et chaque joueur à 100 € ?";
+      ? "Supprimer TOUS les matchs, paris, transactions et remettre chaque joueur à 0 point ?"
+      : "Effacer tous les paris et transactions, remettre les scores à zéro et chaque joueur à 0 point ?";
 
     if (!window.confirm(msg)) return;
 
@@ -37,7 +37,7 @@ export function ResetAppPanel() {
 
     const res = await resetAppAction({
       deleteMatches,
-      startingBalance: Number(startingBalance) || 100,
+      startingBalance: Number(startingBalance) || 0,
     });
 
     if (!res.success) {
@@ -48,7 +48,7 @@ export function ResetAppPanel() {
 
     const s = res.summary;
     setResult(
-      `Réinitialisation OK — ${s?.bets_deleted ?? 0} pari(s) supprimé(s), ${s?.profiles_reset ?? 0} joueur(s) à ${s?.starting_balance ?? 100} €.`,
+      `Réinitialisation OK — ${s?.bets_deleted ?? 0} pari(s) supprimé(s), ${s?.profiles_reset ?? 0} joueur(s) à ${s?.starting_points ?? s?.starting_balance ?? 0} pts.`,
     );
     setConfirm("");
     router.refresh();
@@ -60,14 +60,14 @@ export function ResetAppPanel() {
       <CardHeader>
         <CardTitle className="text-base text-destructive">Zone de test</CardTitle>
         <p className="text-xs text-muted-foreground">
-          Remet les bankrolls, efface paris et transactions. Option pour supprimer
+          Remet les points à zéro, efface paris et transactions. Option pour supprimer
           aussi les matchs. Réservé aux tests avant l&apos;arrivée des joueurs.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="startingBalance">Solde de départ (€)</Label>
+            <Label htmlFor="startingBalance">Points de départ</Label>
             <Input
               id="startingBalance"
               type="number"

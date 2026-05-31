@@ -5,14 +5,14 @@ import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { deleteUserAccountAction } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/format";
+import { formatPoints } from "@/lib/format";
 import type { UserRole } from "@/types/database";
 
 export interface AdminUserRow {
   id: string;
   display_name: string | null;
   username: string | null;
-  balance: number;
+  points: number;
   role: UserRole;
 }
 
@@ -72,7 +72,7 @@ export function UsersTable({ players, currentAdminId }: UsersTableProps) {
             <tr>
               <th className="px-4 py-3 font-medium">Joueur</th>
               <th className="px-4 py-3 font-medium">Rôle</th>
-              <th className="px-4 py-3 font-medium text-right">Solde</th>
+              <th className="px-4 py-3 font-medium text-right">Points</th>
               <th className="px-4 py-3 font-medium text-right">Actions</th>
             </tr>
           </thead>
@@ -91,7 +91,7 @@ export function UsersTable({ players, currentAdminId }: UsersTableProps) {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{p.role}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-primary">
-                    {formatCurrency(Number(p.balance))}
+                    {formatPoints(Number(p.points))} pts
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Button

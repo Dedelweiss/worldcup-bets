@@ -3,7 +3,9 @@ import { BetSlip } from "@/components/bets/bet-slip";
 import { FunBetSlip } from "@/components/bets/fun-bet-slip";
 import { MarkFunBetsSeen } from "@/components/fun-bets/mark-fun-bets-seen";
 import { MatchHeader } from "@/components/matches/match-header";
+import { MatchLiveBets } from "@/components/matches/match-live-bets";
 import { requireAuth } from "@/lib/auth-server";
+import { getMatchLiveBets } from "@/lib/bets/match-live-bets";
 import { getFunMarketsByMatch } from "@/lib/fun-markets";
 import { getMatchById } from "@/lib/matches";
 
@@ -36,7 +38,11 @@ export default async function MatchBetPage({
   const adminEditHref =
     profile.role === "admin" ? `/admin/matches/${matchId}` : undefined;
 
-  const funMarkets = await getFunMarketsByMatch(matchId);
+  const [funMarkets, liveBets] = await Promise.all([
+    getFunMarketsByMatch(matchId),
+    match.status === "live" ? getMatchLiveBets(matchId) : Promise.resolve([]),
+  ]);
+
   const openFunMarkets = funMarkets.filter((m) => m.status === "open");
 
   return (
@@ -44,7 +50,11 @@ export default async function MatchBetPage({
       <MarkFunBetsSeen matchId={matchId} />
       <MatchHeader match={match} adminEditHref={adminEditHref} />
 
-      <BetSlip match={match} balance={profile.balance} />
+      {match.status === "live" && (
+        <MatchLiveBets bets={liveBets} currentUserId={profile.id} />
+      )}
+
+      <BetSlip match={match} points={profile.points} />
 
       {(funMarkets.length > 0 || openFunMarkets.length > 0) && (
         <section id="paris-fun" className="scroll-mt-24 space-y-4">
@@ -56,11 +66,7 @@ export default async function MatchBetPage({
           </div>
           <div className="space-y-3">
             {funMarkets.map((market) => (
-              <FunBetSlip
-                key={market.id}
-                market={market}
-                balance={profile.balance}
-              />
+              <FunBetSlip key={market.id} market={market} />
             ))}
           </div>
         </section>

@@ -1,11 +1,12 @@
 import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { buttonVariants } from "@/components/ui/button";
+import { formatPoints } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Profile } from "@/types/database";
 
 interface UserMenuProps {
-  profile: Pick<Profile, "display_name" | "avatar_url" | "balance">;
+  profile: Pick<Profile, "display_name" | "avatar_url" | "points">;
 }
 
 function getInitials(name: string | null): string {
@@ -26,7 +27,7 @@ export function UserMenu({ profile }: UserMenuProps) {
       <div className="hidden text-right sm:block">
         <p className="text-xs font-medium leading-none">{displayName}</p>
         <p className="mt-0.5 text-[10px] text-muted-foreground tabular-nums">
-          {profile.balance.toFixed(2)} €
+          {formatPoints(profile.points)} pts
         </p>
       </div>
       <Avatar className="size-8">

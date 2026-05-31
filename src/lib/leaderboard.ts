@@ -8,7 +8,7 @@ function mapRow(row: Record<string, unknown>): LeaderboardEntry {
     id: row.id as string,
     display_name: row.display_name as string | null,
     username: row.username as string | null,
-    balance: Number(row.balance),
+    balance: Number(row.balance ?? row.points ?? 0),
     classic_won: Number(row.classic_won ?? 0),
     classic_lost: Number(row.classic_lost ?? 0),
     fun_won: Number(row.fun_won ?? 0),
@@ -42,7 +42,7 @@ async function getLeaderboardFallback(options: {
 
   let query = supabase
     .from("profiles")
-    .select("id, display_name, username, balance");
+    .select("id, display_name, username, points");
 
   if (options.leagueId) {
     const { data: members } = await supabase
@@ -112,7 +112,7 @@ export async function getLeaderboard(options?: {
   players: LeaderboardEntry[];
   warning?: string;
 }> {
-  const sort = options?.sort ?? "balance";
+  const sort = options?.sort ?? "points";
   const leagueId = options?.leagueId ?? null;
 
   const supabase = await createClient();
@@ -159,5 +159,6 @@ export async function getLeaderboard(options?: {
 
 export function parseLeaderboardSort(value: string | undefined): LeaderboardSort {
   if (value === "classic_won" || value === "fun_won") return value;
-  return "balance";
+  if (value === "points" || value === "balance") return "points";
+  return "points";
 }
