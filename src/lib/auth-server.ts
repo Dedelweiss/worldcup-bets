@@ -8,7 +8,7 @@ export const hasSupabaseConfig =
   Boolean(getSupabaseUrl()) && Boolean(getSupabaseAnonKey());
 
 const PROFILE_SELECT =
-  "id, username, display_name, avatar_url, points, boosts_available, role" as const;
+  "id, username, display_name, avatar_url, points, boosts_available, favorite_team_id, role" as const;
 
 export async function getSessionUser() {
   if (!hasSupabaseConfig) return null;

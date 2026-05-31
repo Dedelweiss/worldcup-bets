@@ -10,6 +10,11 @@ export const MOCK_DASHBOARD: DashboardData = {
     points: 120,
     boosts_available: 1,
   },
+  stats: {
+    pendingBets: 2,
+    rank: 1,
+    totalPlayers: 8,
+  },
   upcomingMatches: [
     {
       id: 1001,

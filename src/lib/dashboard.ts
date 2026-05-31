@@ -1,5 +1,6 @@
 import { MOCK_DASHBOARD } from "@/lib/mock-matches";
 import { hasSupabaseConfig, requireAuth } from "@/lib/auth-server";
+import { getDashboardStats } from "@/lib/dashboard-stats";
 import { syncLiveMatches } from "@/lib/matches/sync-live";
 import { createClient } from "@/lib/supabase/server";
 import type { DashboardData, MatchWithTeams } from "@/types/database";
@@ -48,9 +49,12 @@ export async function getDashboardData(): Promise<DashboardData> {
     return new Date(m.kickoff_at) >= new Date();
   });
 
+  const stats = await getDashboardStats(profile.id, profile.points);
+
   return {
     profile,
     upcomingMatches: upcoming,
+    stats,
     isDemo: false,
   };
 }

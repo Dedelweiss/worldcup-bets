@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
-import { WalletCard } from "@/components/dashboard/wallet-card";
+import { DashboardSummary } from "@/components/dashboard/dashboard-summary";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { getUserMatchBetStatuses } from "@/lib/bets/user-match-status-query";
 import { getDashboardData } from "@/lib/dashboard";
+import { getProfileFavoriteTeam } from "@/lib/profile/favorite-team";
+import { getAllTournamentTeams } from "@/lib/tournament/queries";
+import { getTournamentConfig } from "@/lib/tournament/config";
 import { getPlayerLabel } from "@/lib/profile/player-label";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -15,7 +18,16 @@ export const metadata = {
 };
 
 export default async function DashboardPage() {
-  const { profile, upcomingMatches, isDemo } = await getDashboardData();
+  const { profile, upcomingMatches, stats, isDemo } = await getDashboardData();
+
+  const [favoriteTeam, tournamentConfig, tournamentTeams] = isDemo
+    ? [null, { favoriteTeamBonusPoints: 100, worldCupWinnerTeamId: null, worldCupWinnerTeam: null, favoriteBonusSettled: false }, [] as Awaited<ReturnType<typeof getAllTournamentTeams>>]
+    : await Promise.all([
+        getProfileFavoriteTeam(profile.id),
+        getTournamentConfig(),
+        getAllTournamentTeams(),
+      ]);
+
   const betStatuses =
     !isDemo && upcomingMatches.length > 0
       ? await getUserMatchBetStatuses(
@@ -55,21 +67,14 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <section className="grid gap-4 md:grid-cols-[minmax(0,280px)_1fr]">
-        <WalletCard profile={profile} />
-        <div className="grid grid-cols-3 gap-3 rounded-xl border border-border bg-card/50 p-4">
-          {[
-            { label: "Paris en cours", value: "0" },
-            { label: "Gains totaux", value: "0 pts" },
-            { label: "Classement", value: "—" },
-          ].map((stat) => (
-            <div key={stat.label} className="text-center md:text-left">
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
-              <p className="text-lg font-semibold tabular-nums">{stat.value}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <DashboardSummary
+        profile={profile}
+        stats={stats}
+        teams={tournamentTeams}
+        favorite={favoriteTeam}
+        tournamentConfig={tournamentConfig}
+        isDemo={isDemo}
+      />
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-2">

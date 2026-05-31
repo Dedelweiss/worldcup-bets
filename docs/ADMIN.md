@@ -41,6 +41,10 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 33. `032_fix_admin_reset_app.sql` (reset admin : corrige l'appel `(delete_matches, points)` — plus de colonne `balance`)
 34. `033_admin_live_score_and_heat_recompute.sql` (scores admin → match en direct ; On Fire recalculé à la clôture)
 35. `034_fun_bet_one_per_market.sql` (un pari fun par joueur et par marché, non modifiable)
+36. `035_favorite_team.sql` (équipe favorite : choix unique, bonus si champion du monde)
+37. `036_admin_profile_edit.sql` (admin : modifier pseudo et équipe favorite de tout joueur)
+38. `037_fix_admin_reset_where.sql` (reset admin : `UPDATE profiles` avec `WHERE id IS NOT NULL`)
+39. `038_admin_reset_clear_badges.sql` (reset admin : efface aussi `user_badges`)
 
 Après **033**, pour recalculer les flammes sur des matchs déjà clôturés :
 

@@ -447,8 +447,10 @@ export async function resetAppAction(options: {
 
   if (error) {
     const msg = error.message.includes("Could not find the function")
-      ? "Fonction admin_reset_app absente. Exécutez supabase/migrations/007_admin_reset_app.sql dans Supabase."
-      : error.message;
+      ? "Fonction admin_reset_app absente. Exécutez les migrations admin_reset dans Supabase."
+      : error.message.includes("UPDATE requires a WHERE clause")
+        ? "Exécutez supabase/migrations/037_fix_admin_reset_where.sql dans Supabase."
+        : error.message;
     return { success: false, error: msg };
   }
 
@@ -509,4 +511,89 @@ export async function deleteUserAccountAction(
   revalidatePath("/bets");
 
   return { success: true };
+}
+
+export async function adminSetUserUsernameAction(
+  userId: string,
+  username: string,
+): Promise<ActionResult & { username?: string }> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("admin_set_user_username", {
+    p_user_id: userId,
+    p_username: username,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Exécutez supabase/migrations/036_admin_profile_edit.sql dans Supabase."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  revalidatePath("/admin/users");
+  revalidatePath("/dashboard");
+  revalidatePath("/leaderboard");
+  revalidatePath("/profile");
+  revalidatePath("/matches");
+
+  return { success: true, username: data as string };
+}
+
+export async function adminSetUserFavoriteTeamAction(
+  userId: string,
+  teamId: number | null,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("admin_set_user_favorite_team", {
+    p_user_id: userId,
+    p_team_id: teamId,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Exécutez supabase/migrations/036_admin_profile_edit.sql dans Supabase."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  revalidatePath("/admin/users");
+  revalidatePath("/dashboard");
+  revalidatePath("/leaderboard");
+
+  return { success: true };
+}
+
+export async function setWorldCupWinnerAction(
+  teamId: number,
+  bonusPoints: number,
+): Promise<ActionResult & { summary?: Record<string, unknown> }> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("admin_set_world_cup_winner", {
+    p_team_id: teamId,
+    p_bonus_points: bonusPoints,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Exécutez supabase/migrations/035_favorite_team.sql dans Supabase."
+      : error.message.includes("already settled")
+        ? "Le vainqueur a déjà été désigné et les bonus distribués."
+        : error.message;
+    return { success: false, error: msg };
+  }
+
+  revalidatePath("/admin/teams");
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
+  revalidatePath("/leaderboard");
+  revalidatePath("/profile");
+  revalidatePath("/bets");
+
+  return { success: true, summary: data as Record<string, unknown> };
 }

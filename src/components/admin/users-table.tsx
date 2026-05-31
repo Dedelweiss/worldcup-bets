@@ -1,12 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { deleteUserAccountAction } from "@/app/admin/actions";
+import { UserProfileAdminFields } from "@/components/admin/user-profile-admin-fields";
 import { Button } from "@/components/ui/button";
 import { formatPoints } from "@/lib/format";
-import type { UserRole } from "@/types/database";
+import type { TournamentTeam, UserRole } from "@/types/database";
 
 export interface AdminUserRow {
   id: string;
@@ -14,14 +15,20 @@ export interface AdminUserRow {
   username: string | null;
   points: number;
   role: UserRole;
+  favorite_team_id: number | null;
 }
 
 interface UsersTableProps {
   players: AdminUserRow[];
+  teams: TournamentTeam[];
   currentAdminId: string;
 }
 
-export function UsersTable({ players, currentAdminId }: UsersTableProps) {
+export function UsersTable({
+  players,
+  teams,
+  currentAdminId,
+}: UsersTableProps) {
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -80,37 +87,46 @@ export function UsersTable({ players, currentAdminId }: UsersTableProps) {
             {players.map((p) => {
               const isSelf = p.id === currentAdminId;
               return (
-                <tr key={p.id} className="border-t border-border/60">
-                  <td className="px-4 py-3 font-medium">
-                    {p.display_name ?? p.username ?? p.id.slice(0, 8)}
-                    {isSelf && (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        (vous)
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{p.role}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-primary">
-                    {formatPoints(Number(p.points))} pts
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      disabled={isSelf || loadingId === p.id}
-                      title={
-                        isSelf
-                          ? "Impossible de supprimer votre compte"
-                          : "Supprimer le compte"
-                      }
-                      onClick={() => handleDelete(p)}
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </td>
-                </tr>
+                <Fragment key={p.id}>
+                  <tr className="border-t border-border/60">
+                    <td className="px-4 py-3 font-medium">
+                      {p.display_name ?? p.username ?? p.id.slice(0, 8)}
+                      {isSelf && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          (vous)
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {p.role}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-primary">
+                      {formatPoints(Number(p.points))} pts
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        disabled={isSelf || loadingId === p.id}
+                        title={
+                          isSelf
+                            ? "Impossible de supprimer votre compte"
+                            : "Supprimer le compte"
+                        }
+                        onClick={() => handleDelete(p)}
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                  <tr className="border-t border-border/40 bg-muted/15">
+                    <td colSpan={4} className="px-4 py-3">
+                      <UserProfileAdminFields user={p} teams={teams} />
+                    </td>
+                  </tr>
+                </Fragment>
               );
             })}
           </tbody>

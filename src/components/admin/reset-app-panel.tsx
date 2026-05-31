@@ -48,7 +48,7 @@ export function ResetAppPanel() {
 
     const s = res.summary;
     setResult(
-      `Réinitialisation OK — ${s?.bets_deleted ?? 0} pari(s) supprimé(s), ${s?.profiles_reset ?? 0} joueur(s) à ${s?.starting_points ?? s?.starting_balance ?? 0} pts.`,
+      `Réinitialisation OK — ${s?.bets_deleted ?? 0} pari(s), ${s?.user_badges_deleted ?? 0} badge(s), ${s?.profiles_reset ?? 0} joueur(s) à ${s?.starting_points ?? s?.starting_balance ?? 0} pts.`,
     );
     setConfirm("");
     router.refresh();
@@ -60,8 +60,9 @@ export function ResetAppPanel() {
       <CardHeader>
         <CardTitle className="text-base text-destructive">Zone de test</CardTitle>
         <p className="text-xs text-muted-foreground">
-          Remet les points à zéro, efface paris et transactions. Option pour supprimer
-          aussi les matchs. Réservé aux tests avant l&apos;arrivée des joueurs.
+          Remet les points à zéro, efface paris, transactions et succès (badges).
+          Option pour supprimer aussi les matchs. Réservé aux tests avant
+          l&apos;arrivée des joueurs.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">

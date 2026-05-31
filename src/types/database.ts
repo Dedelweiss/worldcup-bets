@@ -67,6 +67,7 @@ export interface Profile {
   heat_streak?: number;
   /** Actif après 3 victoires classiques d'affilée. */
   on_fire?: boolean;
+  favorite_team_id?: number | null;
   role?: UserRole;
 }
 
@@ -108,9 +109,16 @@ export interface FunMarket {
   created_at: string;
 }
 
+export interface DashboardStats {
+  pendingBets: number;
+  rank: number | null;
+  totalPlayers: number;
+}
+
 export interface DashboardData {
   profile: Profile;
   upcomingMatches: MatchWithTeams[];
+  stats: DashboardStats;
   isDemo?: boolean;
 }
 
