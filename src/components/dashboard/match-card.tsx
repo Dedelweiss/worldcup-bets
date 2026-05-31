@@ -6,11 +6,17 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { LiveMatchAnimation } from "@/components/matches/live-match-animation";
+import { MatchScoreInline } from "@/components/matches/match-score-inline";
+import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { formatKickoff, formatKickoffRelative, formatOdd } from "@/lib/format";
+import { MatchCardStatusBadges } from "@/components/dashboard/match-card-status-badges";
+import { goldenMatchCardClass } from "@/lib/golden-match";
+import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
 import type { MatchWithTeams } from "@/types/database";
 
 interface MatchCardProps {
   match: MatchWithTeams;
+  betStatus?: UserMatchBetStatus;
 }
 
 function TeamRow({
@@ -43,14 +49,38 @@ function TeamRow({
   );
 }
 
-export function MatchCard({ match }: MatchCardProps) {
+export function MatchCard({ match, betStatus }: MatchCardProps) {
   const isLive = match.status === "live";
+  const isGolden = match.is_golden ?? false;
+  const hasScore = match.home_score !== null && match.away_score !== null;
+  const hasClassicBet = betStatus?.hasClassicBet ?? false;
+  const hasFunToPlay =
+    hasClassicBet && (betStatus?.pendingFunToPlay ?? 0) > 0;
+
+  const ctaLabel = isLive
+    ? hasFunToPlay
+      ? "Match en direct · paris fun"
+      : hasClassicBet
+        ? "Voir mon pronostic"
+        : "Voir le match en direct"
+    : hasFunToPlay
+      ? "Paris fun à jouer"
+      : hasClassicBet
+        ? "Voir mon pronostic"
+        : "Parier sur ce match";
+
+  const ctaHref =
+    hasFunToPlay && hasClassicBet
+      ? `/matches/${match.id}#paris-fun`
+      : `/matches/${match.id}`;
 
   return (
     <Card
       className={cn(
         "overflow-hidden transition-colors hover:border-primary/40",
-        isLive && "border-primary ring-2 ring-primary/30 animate-pulse",
+        goldenMatchCardClass(isGolden, isLive),
+        hasClassicBet && !isGolden && "ring-1 ring-primary/40",
+        hasFunToPlay && "ring-1 ring-amber-500/40",
       )}
     >
       <CardContent className="p-0">
@@ -60,12 +90,16 @@ export function MatchCard({ match }: MatchCardProps) {
             isLive ? "bg-primary/15" : "bg-muted/30",
           )}
         >
-          <Badge
-            variant={isLive ? "default" : "secondary"}
-            className={cn(isLive && "animate-pulse")}
-          >
-            {isLive ? "EN DIRECT" : match.round ?? "Coupe du Monde"}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {isGolden && <GoldenMatchBadge compact />}
+            <MatchCardStatusBadges matchId={match.id} status={betStatus} />
+            <Badge
+              variant={isLive ? "default" : "secondary"}
+              className={cn(isLive && !isGolden && "animate-pulse")}
+            >
+              {isLive ? "EN DIRECT" : match.round ?? "Coupe du Monde"}
+            </Badge>
+          </div>
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Clock className="size-3" />
             {formatKickoff(match.kickoff_at)}
@@ -76,10 +110,19 @@ export function MatchCard({ match }: MatchCardProps) {
         </div>
 
         <div className="space-y-3 px-4 py-4">
-          {isLive ? (
+          {isLive && !hasScore ? (
             <LiveMatchAnimation
               homeTeam={match.home_team}
               awayTeam={match.away_team}
+            />
+          ) : hasScore ? (
+            <MatchScoreInline
+              homeTeam={match.home_team}
+              awayTeam={match.away_team}
+              homeScore={match.home_score}
+              awayScore={match.away_score}
+              isLive={isLive}
+              size="sm"
             />
           ) : (
             <div className="flex items-center gap-3">
@@ -97,7 +140,7 @@ export function MatchCard({ match }: MatchCardProps) {
             </div>
           )}
 
-          {!isLive && match.odd_home && match.odd_draw && match.odd_away && (
+          {!hasScore && !isLive && match.odd_home && match.odd_draw && match.odd_away && (
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: "1", odd: match.odd_home },
@@ -128,10 +171,14 @@ export function MatchCard({ match }: MatchCardProps) {
 
         <div className="border-t border-border/60 px-4 py-3">
           <Link
-            href={`/matches/${match.id}`}
-            className={cn(buttonVariants({ size: "sm" }), "w-full")}
+            href={ctaHref}
+            className={cn(
+              buttonVariants({ size: "sm" }),
+              "w-full",
+              hasFunToPlay && "bg-amber-600 text-white hover:bg-amber-600/90",
+            )}
           >
-            {isLive ? "Voir le match en direct" : "Parier sur ce match"}
+            {ctaLabel}
           </Link>
         </div>
       </CardContent>

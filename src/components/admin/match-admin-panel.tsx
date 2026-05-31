@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Sparkles } from "lucide-react";
 import {
   deleteMatchAction,
   settleMatchAction,
@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { formatKickoff } from "@/lib/format";
 import type { MatchStatus, MatchWithTeams } from "@/types/database";
 
@@ -35,6 +36,7 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
+  const [isGolden, setIsGolden] = useState(match.is_golden ?? false);
 
   async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -42,7 +44,10 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
     setError(null);
     setMessage(null);
 
-    const result = await updateMatchAction(new FormData(e.currentTarget));
+    const formData = new FormData(e.currentTarget);
+    formData.set("isGolden", isGolden ? "true" : "false");
+
+    const result = await updateMatchAction(formData);
     if (!result.success) {
       setError(result.error);
     } else {
@@ -184,6 +189,27 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
                   placeholder="—"
                 />
               </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-3">
+              <div className="space-y-0.5">
+                <Label
+                  htmlFor="isGolden"
+                  className="flex items-center gap-1.5 text-sm font-medium"
+                >
+                  <Sparkles className="size-3.5 text-amber-500" />
+                  Faire de ce match le Golden Match
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Un seul Golden Match à la fois. Les gains des joueurs sur ce
+                  match sont doublés à la clôture.
+                </p>
+              </div>
+              <Switch
+                id="isGolden"
+                checked={isGolden}
+                onCheckedChange={setIsGolden}
+              />
             </div>
 
             <div className="grid grid-cols-3 gap-3">

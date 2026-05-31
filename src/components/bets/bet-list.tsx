@@ -149,7 +149,9 @@ export function BetList({ bets }: BetListProps) {
                         "text-emerald-900 dark:text-emerald-100",
                     )}
                   >
-                    {match?.home_team?.name} vs {match?.away_team?.name}
+                    {match?.home_team?.name && match?.away_team?.name
+                      ? `${match.home_team.name} vs ${match.away_team.name}`
+                      : `Match #${bet.match_id}`}
                   </p>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -212,10 +214,13 @@ export function BetList({ bets }: BetListProps) {
                   {formatPoints(
                     bet.bet_type === "exact_score" && bet.status === "pending"
                       ? bet.potential_payout
-                      : betDisplayPayout(
-                          bet.potential_payout,
-                          bet.is_boosted,
-                        ),
+                      : bet.status === "won" && bet.bet_type === "exact_score"
+                        ? bet.potential_payout
+                        : betDisplayPayout(
+                            bet.potential_payout,
+                            bet.is_boosted,
+                            bet.match?.is_golden,
+                          ),
                   )}
                 </p>
               </div>

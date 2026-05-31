@@ -1,11 +1,11 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Clock, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { LiveMatchAnimation } from "@/components/matches/live-match-animation";
+import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { cn } from "@/lib/utils";
 import { formatKickoff, formatKickoffRelative } from "@/lib/format";
+import { goldenMatchHeaderClass } from "@/lib/golden-match";
 import type { MatchStatus, MatchWithTeams } from "@/types/database";
 
 const STATUS_LABEL: Record<MatchStatus, string> = {
@@ -21,11 +21,13 @@ interface MatchHeaderProps {
   adminEditHref?: string;
 }
 
+/** Fil d'Ariane + métadonnées match (le score est dans MatchScoreboard). */
 export function MatchHeader({ match, adminEditHref }: MatchHeaderProps) {
   const isLive = match.status === "live";
+  const isGolden = match.is_golden ?? false;
 
   return (
-    <div className="space-y-4">
+    <div className={cn("space-y-3", goldenMatchHeaderClass(isGolden))}>
       <div className="flex items-center justify-between gap-3">
         <Link
           href="/dashboard"
@@ -48,86 +50,40 @@ export function MatchHeader({ match, adminEditHref }: MatchHeaderProps) {
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={isLive ? "default" : "secondary"}>
-          {STATUS_LABEL[match.status]}
-        </Badge>
-        {match.round && (
-          <span className="text-sm text-muted-foreground">{match.round}</span>
-        )}
+      <div>
+        <h1 className="text-xl font-bold leading-tight">
+          {match.home_team.name}{" "}
+          <span className="font-normal text-muted-foreground">vs</span>{" "}
+          {match.away_team.name}
+        </h1>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {isGolden && <GoldenMatchBadge compact />}
+          <Badge variant={isLive ? "default" : "secondary"}>
+            {STATUS_LABEL[match.status]}
+          </Badge>
+          {match.round && (
+            <span className="text-sm text-muted-foreground">{match.round}</span>
+          )}
+        </div>
       </div>
 
-      {isLive && match.home_score === null ? (
-        <LiveMatchAnimation
-          homeTeam={match.home_team}
-          awayTeam={match.away_team}
-          className="my-2"
-        />
-      ) : (
-        <div className="flex items-center justify-center gap-4 py-2">
-          <TeamBlock team={match.home_team} />
-          <div className="text-center">
-            {match.home_score !== null && match.away_score !== null ? (
-              <p className="text-3xl font-bold tabular-nums">
-                {match.home_score} - {match.away_score}
-              </p>
-            ) : (
-              <p className="text-lg font-semibold text-muted-foreground">vs</p>
-            )}
-          </div>
-          <TeamBlock team={match.away_team} align="right" />
-        </div>
-      )}
-
-      {isLive && (
-        <p className={cn("text-center text-sm font-medium text-primary")}>
-          Match en cours
+      {isGolden && (
+        <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
+          Match en or — gains doublés sur cette affiche.
         </p>
       )}
 
-      <p className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
-        <Clock className="size-3.5" />
+      <p className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
+        <Clock className="size-3.5 shrink-0" />
         {formatKickoff(match.kickoff_at)} · {formatKickoffRelative(match.kickoff_at)}
         {match.venue ? ` · ${match.venue}` : ""}
       </p>
 
       {match.bet_scope_note && match.stage && match.stage !== "group" && (
-        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-xs text-amber-100/90">
+        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100/90">
           {match.bet_scope_note}
         </p>
       )}
-    </div>
-  );
-}
-
-function TeamBlock({
-  team,
-  align = "left",
-}: {
-  team: MatchWithTeams["home_team"];
-  align?: "left" | "right";
-}) {
-  return (
-    <div
-      className={`flex flex-1 flex-col items-center gap-2 ${align === "right" ? "text-right" : "text-left"}`}
-    >
-      {team.logo_url ? (
-        <Image
-          src={team.logo_url}
-          alt={team.name}
-          width={56}
-          height={56}
-          className="size-14 rounded-full bg-muted object-contain p-1"
-          unoptimized
-        />
-      ) : (
-        <span className="flex size-14 items-center justify-center rounded-full bg-muted text-lg font-bold">
-          {team.code ?? team.name.slice(0, 2).toUpperCase()}
-        </span>
-      )}
-      <span className="max-w-[120px] text-center text-sm font-semibold leading-tight">
-        {team.name}
-      </span>
     </div>
   );
 }

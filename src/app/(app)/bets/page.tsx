@@ -4,6 +4,8 @@ import { getUserBets } from "@/lib/bets";
 
 export const metadata = { title: "Mes paris · WC2026 Pool" };
 
+export const dynamic = "force-dynamic";
+
 export default async function BetsPage() {
   const profile = await requireAuth();
   const bets = await getUserBets(profile.id);

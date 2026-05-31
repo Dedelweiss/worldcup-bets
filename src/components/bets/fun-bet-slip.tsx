@@ -8,15 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { formatOdd, formatPoints } from "@/lib/format";
+import { goldenMatchPoints } from "@/lib/golden-match";
 import { pointsFromOdd } from "@/lib/points";
 import { cn } from "@/lib/utils";
 import type { FunMarket, FunOutcome } from "@/types/database";
 
 interface FunBetSlipProps {
   market: FunMarket;
+  isGoldenMatch?: boolean;
 }
 
-export function FunBetSlip({ market }: FunBetSlipProps) {
+export function FunBetSlip({ market, isGoldenMatch = false }: FunBetSlipProps) {
   const router = useRouter();
   const open = market.status === "open";
   const [outcome, setOutcome] = useState<FunOutcome | null>(null);
@@ -30,7 +32,8 @@ export function FunBetSlip({ market }: FunBetSlipProps) {
       : outcome === "no"
         ? market.odd_no
         : null;
-  const pointsIfWin = odd != null ? pointsFromOdd(odd) : 0;
+  const pointsIfWin =
+    odd != null ? goldenMatchPoints(pointsFromOdd(odd), isGoldenMatch) : 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

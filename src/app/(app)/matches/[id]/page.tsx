@@ -5,7 +5,11 @@ import { MarkFunBetsSeen } from "@/components/fun-bets/mark-fun-bets-seen";
 import { MatchChat } from "@/components/matches/match-chat";
 import { MatchHeader } from "@/components/matches/match-header";
 import { MatchLiveBets } from "@/components/matches/match-live-bets";
+import { MatchParticipation } from "@/components/matches/match-participation";
+import { MatchScoreboard } from "@/components/matches/match-scoreboard";
+import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
 import { requireAuth } from "@/lib/auth-server";
+import { getMatchBettingParticipation } from "@/lib/bets/match-participation";
 import { getMatchRevealedBets } from "@/lib/bets/match-live-bets";
 import { getMatchUserPendingBets } from "@/lib/bets/match-user-bets";
 import { hasKickoffStarted } from "@/lib/format";
@@ -44,40 +48,39 @@ export default async function MatchBetPage({
   const adminEditHref =
     profile.role === "admin" ? `/admin/matches/${matchId}` : undefined;
 
-  const [funMarkets, revealedBets, comments, pendingBets] = await Promise.all([
-    getFunMarketsByMatch(matchId),
-    kickoffStarted ? getMatchRevealedBets(matchId) : Promise.resolve([]),
-    kickoffStarted ? getMatchComments(matchId) : Promise.resolve([]),
-    getMatchUserPendingBets(matchId, profile.id),
-  ]);
+  const [funMarkets, revealedBets, comments, pendingBets, participation] =
+    await Promise.all([
+      getFunMarketsByMatch(matchId),
+      kickoffStarted ? getMatchRevealedBets(matchId) : Promise.resolve([]),
+      kickoffStarted ? getMatchComments(matchId) : Promise.resolve([]),
+      getMatchUserPendingBets(matchId, profile.id),
+      getMatchBettingParticipation(matchId),
+    ]);
 
-  const openFunMarkets = funMarkets.filter((m) => m.status === "open");
+  const hasFunSection = funMarkets.length > 0;
 
   return (
-    <div className="mx-auto max-w-lg space-y-8">
+    <div className="mx-auto max-w-lg space-y-6">
       <MarkFunBetsSeen matchId={matchId} />
+      {(match.status === "live" || kickoffStarted) && <LiveStatusPoller />}
+
       <MatchHeader match={match} adminEditHref={adminEditHref} />
 
-      {kickoffStarted && (
-        <section id="social" className="scroll-mt-24 space-y-6">
-          <MatchLiveBets bets={revealedBets} currentUserId={profile.id} />
-          <MatchChat
-            matchId={matchId}
-            currentUserId={profile.id}
-            initialComments={comments}
-          />
-        </section>
-      )}
+      <section id="score" className="scroll-mt-20">
+        <MatchScoreboard match={match} />
+      </section>
 
-      <BetSlip
-        match={match}
-        points={profile.points}
-        boostsAvailable={profile.boosts_available ?? 0}
-        pending={pendingBets}
-      />
+      <section id="mon-pronostic" className="scroll-mt-20">
+        <BetSlip
+          match={match}
+          points={profile.points}
+          boostsAvailable={profile.boosts_available ?? 0}
+          pending={pendingBets}
+        />
+      </section>
 
-      {(funMarkets.length > 0 || openFunMarkets.length > 0) && (
-        <section id="paris-fun" className="scroll-mt-24 space-y-4">
+      {hasFunSection && (
+        <section id="paris-fun" className="scroll-mt-20 space-y-4">
           <div>
             <h2 className="text-lg font-semibold">Paris fun</h2>
             <p className="text-sm text-muted-foreground">
@@ -86,10 +89,46 @@ export default async function MatchBetPage({
           </div>
           <div className="space-y-3">
             {funMarkets.map((market) => (
-              <FunBetSlip key={market.id} market={market} />
+              <FunBetSlip
+                key={market.id}
+                market={market}
+                isGoldenMatch={match.is_golden ?? false}
+              />
             ))}
           </div>
         </section>
+      )}
+
+      <section id="participation" className="scroll-mt-20">
+        <MatchParticipation
+          bettors={participation.bettors}
+          pending={participation.pending}
+          totalPlayers={participation.totalPlayers}
+          currentUserId={profile.id}
+          kickoffStarted={kickoffStarted}
+        />
+      </section>
+
+      {kickoffStarted && (
+        <>
+          {revealedBets.length > 0 && (
+            <section id="paris-joueurs" className="scroll-mt-20">
+              <MatchLiveBets
+                bets={revealedBets}
+                currentUserId={profile.id}
+                isGoldenMatch={match.is_golden ?? false}
+              />
+            </section>
+          )}
+
+          <section id="chambrages" className="scroll-mt-20">
+            <MatchChat
+              matchId={matchId}
+              currentUserId={profile.id}
+              initialComments={comments}
+            />
+          </section>
+        </>
       )}
     </div>
   );

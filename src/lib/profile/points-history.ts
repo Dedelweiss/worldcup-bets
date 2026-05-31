@@ -1,4 +1,8 @@
 import { normalizeMatch } from "@/lib/matches";
+import {
+  fetchFunMarketSnippets,
+  resolveFunMarketId,
+} from "@/lib/bets/fun-market-lookup";
 import { createClient } from "@/lib/supabase/server";
 import type { BetStatus, BetType } from "@/types/database";
 
@@ -111,11 +115,11 @@ export async function getPointsHistory(
       .select(
         `
         bet_type, status, potential_payout, score_precision, settled_at,
+        market_id, fun_market_id, selection,
         match:matches (
           home_team:teams!matches_home_team_id_fkey (name),
           away_team:teams!matches_away_team_id_fkey (name)
-        ),
-        fun_market:fun_markets (question)
+        )
       `,
       )
       .eq("user_id", userId)
@@ -130,6 +134,20 @@ export async function getPointsHistory(
       .order("created_at", { ascending: true }),
   ]);
 
+  const funById = await fetchFunMarketSnippets(
+    supabase,
+    (betsRes.data ?? [])
+      .map((row) =>
+        resolveFunMarketId({
+          bet_type: (row as { bet_type: string }).bet_type,
+          market_id: (row as { market_id?: string | null }).market_id,
+          fun_market_id: (row as { fun_market_id?: string | null }).fun_market_id,
+          selection: (row as { selection?: unknown }).selection,
+        }),
+      )
+      .filter((id): id is string => id != null),
+  );
+
   const events: TimelineEvent[] = [];
 
   for (const row of betsRes.data ?? []) {
@@ -143,12 +161,13 @@ export async function getPointsHistory(
       ? matchRaw[0]
       : (matchRaw as Record<string, unknown> | null);
     const normalized = match ? normalizeMatch(match) : null;
-    const funRaw = r.fun_market;
-    const fun = Array.isArray(funRaw) ? funRaw[0] : funRaw;
-    const funQuestion =
-      fun && typeof fun === "object" && "question" in fun
-        ? String((fun as { question: string }).question)
-        : null;
+    const funId = resolveFunMarketId({
+      bet_type: betType,
+      market_id: r.market_id as string | null,
+      fun_market_id: r.fun_market_id as string | null,
+      selection: r.selection,
+    });
+    const funQuestion = funId ? (funById.get(funId)?.question ?? null) : null;
 
     const home = normalized?.home_team?.name;
     const away = normalized?.away_team?.name;

@@ -1,3 +1,7 @@
+import {
+  fetchFunMarketSnippets,
+  resolveFunMarketId,
+} from "@/lib/bets/fun-market-lookup";
 import { createClient } from "@/lib/supabase/server";
 import type { BetStatus, BetType, MatchResultSelection } from "@/types/database";
 
@@ -53,8 +57,9 @@ export async function getMatchRevealedBets(
       is_boosted,
       status,
       placed_at,
-      profiles (display_name, username, avatar_url),
-      fun_market:fun_markets (question)
+      market_id,
+      fun_market_id,
+      profiles (display_name, username, avatar_url)
     `,
     )
     .eq("match_id", matchId)
@@ -63,16 +68,35 @@ export async function getMatchRevealedBets(
 
   if (error || !data) return [];
 
+  const funIds = data
+    .map((row) =>
+      resolveFunMarketId({
+        bet_type: row.bet_type as string,
+        market_id: row.market_id as string | null,
+        fun_market_id: row.fun_market_id as string | null,
+        selection: row.selection,
+      }),
+    )
+    .filter((id): id is string => id != null);
+
+  const funById = await fetchFunMarketSnippets(supabase, funIds);
+
   return data.map((row) => {
     const r = row as Record<string, unknown>;
     const profile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
-    const fun = Array.isArray(r.fun_market) ? r.fun_market[0] : r.fun_market;
     const p = profile as {
       display_name?: string;
       username?: string;
       avatar_url?: string;
     } | null;
-    const f = fun as { question?: string } | null;
+
+    const funId = resolveFunMarketId({
+      bet_type: r.bet_type as string,
+      market_id: r.market_id as string | null,
+      fun_market_id: r.fun_market_id as string | null,
+      selection: r.selection,
+    });
+    const funSnippet = funId ? funById.get(funId) : undefined;
 
     return {
       id: r.id as string,
@@ -86,7 +110,7 @@ export async function getMatchRevealedBets(
       is_boosted: Boolean(r.is_boosted),
       status: r.status as BetStatus,
       placed_at: r.placed_at as string,
-      fun_question: f?.question ?? null,
+      fun_question: funSnippet?.question ?? null,
     };
   });
 }

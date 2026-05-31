@@ -118,6 +118,22 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+@keyframes golden-border-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 oklch(0.75 0.15 85 / 0.35);
+    border-color: oklch(0.72 0.14 85 / 0.75);
+  }
+  50% {
+    box-shadow: 0 0 18px 2px oklch(0.78 0.16 85 / 0.45);
+    border-color: oklch(0.82 0.17 90 / 0.95);
+  }
+}
+
+@utility animate-golden-border {
+  animation: golden-border-pulse 2.5s ease-in-out infinite;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

@@ -2,7 +2,9 @@ import Link from "next/link";
 import { TeamFlag } from "@/components/shared/team-flag";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { formatKickoff, formatOdd } from "@/lib/format";
+import { goldenMatchCardClass } from "@/lib/golden-match";
 import { cn } from "@/lib/utils";
 import type { MatchStatus, MatchWithTeams } from "@/types/database";
 
@@ -58,13 +60,16 @@ export function AdminMatchesList({ matches }: AdminMatchesListProps) {
             key={m.id}
             className={cn(
               "rounded-xl border border-border bg-card p-4 shadow-sm",
-              m.status === "live" && "border-primary/40 ring-1 ring-primary/20",
+              goldenMatchCardClass(m.is_golden ?? false, m.status === "live"),
             )}
           >
             <div className="flex items-start justify-between gap-2">
-              <Badge variant={statusVariant(m.status)} className="shrink-0 text-[10px]">
-                {STATUS_LABEL[m.status]}
-              </Badge>
+              <div className="flex flex-wrap items-center gap-1">
+                {(m.is_golden ?? false) && <GoldenMatchBadge compact />}
+                <Badge variant={statusVariant(m.status)} className="shrink-0 text-[10px]">
+                  {STATUS_LABEL[m.status]}
+                </Badge>
+              </div>
               <p className="text-right text-xs text-muted-foreground tabular-nums">
                 {formatKickoff(m.kickoff_at)}
               </p>

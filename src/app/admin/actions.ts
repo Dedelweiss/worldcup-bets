@@ -241,6 +241,14 @@ export async function updateMatchAction(formData: FormData): Promise<ActionResul
       ? null
       : Number(awayScoreRaw);
 
+  const isGoldenRaw = formData.get("isGolden");
+  const p_is_golden =
+    isGoldenRaw === "true" || isGoldenRaw === "on"
+      ? true
+      : isGoldenRaw === "false" || isGoldenRaw === "off"
+        ? false
+        : null;
+
   const { error } = await supabase.rpc("admin_update_match", {
     p_match_id: matchId,
     p_status: status,
@@ -255,6 +263,7 @@ export async function updateMatchAction(formData: FormData): Promise<ActionResul
     p_odd_away: formData.get("oddAway")
       ? Number(formData.get("oddAway"))
       : null,
+    p_is_golden,
   });
 
   if (error) {
@@ -264,6 +273,8 @@ export async function updateMatchAction(formData: FormData): Promise<ActionResul
   revalidatePath(`/admin/matches/${matchId}`);
   revalidatePath("/admin");
   revalidatePath("/dashboard");
+  revalidatePath("/matches");
+  revalidatePath(`/matches/${matchId}`);
   return { success: true, matchId };
 }
 

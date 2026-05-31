@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Target, Zap } from "lucide-react";
+import { Lock, Target, Zap } from "lucide-react";
 import {
   placeBetAction,
   placeExactScoreBetAction,
@@ -26,7 +26,9 @@ import {
 } from "@/lib/exact-score";
 import { formatOdd, formatPoints } from "@/lib/format";
 import type { MatchUserPendingBets } from "@/lib/bets/match-user-bets";
-import { pointsFromOdd, pointsIfWin } from "@/lib/points";
+import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
+import { goldenMatchCardClass, goldenMatchPoints } from "@/lib/golden-match";
+import { betDisplayPayout, pointsFromOdd, pointsIfWin } from "@/lib/points";
 import { cn } from "@/lib/utils";
 import type { MatchResultSelection, MatchWithTeams } from "@/types/database";
 
@@ -43,21 +45,35 @@ export function BetSlip({
   match,
   points,
   boostsAvailable,
-  pending = { hasMatchResult: false, hasExactScore: false },
+  pending = {
+    hasMatchResult: false,
+    hasExactScore: false,
+    matchResult: null,
+    exactScore: null,
+  },
 }: BetSlipProps) {
   const router = useRouter();
   const bettingOpen = useClassicBettingOpen(match);
 
-  const [mode, setMode] = useState<BetMode>("1n2");
-  const [selection, setSelection] = useState<MatchResultSelection | null>(null);
-  const [homeScore, setHomeScore] = useState("");
-  const [awayScore, setAwayScore] = useState("");
+  const [mode, setMode] = useState<BetMode>(() =>
+    pending.hasMatchResult ? "1n2" : pending.hasExactScore ? "exact" : "1n2",
+  );
+  const [selection, setSelection] = useState<MatchResultSelection | null>(
+    () => pending.matchResult?.selection ?? null,
+  );
+  const [homeScore, setHomeScore] = useState(() =>
+    pending.exactScore != null ? String(pending.exactScore.home) : "",
+  );
+  const [awayScore, setAwayScore] = useState(() =>
+    pending.exactScore != null ? String(pending.exactScore.away) : "",
+  );
   const [useBoost, setUseBoost] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<"1n2" | "exact" | null>(null);
 
   const canUseBoost = boostsAvailable > 0;
+  const isGolden = match.is_golden ?? false;
 
   const outcomes = useMemo(
     () =>
@@ -95,7 +111,7 @@ export function BetSlip({
 
   const boosted = useBoost && canUseBoost && mode === "1n2";
   const pointsIfWinValue =
-    selectedOdd != null ? pointsIfWin(selectedOdd, boosted) : 0;
+    selectedOdd != null ? pointsIfWin(selectedOdd, boosted, isGolden) : 0;
   const basePointsIfWin =
     selectedOdd != null ? pointsFromOdd(selectedOdd) : 0;
 
@@ -108,9 +124,55 @@ export function BetSlip({
     impliedWinner != null ? impliedOddFromMatch(match, impliedWinner) : null;
 
   const tendancePts =
-    impliedOdd != null ? exactScorePointsTendance(impliedOdd) : null;
+    impliedOdd != null
+      ? goldenMatchPoints(exactScorePointsTendance(impliedOdd), isGolden)
+      : null;
   const perfectPts =
-    impliedOdd != null ? exactScorePointsPerfect(impliedOdd) : null;
+    impliedOdd != null
+      ? goldenMatchPoints(exactScorePointsPerfect(impliedOdd), isGolden)
+      : null;
+
+  const locked1n2 = pending.matchResult;
+  const lockedExact = pending.exactScore;
+  const active1n2Selection = locked1n2?.selection ?? selection;
+  const displayHomeScore = lockedExact
+    ? String(lockedExact.home)
+    : homeScore;
+  const displayAwayScore = lockedExact
+    ? String(lockedExact.away)
+    : awayScore;
+  const lockedExactParsed = lockedExact
+    ? { home: lockedExact.home, away: lockedExact.away }
+    : parsedScore;
+  const lockedImpliedWinner = lockedExactParsed
+    ? impliedMatchResult(lockedExactParsed.home, lockedExactParsed.away)
+    : impliedWinner;
+  const lockedImpliedOdd =
+    lockedImpliedWinner != null
+      ? impliedOddFromMatch(match, lockedImpliedWinner)
+      : impliedOdd;
+  const lockedTendancePts =
+    lockedImpliedOdd != null
+      ? goldenMatchPoints(
+          exactScorePointsTendance(lockedImpliedOdd),
+          isGolden,
+        )
+      : null;
+  const lockedPerfectPts =
+    lockedImpliedOdd != null
+      ? goldenMatchPoints(
+          exactScorePointsPerfect(lockedImpliedOdd),
+          isGolden,
+        )
+      : null;
+  const locked1n2Points =
+    locked1n2 != null
+      ? betDisplayPayout(
+          locked1n2.potential_payout,
+          locked1n2.is_boosted,
+          isGolden,
+        )
+      : null;
 
   function switchMode(next: BetMode) {
     setMode(next);
@@ -176,7 +238,9 @@ export function BetSlip({
     router.refresh();
   }
 
-  if (!bettingOpen) {
+  const hasAnyLockedBet = pending.hasMatchResult || pending.hasExactScore;
+
+  if (!bettingOpen && !hasAnyLockedBet) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground">
@@ -243,8 +307,13 @@ export function BetSlip({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <Card>
+          <Card className={cn(goldenMatchCardClass(isGolden))}>
             <CardHeader className="space-y-3">
+              {isGolden && (
+                <div className="flex justify-center">
+                  <GoldenMatchBadge />
+                </div>
+              )}
               <div>
                 <CardTitle className="text-base">Mon pronostic</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -294,30 +363,50 @@ export function BetSlip({
             <CardContent>
               {mode === "1n2" ? (
                 <form onSubmit={handleSubmit1n2} className="space-y-5">
-                  {pending.hasMatchResult && (
-                    <p className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-primary">
-                      Pronostic 1N2 déjà enregistré sur ce match. Vous pouvez encore
-                      jouer un score exact via l&apos;onglet dédié.
+                  {!bettingOpen && !pending.hasMatchResult && (
+                    <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                      Coup d&apos;envoi passé — plus de pari 1N2 possible sur ce
+                      match.
                     </p>
                   )}
 
+                  {pending.hasMatchResult && locked1n2 && (
+                    <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-primary">
+                      <Lock className="size-4 shrink-0" aria-hidden />
+                      <span>Pronostic 1N2 enregistré — non modifiable</span>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
-                    <Label>Qui gagne selon vous ?</Label>
+                    <Label>
+                      {pending.hasMatchResult
+                        ? "Votre pronostic 1N2"
+                        : "Qui gagne selon vous ?"}
+                    </Label>
                     <div className="grid grid-cols-3 gap-2">
                       {outcomes.map((outcome) => {
                         const base = pointsFromOdd(outcome.odd!);
-                        const display = boosted ? base * 2 : base;
+                        const display = goldenMatchPoints(
+                          boosted ? base * 2 : base,
+                          isGolden,
+                        );
+                        const isChosen = active1n2Selection === outcome.key;
                         return (
                           <button
                             key={outcome.key}
                             type="button"
-                            disabled={pending.hasMatchResult}
+                            disabled={pending.hasMatchResult || !bettingOpen}
                             onClick={() => setSelection(outcome.key)}
                             className={cn(
-                              "flex flex-col items-center rounded-lg border py-3 transition-colors disabled:opacity-50",
-                              selection === outcome.key
-                                ? "border-primary bg-primary/15 ring-1 ring-primary"
-                                : "border-border bg-muted/20 hover:border-primary/50",
+                              "flex flex-col items-center rounded-lg border py-3 transition-colors",
+                              pending.hasMatchResult &&
+                                "cursor-default disabled:opacity-100",
+                              !pending.hasMatchResult && "disabled:opacity-50",
+                              isChosen
+                                ? "border-primary bg-primary/15 ring-2 ring-primary"
+                                : pending.hasMatchResult
+                                  ? "border-border/50 bg-muted/10 opacity-40"
+                                  : "border-border bg-muted/20 hover:border-primary/50",
                             )}
                           >
                             <span className="text-[10px] font-medium text-muted-foreground">
@@ -363,6 +452,31 @@ export function BetSlip({
                     </div>
                   )}
 
+                  {pending.hasMatchResult && locked1n2 && locked1n2Points != null && (
+                    <div className="space-y-2 rounded-lg bg-muted/40 p-3 text-sm">
+                      <div className="flex justify-between gap-2">
+                        <span className="text-muted-foreground">Cote figée</span>
+                        <span className="font-medium tabular-nums">
+                          {formatOdd(locked1n2.odd_at_placement)}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-muted-foreground">Si gagné</span>
+                        <span className="font-bold tabular-nums text-primary">
+                          +{formatPoints(locked1n2Points)} pts
+                        </span>
+                      </div>
+                      {locked1n2.is_boosted && (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-500/40 text-amber-600 dark:text-amber-400"
+                        >
+                          Boost x2 actif
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
                   {selection && !pending.hasMatchResult && (
                     <div className="rounded-lg bg-muted/40 p-3 text-sm">
                       <div className="flex justify-between">
@@ -380,35 +494,55 @@ export function BetSlip({
                     </p>
                   )}
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={loading || !selection || pending.hasMatchResult}
-                  >
-                    {loading ? "Validation…" : "Valider le 1N2"}
-                  </Button>
+                  {pending.hasMatchResult ? (
+                    <Button type="button" className="w-full" disabled>
+                      <Lock className="mr-2 size-4" aria-hidden />
+                      Pronostic 1N2 verrouillé
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={loading || !selection || !bettingOpen}
+                    >
+                      {loading ? "Validation…" : "Valider le 1N2"}
+                    </Button>
+                  )}
                 </form>
               ) : (
                 <form onSubmit={handleSubmitExact} className="space-y-5">
-                  {pending.hasExactScore && (
-                    <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
-                      Score exact déjà enregistré. Vous pouvez encore jouer le 1N2
-                      via l&apos;onglet « 1N2 rapide ».
+                  {!bettingOpen && !pending.hasExactScore && (
+                    <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                      Coup d&apos;envoi passé — plus de score exact possible sur ce
+                      match.
                     </p>
                   )}
 
+                  {pending.hasExactScore && lockedExact && (
+                    <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
+                      <Lock className="size-4 shrink-0" aria-hidden />
+                      <span>Score exact enregistré — non modifiable</span>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
-                    <Label>Score final prédit</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Utilisez +/− ou un raccourci — le vainqueur est calculé
-                      automatiquement.
-                    </p>
+                    <Label>
+                      {pending.hasExactScore
+                        ? "Votre score exact"
+                        : "Score final prédit"}
+                    </Label>
+                    {!pending.hasExactScore && (
+                      <p className="text-xs text-muted-foreground">
+                        Utilisez +/− ou un raccourci — le vainqueur est calculé
+                        automatiquement.
+                      </p>
+                    )}
                     <ScorePicker
                       homeTeam={match.home_team}
                       awayTeam={match.away_team}
-                      homeScore={homeScore}
-                      awayScore={awayScore}
-                      disabled={pending.hasExactScore}
+                      homeScore={displayHomeScore}
+                      awayScore={displayAwayScore}
+                      disabled={pending.hasExactScore || !bettingOpen}
                       onHomeChange={(v) => {
                         setHomeScore(v);
                         setError(null);
@@ -426,7 +560,11 @@ export function BetSlip({
                     </p>
                   )}
 
-                  {parsedScore && impliedOdd != null && tendancePts != null && perfectPts != null && (
+                  {((pending.hasExactScore && lockedExactParsed) ||
+                    (parsedScore && !pending.hasExactScore)) &&
+                    lockedImpliedOdd != null &&
+                    lockedTendancePts != null &&
+                    lockedPerfectPts != null && (
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
                         <Target className="size-4 shrink-0 text-primary" />
@@ -434,7 +572,7 @@ export function BetSlip({
                           Vainqueur selon votre score :{" "}
                           <strong>
                             {matchResultLabel(
-                              impliedWinner!,
+                              lockedImpliedWinner!,
                               match.home_team.name,
                               match.away_team.name,
                             )}
@@ -444,7 +582,7 @@ export function BetSlip({
 
                       <div className="grid grid-cols-3 gap-2">
                         {outcomes.map((outcome) => {
-                          const active = impliedWinner === outcome.key;
+                          const active = lockedImpliedWinner === outcome.key;
                           return (
                             <div
                               key={outcome.key}
@@ -472,21 +610,22 @@ export function BetSlip({
                           Score{" "}
                           <strong className="text-foreground">
                             {formatExactScoreSelection(
-                              parsedScore.home,
-                              parsedScore.away,
+                              lockedExactParsed!.home,
+                              lockedExactParsed!.away,
                             )}
                           </strong>
                           {" · "}
-                          cote {impliedOdd.toFixed(2)} (1N2 équivalent)
+                          cote {lockedImpliedOdd.toFixed(2)} (1N2 équivalent)
                         </p>
                         <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
                           <span className="text-emerald-600 dark:text-emerald-400">
-                            Tendance : +{formatPoints(tendancePts)} pts (= 1N2)
+                            Tendance : +{formatPoints(lockedTendancePts)} pts
+                            {isGolden ? " (×2 Golden)" : " (= 1N2)"}
                           </span>
                           <span className="text-amber-600 dark:text-amber-400">
-                            Tout pile : +{formatPoints(perfectPts)} pts
-                            {perfectPts > tendancePts &&
-                              ` (×${Math.round(perfectPts / tendancePts)})`}
+                            Tout pile : +{formatPoints(lockedPerfectPts)} pts
+                            {lockedPerfectPts > lockedTendancePts &&
+                              ` (×${Math.round(lockedPerfectPts / lockedTendancePts)})`}
                           </span>
                         </p>
                       </div>
@@ -499,19 +638,23 @@ export function BetSlip({
                     </p>
                   )}
 
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    className="w-full"
-                    disabled={
-                      loading ||
-                      !parsedScore ||
-                      impliedOdd == null ||
-                      pending.hasExactScore
-                    }
-                  >
-                    {loading ? "Validation…" : "Valider le score exact"}
-                  </Button>
+                  {pending.hasExactScore ? (
+                    <Button type="button" variant="secondary" className="w-full" disabled>
+                      <Lock className="mr-2 size-4" aria-hidden />
+                      Score exact verrouillé
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      className="w-full"
+                      disabled={
+                        loading || !parsedScore || impliedOdd == null || !bettingOpen
+                      }
+                    >
+                      {loading ? "Validation…" : "Valider le score exact"}
+                    </Button>
+                  )}
                 </form>
               )}
             </CardContent>

@@ -4,7 +4,9 @@ import { TeamFlag } from "@/components/shared/team-flag";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { formatKickoff } from "@/lib/format";
+import { goldenMatchCardClass } from "@/lib/golden-match";
 import type { BracketSlotWithMatch } from "@/types/database";
 
 interface BracketSlotCardProps {
@@ -54,7 +56,7 @@ export function BracketSlotCard({
           highlight
             ? "border-primary/50 ring-1 ring-primary/30"
             : "border-border/80",
-          m.status === "live" && "border-primary ring-1 ring-primary/40",
+          goldenMatchCardClass(m.is_golden ?? false, m.status === "live"),
         )}
       >
         <p className="mb-1.5 truncate text-[10px] font-medium text-muted-foreground">
@@ -74,6 +76,11 @@ export function BracketSlotCard({
             compact={compact}
           />
         </div>
+        {(m.is_golden ?? false) && (
+          <div className="mb-1.5 flex justify-center">
+            <GoldenMatchBadge compact className="text-[9px] h-4 px-1.5" />
+          </div>
+        )}
         <div className="mt-2 flex items-center justify-between gap-1 border-t border-border/50 pt-1.5">
           <span className="text-[9px] text-muted-foreground">
             {formatKickoff(m.kickoff_at)}

@@ -33,6 +33,9 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 25. `024_match_delete_cascade.sql` (suppression match → cascade paris, fun, chat, transactions)
 26. `025_exact_score_precision.sql` (score exact : Tendance / Tout pile)
 27. `026_exact_score_odds_based_points.sql` (score exact indexé sur la cote du vainqueur implicite)
+28. `027_golden_match.sql` (Golden Match : un match « en or », gains ×2 à la clôture)
+29. `028_match_betting_participation.sql` (liste qui a parié sur un match sans révéler les pronos)
+30. `029_fun_bets_fun_market_id.sql` (corrige FK paris fun : colonne `fun_market_id`)
 
 ### Workflow admin CDM 2026
 

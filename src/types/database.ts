@@ -88,6 +88,7 @@ export interface MatchWithTeams {
   odd_home: number | null;
   odd_draw: number | null;
   odd_away: number | null;
+  is_golden?: boolean;
   home_team: Team;
   away_team: Team;
 }
@@ -159,6 +160,7 @@ export interface BetRow {
   id: string;
   match_id: number;
   market_id: string | null;
+  fun_market_id?: string | null;
   bet_type: BetType;
   selection: {
     selection?: MatchResultSelection;
@@ -176,7 +178,13 @@ export interface BetRow {
   placed_at: string;
   match: Pick<
     MatchWithTeams,
-    "id" | "round" | "status" | "kickoff_at" | "home_team" | "away_team"
-  >;
+    | "id"
+    | "round"
+    | "status"
+    | "kickoff_at"
+    | "is_golden"
+    | "home_team"
+    | "away_team"
+  > | null;
   fun_market?: Pick<FunMarket, "id" | "question"> | null;
 }

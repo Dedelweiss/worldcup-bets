@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
 import { WalletCard } from "@/components/dashboard/wallet-card";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
+import { getUserMatchBetStatuses } from "@/lib/bets/user-match-status-query";
 import { getDashboardData } from "@/lib/dashboard";
 import { getPlayerLabel } from "@/lib/profile/player-label";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,13 @@ export const metadata = {
 
 export default async function DashboardPage() {
   const { profile, upcomingMatches, isDemo } = await getDashboardData();
+  const betStatuses =
+    !isDemo && upcomingMatches.length > 0
+      ? await getUserMatchBetStatuses(
+          profile.id,
+          upcomingMatches.map((m) => m.id),
+        )
+      : {};
 
   return (
     <div className="space-y-8">
@@ -64,11 +72,23 @@ export default async function DashboardPage() {
       </section>
 
       <section className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold">Prochains matchs</h2>
-          <p className="text-sm text-muted-foreground">
-            Coupe du Monde FIFA 2026 · Paris 1N2
-          </p>
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-semibold">Prochains matchs</h2>
+            <p className="text-sm text-muted-foreground">
+              Coupe du Monde FIFA 2026 · Paris 1N2
+            </p>
+          </div>
+          {!isDemo && (
+            <Link
+              href="/matches?bets=my"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+              )}
+            >
+              Mes pronostics
+            </Link>
+          )}
         </div>
         {upcomingMatches.length === 0 && !isDemo ? (
           <p className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
@@ -76,7 +96,10 @@ export default async function DashboardPage() {
             <strong className="text-foreground">/admin</strong>.
           </p>
         ) : (
-          <UpcomingMatches matches={upcomingMatches} />
+          <UpcomingMatches
+            matches={upcomingMatches}
+            betStatuses={betStatuses}
+          />
         )}
       </section>
     </div>

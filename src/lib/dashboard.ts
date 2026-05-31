@@ -33,7 +33,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     .from("matches")
     .select(
       `
-      id, round, status, kickoff_at, venue,
+      id, round, status, kickoff_at, venue, is_golden,
       home_score, away_score, odd_home, odd_draw, odd_away,
       home_team:teams!matches_home_team_id_fkey (id, name, code, logo_url),
       away_team:teams!matches_away_team_id_fkey (id, name, code, logo_url)

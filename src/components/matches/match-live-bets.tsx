@@ -49,9 +49,14 @@ const STATUS_BADGE: Partial<
 interface MatchLiveBetsProps {
   bets: MatchLiveBetRow[];
   currentUserId: string;
+  isGoldenMatch?: boolean;
 }
 
-export function MatchLiveBets({ bets, currentUserId }: MatchLiveBetsProps) {
+export function MatchLiveBets({
+  bets,
+  currentUserId,
+  isGoldenMatch = false,
+}: MatchLiveBetsProps) {
   if (bets.length === 0) {
     return (
       <section className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6 text-center">
@@ -116,12 +121,17 @@ export function MatchLiveBets({ bets, currentUserId }: MatchLiveBetsProps) {
                     betDisplayPayout(
                       bet.potential_payout,
                       bet.is_boosted,
+                      isGoldenMatch,
                     ),
                   )}{" "}
                   pts
-                  {bet.is_boosted && (
+                  {(bet.is_boosted || isGoldenMatch) && (
                     <span className="ml-1 text-[10px] font-normal text-amber-600 dark:text-amber-400">
-                      x2
+                      {bet.is_boosted && isGoldenMatch
+                        ? "Boost×2 · Golden×2"
+                        : bet.is_boosted
+                          ? "Boost×2"
+                          : "Golden×2"}
                     </span>
                   )}
                 </p>
