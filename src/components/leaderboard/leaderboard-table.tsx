@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatPoints } from "@/lib/format";
+import { getPlayerLabel } from "@/lib/profile/player-label";
 import type { LeaderboardEntry, LeaderboardSort } from "@/types/database";
 
 interface LeaderboardTableProps {
@@ -58,7 +59,7 @@ export function LeaderboardTable({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold leading-tight">
-                  {player.display_name ?? player.username ?? "Joueur"}
+                  {getPlayerLabel(player)}
                 </p>
                 {player.leagues && player.leagues.length > 0 && (
                   <div className="mt-1.5 flex flex-wrap gap-1">
@@ -174,7 +175,7 @@ export function LeaderboardTable({
                 <td className="px-3 py-3">
                   <div className="flex min-w-0 flex-col gap-1">
                     <span className="font-medium">
-                      {player.display_name ?? player.username ?? "Joueur"}
+                      {getPlayerLabel(player)}
                     </span>
                     {player.leagues && player.leagues.length > 0 && (
                       <div className="flex flex-wrap gap-1">

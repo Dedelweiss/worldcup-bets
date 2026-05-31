@@ -27,6 +27,8 @@ export function SignupForm() {
     setError(null);
 
     const supabase = createClient();
+    const pseudo = displayName.trim().toLowerCase().replace(/\s+/g, "_");
+
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -34,6 +36,7 @@ export function SignupForm() {
         emailRedirectTo: getAuthRedirectUrl("/auth/callback"),
         data: {
           full_name: displayName.trim() || undefined,
+          username: pseudo || undefined,
         },
       },
     });
@@ -45,7 +48,10 @@ export function SignupForm() {
     }
 
     if (data.session) {
-      router.push("/dashboard");
+      if (pseudo.length >= 3) {
+        await supabase.rpc("update_username", { p_username: pseudo });
+      }
+      router.push("/profile");
       router.refresh();
       return;
     }
@@ -58,8 +64,8 @@ export function SignupForm() {
     return (
       <div className="space-y-4 text-center">
         <p className="text-sm text-muted-foreground">
-          Un email de confirmation vous a été envoyé. Cliquez sur le lien pour activer
-          votre compte et recevoir vos <strong>100 €</strong> virtuels.
+          Un email de confirmation vous a été envoyé. Cliquez sur le lien pour
+          activer votre compte et choisir votre pseudo.
         </p>
         <Link
           href="/login"
@@ -89,7 +95,10 @@ export function SignupForm() {
             autoComplete="nickname"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="MonPseudo"
+            placeholder="mon_pseudo"
+            minLength={3}
+            maxLength={20}
+            pattern="[a-zA-Z0-9_]+"
           />
         </div>
         <div className="space-y-2">
@@ -123,7 +132,7 @@ export function SignupForm() {
           </p>
         )}
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Création…" : "Créer mon compte — 100 € offerts"}
+          {loading ? "Création…" : "Créer mon compte"}
         </Button>
       </form>
       <p className="text-center text-sm text-muted-foreground">

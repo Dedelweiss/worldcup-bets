@@ -1,6 +1,7 @@
 import { Trophy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPoints } from "@/lib/format";
+import { getPlayerLabel } from "@/lib/profile/player-label";
 import type { Profile } from "@/types/database";
 
 interface WalletCardProps {
@@ -22,7 +23,7 @@ export function WalletCard({ profile }: WalletCardProps) {
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
           Gagnés sur les paris réussis (selon la cote) ·{" "}
-          {profile.display_name ?? profile.username ?? "Joueur"}
+          {getPlayerLabel(profile)}
         </p>
       </CardContent>
     </Card>

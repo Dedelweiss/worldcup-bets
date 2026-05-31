@@ -52,14 +52,14 @@ export function GroupStandingsView({ standings }: GroupStandingsViewProps) {
       {filter === "all" ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {withTeams.map((groupStanding) => (
-            <GroupStandingsCard
+            <GroupStandingsTable
               key={groupStanding.group.id}
               data={groupStanding}
             />
           ))}
         </div>
       ) : (
-        <GroupStandingsCard data={active} />
+        <GroupStandingsTable data={active} />
       )}
     </div>
   );
@@ -90,7 +90,7 @@ function FilterPill({
   );
 }
 
-function GroupStandingsCard({
+function GroupStandingsTable({
   data,
   className,
 }: {
@@ -106,50 +106,82 @@ function GroupStandingsCard({
         className,
       )}
     >
-      <header className="border-b border-border/60 bg-muted/30 px-4 py-2.5">
+      <header className="border-b border-border/60 bg-muted/30 px-3 py-2 sm:px-4">
         <h3 className="font-semibold">{group.name}</h3>
-        <p className="text-[10px] text-muted-foreground">
-          3 pts victoire · 1 pt nul
-        </p>
       </header>
 
-      <ul className="divide-y divide-border/60">
-        {rows.map((row, index) => (
-          <li
-            key={row.team.id}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5",
-              index === 0 && row.points > 0 && "bg-primary/5",
-            )}
-          >
-            <span
-              className={cn(
-                "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums",
-                index === 0 ? "bg-primary text-primary-foreground" : "bg-muted",
-              )}
-            >
-              {index + 1}
-            </span>
-            <TeamFlag
-              name={row.team.name}
-              code={row.team.code}
-              logoUrl={row.team.logo_url}
-              size={28}
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{row.team.name}</p>
-              <p className="text-[11px] text-muted-foreground tabular-nums">
-                {row.played} j · {row.won}V {row.drawn}N {row.lost}D ·{" "}
-                {row.goalsFor}:{row.goalsAgainst}
-                {row.goalDiff > 0 ? ` (+${row.goalDiff})` : row.goalDiff < 0 ? ` (${row.goalDiff})` : ""}
-              </p>
-            </div>
-            <span className="shrink-0 text-lg font-bold tabular-nums text-primary">
-              {row.points}
-            </span>
-          </li>
-        ))}
-      </ul>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[320px] text-sm">
+          <thead>
+            <tr className="border-b border-border/60 bg-muted/20 text-[11px] uppercase tracking-wide text-muted-foreground">
+              <th className="w-8 px-2 py-2 text-center font-medium">#</th>
+              <th className="px-2 py-2 text-left font-medium">Équipe</th>
+              <th className="w-9 px-1 py-2 text-center font-medium" title="Joués">
+                P
+              </th>
+              <th className="w-9 px-1 py-2 text-center font-medium" title="Victoires">
+                V
+              </th>
+              <th className="w-9 px-1 py-2 text-center font-medium" title="Nuls">
+                N
+              </th>
+              <th className="w-9 px-1 py-2 text-center font-medium" title="Défaites">
+                D
+              </th>
+              <th className="w-10 px-1 py-2 text-center font-medium" title="Différence de buts">
+                GD
+              </th>
+              <th className="w-10 px-2 py-2 text-center font-medium" title="Points">
+                Pts
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr
+                key={row.team.id}
+                className={cn(
+                  "border-b border-border/40 last:border-0",
+                  index === 0 && row.points > 0 && "bg-primary/5",
+                )}
+              >
+                <td className="px-2 py-2 text-center text-xs font-medium text-muted-foreground tabular-nums">
+                  {index + 1}
+                </td>
+                <td className="px-2 py-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <TeamFlag
+                      name={row.team.name}
+                      code={row.team.code}
+                      logoUrl={row.team.logo_url}
+                      size={22}
+                    />
+                    <span className="truncate font-medium">{row.team.name}</span>
+                  </div>
+                </td>
+                <td className="px-1 py-2 text-center tabular-nums text-muted-foreground">
+                  {row.played}
+                </td>
+                <td className="px-1 py-2 text-center tabular-nums">{row.won}</td>
+                <td className="px-1 py-2 text-center tabular-nums">{row.drawn}</td>
+                <td className="px-1 py-2 text-center tabular-nums">{row.lost}</td>
+                <td
+                  className={cn(
+                    "px-1 py-2 text-center tabular-nums font-medium",
+                    row.goalDiff > 0 && "text-green-600 dark:text-green-400",
+                    row.goalDiff < 0 && "text-red-600 dark:text-red-400",
+                  )}
+                >
+                  {row.goalDiff > 0 ? `+${row.goalDiff}` : row.goalDiff}
+                </td>
+                <td className="px-2 py-2 text-center text-base font-bold tabular-nums text-primary">
+                  {row.points}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }

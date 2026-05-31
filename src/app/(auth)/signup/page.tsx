@@ -11,8 +11,7 @@ export default function SignupPage() {
       <CardHeader className="text-center">
         <CardTitle className="text-xl">Créer un compte</CardTitle>
         <CardDescription>
-          Recevez <strong className="text-primary">100 €</strong> de monnaie virtuelle à
-          l&apos;inscription
+          Choisissez un pseudo et pariez avec vos amis sur la Coupe du Monde 2026
         </CardDescription>
       </CardHeader>
       <CardContent>

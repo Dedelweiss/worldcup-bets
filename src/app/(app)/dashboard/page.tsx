@@ -1,8 +1,12 @@
+import Link from "next/link";
 import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
 import { WalletCard } from "@/components/dashboard/wallet-card";
 import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
 import { getDashboardData } from "@/lib/dashboard";
+import { getPlayerLabel } from "@/lib/profile/player-label";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export const metadata = {
   title: "Tableau de bord · WC2026 Pool",
@@ -18,7 +22,7 @@ export default async function DashboardPage() {
       <section className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-bold tracking-tight">
-            Bonjour, {profile.display_name ?? "Joueur"}
+            Bonjour, {getPlayerLabel(profile)}
           </h1>
           {isDemo && (
             <Badge variant="outline" className="text-[10px]">
@@ -31,12 +35,24 @@ export default async function DashboardPage() {
         </p>
       </section>
 
+      {!isDemo && !profile.username && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3">
+          <p className="text-sm">
+            Choisissez un <strong>pseudo</strong> pour apparaître dans le
+            classement et les matchs en direct.
+          </p>
+          <Link href="/profile" className={cn(buttonVariants({ size: "sm" }))}>
+            Choisir mon pseudo
+          </Link>
+        </div>
+      )}
+
       <section className="grid gap-4 md:grid-cols-[minmax(0,280px)_1fr]">
         <WalletCard profile={profile} />
         <div className="grid grid-cols-3 gap-3 rounded-xl border border-border bg-card/50 p-4">
           {[
             { label: "Paris en cours", value: "0" },
-            { label: "Gains totaux", value: "0 €" },
+            { label: "Gains totaux", value: "0 pts" },
             { label: "Classement", value: "—" },
           ].map((stat) => (
             <div key={stat.label} className="text-center md:text-left">

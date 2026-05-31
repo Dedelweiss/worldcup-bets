@@ -25,6 +25,7 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 17. `016_single_league_self_service.sql` (une seule ligue / joueur sauf ajout admin)
 18. `017_fun_markets_realtime.sql` (notifications temps réel des nouveaux paris fun)
 19. `018_points_system_live_bets.sql` (points selon cotes, sans mise · paris visibles en direct)
+20. `019_player_username.sql` (pseudos joueurs uniques)
 
 ### Workflow admin CDM 2026
 

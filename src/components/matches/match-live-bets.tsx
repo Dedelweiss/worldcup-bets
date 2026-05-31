@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { formatOdd, formatPoints } from "@/lib/format";
+import { getPlayerLabel } from "@/lib/profile/player-label";
 import type { MatchLiveBetRow } from "@/lib/bets/match-live-bets";
 
 const SELECTION_LABEL: Record<string, string> = {
@@ -21,7 +22,7 @@ function betChoiceLabel(bet: MatchLiveBetRow): string {
 }
 
 function playerName(bet: MatchLiveBetRow): string {
-  return bet.display_name ?? bet.username ?? "Joueur";
+  return getPlayerLabel(bet);
 }
 
 interface MatchLiveBetsProps {
