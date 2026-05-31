@@ -63,6 +63,10 @@ export interface Profile {
   points: number;
   /** Jokers Boost x2 restants (1 par tournoi par défaut). */
   boosts_available?: number;
+  /** Série On Fire : victoires classiques consécutives. */
+  heat_streak?: number;
+  /** Actif après 3 victoires classiques d'affilée. */
+  on_fire?: boolean;
   role?: UserRole;
 }
 
@@ -152,6 +156,10 @@ export interface LeaderboardEntry {
   fun_lost: number;
   total_won: number;
   total_lost: number;
+  /** Mode On Fire (classement général uniquement en UI). */
+  on_fire?: boolean;
+  /** Série de victoires classiques en cours (0–3+). */
+  heat_streak?: number;
   leagues?: LeaderboardLeagueTag[];
   badges?: LeaderboardPlayerBadge[];
 }

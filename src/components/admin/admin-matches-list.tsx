@@ -1,5 +1,10 @@
 import Link from "next/link";
+import { AdminMatchSortHeader } from "@/components/admin/admin-matches-filters";
 import { TeamFlag } from "@/components/shared/team-flag";
+import type {
+  AdminMatchSortField,
+  AdminMatchSortOrder,
+} from "@/lib/admin/match-sort";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
@@ -41,9 +46,15 @@ function formatScoreLine(match: MatchWithTeams): string {
 
 interface AdminMatchesListProps {
   matches: MatchWithTeams[];
+  sortField: AdminMatchSortField;
+  sortOrder: AdminMatchSortOrder;
 }
 
-export function AdminMatchesList({ matches }: AdminMatchesListProps) {
+export function AdminMatchesList({
+  matches,
+  sortField,
+  sortOrder,
+}: AdminMatchesListProps) {
   if (matches.length === 0) {
     return (
       <p className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
@@ -119,12 +130,28 @@ export function AdminMatchesList({ matches }: AdminMatchesListProps) {
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-left text-muted-foreground">
             <tr>
-              <th className="px-4 py-3 font-medium">Match</th>
-              <th className="px-4 py-3 font-medium">Date</th>
-              <th className="px-4 py-3 font-medium">Cotes 1-N-2</th>
-              <th className="px-4 py-3 font-medium">Score</th>
-              <th className="px-4 py-3 font-medium">Statut</th>
-              <th className="px-4 py-3 font-medium" />
+              <th className="px-4 py-3 font-medium text-muted-foreground">
+                Match
+              </th>
+              <AdminMatchSortHeader
+                column="date"
+                label="Date"
+                sortField={sortField}
+                sortOrder={sortOrder}
+              />
+              <th className="px-4 py-3 font-medium text-muted-foreground">
+                Cotes 1-N-2
+              </th>
+              <th className="px-4 py-3 font-medium text-muted-foreground">
+                Score
+              </th>
+              <AdminMatchSortHeader
+                column="status"
+                label="Statut"
+                sortField={sortField}
+                sortOrder={sortOrder}
+              />
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>

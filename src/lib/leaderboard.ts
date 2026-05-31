@@ -16,6 +16,8 @@ function mapRow(row: Record<string, unknown>): LeaderboardEntry {
     fun_lost: Number(row.fun_lost ?? 0),
     total_won: Number(row.total_won ?? 0),
     total_lost: Number(row.total_lost ?? 0),
+    on_fire: Boolean(row.on_fire),
+    heat_streak: Number(row.heat_streak ?? 0),
   };
 }
 
@@ -43,7 +45,7 @@ async function getLeaderboardFallback(options: {
 
   let query = supabase
     .from("profiles")
-    .select("id, display_name, username, points");
+    .select("id, display_name, username, points, on_fire, heat_streak");
 
   if (options.leagueId) {
     const { data: members } = await supabase

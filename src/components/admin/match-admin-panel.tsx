@@ -51,7 +51,15 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
     if (!result.success) {
       setError(result.error);
     } else {
-      setMessage("Match mis à jour.");
+      const form = e.currentTarget;
+      const home = form.homeScore.value;
+      const away = form.awayScore.value;
+      const scoresSet = home !== "" && away !== "";
+      setMessage(
+        scoresSet
+          ? "Match mis à jour — passé en direct (scores visibles pour les joueurs)."
+          : "Match mis à jour.",
+      );
       router.refresh();
     }
     setLoading(null);

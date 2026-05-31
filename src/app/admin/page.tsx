@@ -1,13 +1,29 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { AdminMatchesFilters } from "@/components/admin/admin-matches-filters";
 import { AdminMatchesList } from "@/components/admin/admin-matches-list";
 import { getAdminMatches } from "@/lib/admin/matches";
+import { parseAdminMatchSort, sortAdminMatches } from "@/lib/admin/match-sort";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Admin · Matchs" };
 
-export default async function AdminPage() {
-  const matches = await getAdminMatches();
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string; order?: string }>;
+}) {
+  const params = await searchParams;
+  const { field: sortField, order: sortOrder } = parseAdminMatchSort(
+    params.sort,
+    params.order,
+  );
+  const matches = sortAdminMatches(
+    await getAdminMatches(),
+    sortField,
+    sortOrder,
+  );
 
   return (
     <div className="space-y-6">
@@ -29,7 +45,19 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      <AdminMatchesList matches={matches} />
+      <Suspense
+        fallback={
+          <div className="h-24 animate-pulse rounded-xl bg-muted/40" />
+        }
+      >
+        <AdminMatchesFilters sortField={sortField} sortOrder={sortOrder} />
+      </Suspense>
+
+      <AdminMatchesList
+        matches={matches}
+        sortField={sortField}
+        sortOrder={sortOrder}
+      />
     </div>
   );
 }

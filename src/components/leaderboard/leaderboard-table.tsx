@@ -1,4 +1,6 @@
+import { OnFireFlame } from "@/components/leaderboard/on-fire-flame";
 import { PlayerBadges } from "@/components/leaderboard/player-badges";
+import { ON_FIRE_STREAK_REQUIRED } from "@/lib/on-fire";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatPoints } from "@/lib/format";
@@ -8,12 +10,21 @@ import type { LeaderboardEntry, LeaderboardSort } from "@/types/database";
 interface LeaderboardTableProps {
   players: LeaderboardEntry[];
   highlightSort?: LeaderboardSort;
+  /** Flamme On Fire (classement général uniquement). */
+  showOnFire?: boolean;
 }
 
 function sortLabel(sort: LeaderboardSort): string {
   if (sort === "classic_won") return "Paris matchs gagnés";
   if (sort === "fun_won") return "Paris fun gagnés";
   return "Points";
+}
+
+function playerIsOnFire(player: LeaderboardEntry): boolean {
+  return (
+    Boolean(player.on_fire) ||
+    (player.heat_streak ?? 0) >= ON_FIRE_STREAK_REQUIRED
+  );
 }
 
 function primaryValue(player: LeaderboardEntry, sort: LeaderboardSort): string {
@@ -25,6 +36,7 @@ function primaryValue(player: LeaderboardEntry, sort: LeaderboardSort): string {
 export function LeaderboardTable({
   players,
   highlightSort = "points",
+  showOnFire = false,
 }: LeaderboardTableProps) {
   if (players.length === 0) {
     return (
@@ -63,6 +75,7 @@ export function LeaderboardTable({
                   <p className="font-semibold leading-tight">
                     {getPlayerLabel(player)}
                   </p>
+                  {showOnFire && playerIsOnFire(player) && <OnFireFlame />}
                   <PlayerBadges badges={player.badges ?? []} />
                 </div>
                 {player.leagues && player.leagues.length > 0 && (
@@ -182,6 +195,7 @@ export function LeaderboardTable({
                       <span className="font-medium">
                         {getPlayerLabel(player)}
                       </span>
+                      {showOnFire && playerIsOnFire(player) && <OnFireFlame />}
                       <PlayerBadges badges={player.badges ?? []} />
                     </div>
                     {player.leagues && player.leagues.length > 0 && (

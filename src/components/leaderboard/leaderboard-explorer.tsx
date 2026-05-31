@@ -77,7 +77,11 @@ export function LeaderboardExplorer({
         </p>
       )}
 
-      <LeaderboardTable players={players} highlightSort={sort} />
+      <LeaderboardTable
+        players={players}
+        highlightSort={sort}
+        showOnFire={scope === "general"}
+      />
     </div>
   );
 }

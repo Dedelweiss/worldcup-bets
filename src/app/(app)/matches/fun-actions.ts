@@ -13,6 +13,9 @@ function mapError(message: string): string {
   const m = message.toLowerCase();
   if (m.includes("closed")) return "Ce pari fun est fermé.";
   if (m.includes("odds have changed")) return "Cotes modifiées — actualisez.";
+  if (m.includes("already have a pending fun bet")) {
+    return "Vous avez déjà un pronostic sur ce pari fun.";
+  }
   return message;
 }
 

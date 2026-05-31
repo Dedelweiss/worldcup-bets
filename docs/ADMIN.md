@@ -36,6 +36,17 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 28. `027_golden_match.sql` (Golden Match : un match « en or », gains ×2 à la clôture)
 29. `028_match_betting_participation.sql` (liste qui a parié sur un match sans révéler les pronos)
 30. `029_fun_bets_fun_market_id.sql` (corrige FK paris fun : colonne `fun_market_id`)
+31. `030_classic_bet_mutual_exclusivity.sql` (un seul pronostic classique par match : 1N2 ou score exact)
+32. `031_on_fire_heat.sql` (série On Fire : 3 victoires classiques d'affilée, +1 pt bonus, flamme au classement)
+33. `032_fix_admin_reset_app.sql` (reset admin : corrige l'appel `(delete_matches, points)` — plus de colonne `balance`)
+34. `033_admin_live_score_and_heat_recompute.sql` (scores admin → match en direct ; On Fire recalculé à la clôture)
+35. `034_fun_bet_one_per_market.sql` (un pari fun par joueur et par marché, non modifiable)
+
+Après **033**, pour recalculer les flammes sur des matchs déjà clôturés :
+
+```sql
+select public.recompute_classic_heat(id) from public.profiles;
+```
 
 ### Workflow admin CDM 2026
 

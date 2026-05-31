@@ -249,9 +249,23 @@ export async function updateMatchAction(formData: FormData): Promise<ActionResul
         ? false
         : null;
 
+  const bothScoresSet =
+    homeScore !== null &&
+    !Number.isNaN(homeScore) &&
+    awayScore !== null &&
+    !Number.isNaN(awayScore);
+
+  const effectiveStatus: MatchStatus | null =
+    bothScoresSet &&
+    status !== "finished" &&
+    status !== "cancelled" &&
+    status !== "postponed"
+      ? "live"
+      : status;
+
   const { error } = await supabase.rpc("admin_update_match", {
     p_match_id: matchId,
-    p_status: status,
+    p_status: effectiveStatus,
     p_home_score: homeScore,
     p_away_score: awayScore,
     p_odd_home: formData.get("oddHome")

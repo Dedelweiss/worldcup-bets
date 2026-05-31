@@ -11,6 +11,7 @@ import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
 import { requireAuth } from "@/lib/auth-server";
 import { getMatchBettingParticipation } from "@/lib/bets/match-participation";
 import { getMatchRevealedBets } from "@/lib/bets/match-live-bets";
+import { getMatchUserFunBets } from "@/lib/bets/match-user-fun-bets";
 import { getMatchUserPendingBets } from "@/lib/bets/match-user-bets";
 import { hasKickoffStarted } from "@/lib/format";
 import { getFunMarketsByMatch } from "@/lib/fun-markets";
@@ -48,12 +49,13 @@ export default async function MatchBetPage({
   const adminEditHref =
     profile.role === "admin" ? `/admin/matches/${matchId}` : undefined;
 
-  const [funMarkets, revealedBets, comments, pendingBets, participation] =
+  const [funMarkets, revealedBets, comments, pendingBets, funBetsByMarket, participation] =
     await Promise.all([
       getFunMarketsByMatch(matchId),
       kickoffStarted ? getMatchRevealedBets(matchId) : Promise.resolve([]),
       kickoffStarted ? getMatchComments(matchId) : Promise.resolve([]),
       getMatchUserPendingBets(matchId, profile.id),
+      getMatchUserFunBets(matchId, profile.id),
       getMatchBettingParticipation(matchId),
     ]);
 
@@ -93,6 +95,7 @@ export default async function MatchBetPage({
                 key={market.id}
                 market={market}
                 isGoldenMatch={match.is_golden ?? false}
+                userBet={funBetsByMarket.get(market.id) ?? null}
               />
             ))}
           </div>
