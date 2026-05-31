@@ -2,11 +2,14 @@ import { notFound } from "next/navigation";
 import { BetSlip } from "@/components/bets/bet-slip";
 import { FunBetSlip } from "@/components/bets/fun-bet-slip";
 import { MarkFunBetsSeen } from "@/components/fun-bets/mark-fun-bets-seen";
+import { MatchChat } from "@/components/matches/match-chat";
 import { MatchHeader } from "@/components/matches/match-header";
 import { MatchLiveBets } from "@/components/matches/match-live-bets";
 import { requireAuth } from "@/lib/auth-server";
-import { getMatchLiveBets } from "@/lib/bets/match-live-bets";
+import { getMatchRevealedBets } from "@/lib/bets/match-live-bets";
+import { hasKickoffStarted } from "@/lib/format";
 import { getFunMarketsByMatch } from "@/lib/fun-markets";
+import { getMatchComments } from "@/lib/match-comments";
 import { getMatchById } from "@/lib/matches";
 
 export async function generateMetadata({
@@ -35,12 +38,15 @@ export default async function MatchBetPage({
   const match = await getMatchById(matchId);
   if (!match) notFound();
 
+  const kickoffStarted = hasKickoffStarted(match.kickoff_at);
+
   const adminEditHref =
     profile.role === "admin" ? `/admin/matches/${matchId}` : undefined;
 
-  const [funMarkets, liveBets] = await Promise.all([
+  const [funMarkets, revealedBets, comments] = await Promise.all([
     getFunMarketsByMatch(matchId),
-    match.status === "live" ? getMatchLiveBets(matchId) : Promise.resolve([]),
+    kickoffStarted ? getMatchRevealedBets(matchId) : Promise.resolve([]),
+    kickoffStarted ? getMatchComments(matchId) : Promise.resolve([]),
   ]);
 
   const openFunMarkets = funMarkets.filter((m) => m.status === "open");
@@ -50,8 +56,15 @@ export default async function MatchBetPage({
       <MarkFunBetsSeen matchId={matchId} />
       <MatchHeader match={match} adminEditHref={adminEditHref} />
 
-      {match.status === "live" && (
-        <MatchLiveBets bets={liveBets} currentUserId={profile.id} />
+      {kickoffStarted && (
+        <section id="social" className="scroll-mt-24 space-y-6">
+          <MatchLiveBets bets={revealedBets} currentUserId={profile.id} />
+          <MatchChat
+            matchId={matchId}
+            currentUserId={profile.id}
+            initialComments={comments}
+          />
+        </section>
       )}
 
       <BetSlip

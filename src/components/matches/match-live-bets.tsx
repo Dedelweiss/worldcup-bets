@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { formatOdd, formatPoints } from "@/lib/format";
+import type { BetStatus } from "@/types/database";
 import { betDisplayPayout } from "@/lib/points";
 import { getPlayerLabel } from "@/lib/profile/player-label";
 import type { MatchLiveBetRow } from "@/lib/bets/match-live-bets";
@@ -26,6 +27,14 @@ function playerName(bet: MatchLiveBetRow): string {
   return getPlayerLabel(bet);
 }
 
+const STATUS_BADGE: Partial<
+  Record<BetStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }>
+> = {
+  won: { label: "Gagné", variant: "default" },
+  lost: { label: "Perdu", variant: "destructive" },
+  pending: { label: "En cours", variant: "secondary" },
+};
+
 interface MatchLiveBetsProps {
   bets: MatchLiveBetRow[];
   currentUserId: string;
@@ -35,10 +44,9 @@ export function MatchLiveBets({ bets, currentUserId }: MatchLiveBetsProps) {
   if (bets.length === 0) {
     return (
       <section className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6 text-center">
-        <p className="text-sm font-medium text-primary">Match en direct</p>
+        <p className="text-sm font-medium text-primary">Paris révélés</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Aucun pari en attente pour le moment. Les paris des joueurs apparaîtront
-          ici pendant le live.
+          Aucun pari enregistré sur ce match pour le moment.
         </p>
       </section>
     );
@@ -49,29 +57,35 @@ export function MatchLiveBets({ bets, currentUserId }: MatchLiveBetsProps) {
       <div>
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-semibold">Paris des joueurs</h2>
-          <Badge className="text-[10px]">En direct</Badge>
+          <Badge className="text-[10px]">Public</Badge>
         </div>
         <p className="text-sm text-muted-foreground">
-          Visible uniquement pendant le match. Les points affichés sont ceux
-          gagnés en cas de bon pronostic (selon la cote).
+          Visibles pour tous après le coup d&apos;envoi — pronostic et points
+          potentiels (selon la cote).
         </p>
       </div>
 
       <ul className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border bg-card">
         {bets.map((bet) => {
           const isYou = bet.user_id === currentUserId;
+          const statusInfo = STATUS_BADGE[bet.status];
           return (
             <li
               key={bet.id}
               className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 text-sm"
             >
               <div className="min-w-0 flex-1">
-                <p className="font-medium">
+                <p className="flex flex-wrap items-center gap-1.5 font-medium">
                   {playerName(bet)}
                   {isYou && (
-                    <span className="ml-1.5 text-xs font-normal text-primary">
+                    <span className="text-xs font-normal text-primary">
                       (vous)
                     </span>
+                  )}
+                  {statusInfo && bet.status !== "pending" && (
+                    <Badge variant={statusInfo.variant} className="text-[10px]">
+                      {statusInfo.label}
+                    </Badge>
                   )}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">

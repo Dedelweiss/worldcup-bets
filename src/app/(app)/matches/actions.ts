@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth-server";
+import type { MatchCommentRow } from "@/lib/match-comments";
 import { canPlaceBetOnMatch, getMatchById } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/server";
 import type { MatchResultSelection } from "@/types/database";
@@ -71,4 +72,91 @@ export async function placeBetAction(
   revalidatePath("/leaderboard");
 
   return { success: true, betId: betId as string };
+}
+
+export type PostMatchCommentResult =
+  | { success: true; comment: MatchCommentRow }
+  | { success: false; error: string };
+
+export async function postMatchCommentAction(
+  matchId: number,
+  message: string,
+): Promise<PostMatchCommentResult> {
+  const profile = await requireAuth();
+
+  const supabase = await createClient();
+  const { data: commentId, error } = await supabase.rpc("post_match_comment", {
+    p_match_id: matchId,
+    p_message: message,
+  });
+
+  if (error) {
+    const m = error.message.toLowerCase();
+    if (m.includes("chat opens")) {
+      return {
+        success: false,
+        error: "Le chat s'ouvre au coup d'envoi du match.",
+      };
+    }
+    if (m.includes("too long")) {
+      return { success: false, error: "Message trop long (500 caractères max)." };
+    }
+    if (m.includes("empty")) {
+      return { success: false, error: "Le message ne peut pas être vide." };
+    }
+    return { success: false, error: error.message };
+  }
+
+  const { data: row } = await supabase
+    .from("match_comments")
+    .select(
+      `
+      id,
+      match_id,
+      user_id,
+      message,
+      created_at,
+      profiles (display_name, username, avatar_url)
+    `,
+    )
+    .eq("id", commentId as string)
+    .single();
+
+  if (!row) {
+    return { success: true, comment: {
+      id: commentId as string,
+      match_id: matchId,
+      user_id: profile.id,
+      message: message.trim(),
+      created_at: new Date().toISOString(),
+      display_name: profile.display_name,
+      username: profile.username,
+      avatar_url: profile.avatar_url,
+    } };
+  }
+
+  const r = row as Record<string, unknown>;
+  const pRaw = r.profiles;
+  const p = Array.isArray(pRaw) ? pRaw[0] : pRaw;
+  const prof = p as {
+    display_name?: string | null;
+    username?: string | null;
+    avatar_url?: string | null;
+  } | null;
+
+  revalidatePath(`/matches/${matchId}`);
+
+  return {
+    success: true,
+    comment: {
+      id: r.id as string,
+      match_id: r.match_id as number,
+      user_id: r.user_id as string,
+      message: r.message as string,
+      created_at: r.created_at as string,
+      display_name: prof?.display_name ?? profile.display_name,
+      username: prof?.username ?? profile.username,
+      avatar_url: prof?.avatar_url ?? profile.avatar_url,
+    },
+  };
 }
