@@ -1,4 +1,5 @@
 import { LeaderboardExplorer } from "@/components/leaderboard/leaderboard-explorer";
+import { MOCK_PLAYER_BADGES } from "@/lib/badges";
 import { requireAuth, hasSupabaseConfig } from "@/lib/auth-server";
 import { getLeaderboard, parseLeaderboardSort } from "@/lib/leaderboard";
 import { getLeagueById, getLeaguesForUser } from "@/lib/leagues";
@@ -57,6 +58,7 @@ export default async function LeaderboardPage({
         fun_lost: 0,
         total_won: 0,
         total_lost: 0,
+        badges: MOCK_PLAYER_BADGES,
       },
     ];
     leagues = [];

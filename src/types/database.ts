@@ -126,6 +126,14 @@ export interface LeaderboardLeagueTag {
   name: string;
 }
 
+export interface LeaderboardPlayerBadge {
+  id: string;
+  name: string;
+  description: string;
+  icon_name: string;
+  unlocked_at: string;
+}
+
 export interface LeaderboardEntry {
   id: string;
   display_name: string | null;
@@ -139,6 +147,7 @@ export interface LeaderboardEntry {
   total_won: number;
   total_lost: number;
   leagues?: LeaderboardLeagueTag[];
+  badges?: LeaderboardPlayerBadge[];
 }
 
 export interface BetRow {

@@ -1,3 +1,4 @@
+import type { PlayerBadge } from "@/lib/badges";
 import { createClient } from "@/lib/supabase/server";
 import type { LeaderboardEntry, LeaderboardSort } from "@/types/database";
 
@@ -76,6 +77,48 @@ async function getLeaderboardFallback(options: {
   };
 }
 
+async function attachPlayerBadges(
+  players: LeaderboardEntry[],
+): Promise<LeaderboardEntry[]> {
+  if (players.length === 0) return players;
+
+  const supabase = await createClient();
+  const userIds = players.map((p) => p.id);
+
+  const { data, error } = await supabase.rpc("get_users_badges", {
+    p_user_ids: userIds,
+  });
+
+  if (error || !data) {
+    return players;
+  }
+
+  const byUser = new Map<string, PlayerBadge[]>();
+  for (const row of data as {
+    user_id: string;
+    badge_id: string;
+    name: string;
+    description: string;
+    icon_name: string;
+    unlocked_at: string;
+  }[]) {
+    const list = byUser.get(row.user_id) ?? [];
+    list.push({
+      id: row.badge_id,
+      name: row.name,
+      description: row.description,
+      icon_name: row.icon_name,
+      unlocked_at: row.unlocked_at,
+    });
+    byUser.set(row.user_id, list);
+  }
+
+  return players.map((p) => ({
+    ...p,
+    badges: byUser.get(p.id) ?? [],
+  }));
+}
+
 async function attachLeagueLabels(
   players: LeaderboardEntry[],
 ): Promise<LeaderboardEntry[]> {
@@ -137,14 +180,14 @@ export async function getLeaderboard(options?: {
           const ids = new Set((members ?? []).map((m) => m.user_id));
           players = players.filter((p) => ids.has(p.id));
         }
-        return {
-          players: await attachLeagueLabels(sortPlayers(players, sort)),
-        };
+        const labeled = await attachLeagueLabels(sortPlayers(players, sort));
+        return { players: await attachPlayerBadges(labeled) };
       }
       const fallback = await getLeaderboardFallback({ leagueId, sort });
+      const labeled = await attachLeagueLabels(fallback.players);
       return {
         ...fallback,
-        players: await attachLeagueLabels(fallback.players),
+        players: await attachPlayerBadges(labeled),
       };
     }
     console.error("get_leaderboard_filtered", error);
@@ -152,9 +195,8 @@ export async function getLeaderboard(options?: {
   }
 
   const players = (data ?? []).map((row: Record<string, unknown>) => mapRow(row));
-  return {
-    players: await attachLeagueLabels(players),
-  };
+  const labeled = await attachLeagueLabels(players);
+  return { players: await attachPlayerBadges(labeled) };
 }
 
 export function parseLeaderboardSort(value: string | undefined): LeaderboardSort {

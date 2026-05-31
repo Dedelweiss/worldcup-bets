@@ -26,6 +26,8 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 18. `017_fun_markets_realtime.sql` (notifications temps réel des nouveaux paris fun)
 19. `018_points_system_live_bets.sql` (points selon cotes, sans mise · paris visibles en direct)
 20. `019_player_username.sql` (pseudos joueurs uniques)
+21. `020_badges_achievements.sql` (trophées / succès + affichage classement)
+22. `021_badges_points_era.sql` (remplace Le Flambeur par succès basés sur points & cotes)
 
 ### Workflow admin CDM 2026
 

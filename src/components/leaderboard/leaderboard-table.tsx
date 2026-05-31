@@ -1,3 +1,4 @@
+import { PlayerBadges } from "@/components/leaderboard/player-badges";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatPoints } from "@/lib/format";
@@ -58,9 +59,12 @@ export function LeaderboardTable({
                 {index + 1}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold leading-tight">
-                  {getPlayerLabel(player)}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-semibold leading-tight">
+                    {getPlayerLabel(player)}
+                  </p>
+                  <PlayerBadges badges={player.badges ?? []} />
+                </div>
                 {player.leagues && player.leagues.length > 0 && (
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {player.leagues.map((league) => (
@@ -113,7 +117,7 @@ export function LeaderboardTable({
           <thead className="bg-muted/40 text-left text-muted-foreground">
             <tr>
               <th className="px-3 py-3 font-medium">#</th>
-              <th className="px-3 py-3 font-medium">Joueur</th>
+              <th className="px-3 py-3 font-medium">Joueur · Succès</th>
               <th
                 className={cn(
                   "px-3 py-3 font-medium text-right",
@@ -174,9 +178,12 @@ export function LeaderboardTable({
                 </td>
                 <td className="px-3 py-3">
                   <div className="flex min-w-0 flex-col gap-1">
-                    <span className="font-medium">
-                      {getPlayerLabel(player)}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">
+                        {getPlayerLabel(player)}
+                      </span>
+                      <PlayerBadges badges={player.badges ?? []} />
+                    </div>
                     {player.leagues && player.leagues.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {player.leagues.map((league) => (
