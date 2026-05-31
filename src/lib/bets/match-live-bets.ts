@@ -13,6 +13,7 @@ export interface MatchLiveBetRow {
   };
   odd_at_placement: number;
   potential_payout: number;
+  is_boosted: boolean;
   placed_at: string;
   fun_question: string | null;
 }
@@ -42,6 +43,7 @@ export async function getMatchLiveBets(
       selection,
       odd_at_placement,
       potential_payout,
+      is_boosted,
       placed_at,
       profiles (display_name, username),
       fun_market:fun_markets (question)
@@ -69,6 +71,7 @@ export async function getMatchLiveBets(
       selection: r.selection as MatchLiveBetRow["selection"],
       odd_at_placement: Number(r.odd_at_placement),
       potential_payout: Number(r.potential_payout),
+      is_boosted: Boolean(r.is_boosted),
       placed_at: r.placed_at as string,
       fun_question: f?.question ?? null,
     };

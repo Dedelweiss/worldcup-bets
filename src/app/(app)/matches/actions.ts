@@ -18,12 +18,19 @@ function mapBetError(message: string): string {
   if (m.includes("odds have changed")) {
     return "Les cotes ont changé. Actualisez la page.";
   }
+  if (m.includes("no boost available")) {
+    return "Vous avez déjà utilisé votre Boost x2 pour ce tournoi.";
+  }
+  if (m.includes("boost only allowed")) {
+    return "Le boost ne s'applique qu'aux paris classiques 1N2.";
+  }
   return message;
 }
 
 export async function placeBetAction(
   matchId: number,
   selection: MatchResultSelection,
+  useBoost = false,
 ): Promise<PlaceBetResult> {
   await requireAuth();
 
@@ -51,6 +58,7 @@ export async function placeBetAction(
     p_selection: { selection },
     p_odd: odd,
     p_stake: 0,
+    p_use_boost: useBoost,
   });
 
   if (error) {

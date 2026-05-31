@@ -8,6 +8,7 @@ export const MOCK_DASHBOARD: DashboardData = {
     display_name: "Joueur Démo",
     avatar_url: null,
     points: 120,
+    boosts_available: 1,
   },
   upcomingMatches: [
     {

@@ -58,6 +58,8 @@ export interface Profile {
   avatar_url: string | null;
   /** Total de points (ex-colonne balance). */
   points: number;
+  /** Jokers Boost x2 restants (1 par tournoi par défaut). */
+  boosts_available?: number;
   role?: UserRole;
 }
 
@@ -163,6 +165,7 @@ export interface BetRow {
   odd_at_placement: number;
   stake: number;
   potential_payout: number;
+  is_boosted?: boolean;
   status: BetStatus;
   placed_at: string;
   match: Pick<

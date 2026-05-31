@@ -1,4 +1,4 @@
-import { Trophy } from "lucide-react";
+import { Trophy, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPoints } from "@/lib/format";
 import { getPlayerLabel } from "@/lib/profile/player-label";
@@ -25,6 +25,12 @@ export function WalletCard({ profile }: WalletCardProps) {
           Gagnés sur les paris réussis (selon la cote) ·{" "}
           {getPlayerLabel(profile)}
         </p>
+        {(profile.boosts_available ?? 0) > 0 && (
+          <p className="mt-2 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+            <Zap className="size-3" />
+            Boost x2 disponible (1 pari classique)
+          </p>
+        )}
       </CardContent>
     </Card>
   );

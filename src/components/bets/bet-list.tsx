@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { BetResultAnimation } from "@/components/bets/bet-result-animation";
 import { formatKickoff, formatOdd, formatPoints } from "@/lib/format";
+import { betDisplayPayout } from "@/lib/points";
 import type { BetRow, BetStatus } from "@/types/database";
 
 const STATUS_LABEL: Record<BetStatus, string> = {
@@ -75,6 +76,14 @@ export function BetList({ bets }: BetListProps) {
                       Fun
                     </Badge>
                   )}
+                  {bet.is_boosted && (
+                    <Badge
+                      variant="outline"
+                      className="border-amber-500/40 text-[10px] text-amber-600 dark:text-amber-400"
+                    >
+                      Boost x2
+                    </Badge>
+                  )}
                   <p className="font-medium">
                     {match?.home_team?.name} vs {match?.away_team?.name}
                   </p>
@@ -108,7 +117,13 @@ export function BetList({ bets }: BetListProps) {
                   {bet.status === "won" ? "Points gagnés" : "Points si gagné"}
                 </p>
                 <p className="font-semibold tabular-nums text-primary">
-                  +{formatPoints(bet.potential_payout)}
+                  +
+                  {formatPoints(
+                    betDisplayPayout(
+                      bet.potential_payout,
+                      bet.is_boosted,
+                    ),
+                  )}
                 </p>
               </div>
             </div>

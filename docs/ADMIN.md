@@ -28,6 +28,7 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 20. `019_player_username.sql` (pseudos joueurs uniques)
 21. `020_badges_achievements.sql` (trophées / succès + affichage classement)
 22. `021_badges_points_era.sql` (remplace Le Flambeur par succès basés sur points & cotes)
+23. `022_boost_x2_joker.sql` (joker Boost x2 unique sur paris classiques 1N2)
 
 ### Workflow admin CDM 2026
 

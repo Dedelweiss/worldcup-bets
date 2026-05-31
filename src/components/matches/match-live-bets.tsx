@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { formatOdd, formatPoints } from "@/lib/format";
+import { betDisplayPayout } from "@/lib/points";
 import { getPlayerLabel } from "@/lib/profile/player-label";
 import type { MatchLiveBetRow } from "@/lib/bets/match-live-bets";
 
@@ -85,7 +86,19 @@ export function MatchLiveBets({ bets, currentUserId }: MatchLiveBetsProps) {
                   Cote {formatOdd(bet.odd_at_placement)}
                 </p>
                 <p className="font-semibold text-primary">
-                  +{formatPoints(bet.potential_payout)} pts
+                  +
+                  {formatPoints(
+                    betDisplayPayout(
+                      bet.potential_payout,
+                      bet.is_boosted,
+                    ),
+                  )}{" "}
+                  pts
+                  {bet.is_boosted && (
+                    <span className="ml-1 text-[10px] font-normal text-amber-600 dark:text-amber-400">
+                      x2
+                    </span>
+                  )}
                 </p>
               </div>
             </li>

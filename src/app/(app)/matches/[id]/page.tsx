@@ -54,7 +54,11 @@ export default async function MatchBetPage({
         <MatchLiveBets bets={liveBets} currentUserId={profile.id} />
       )}
 
-      <BetSlip match={match} points={profile.points} />
+      <BetSlip
+        match={match}
+        points={profile.points}
+        boostsAvailable={profile.boosts_available ?? 0}
+      />
 
       {(funMarkets.length > 0 || openFunMarkets.length > 0) && (
         <section id="paris-fun" className="scroll-mt-24 space-y-4">

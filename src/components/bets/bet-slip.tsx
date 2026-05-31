@@ -3,28 +3,35 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Zap } from "lucide-react";
 import { placeBetAction } from "@/app/(app)/matches/actions";
 import { useClassicBettingOpen } from "@/hooks/use-match-betting-open";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { formatOdd, formatPoints } from "@/lib/format";
-import { pointsFromOdd } from "@/lib/points";
+import { pointsFromOdd, pointsIfWin } from "@/lib/points";
 import { cn } from "@/lib/utils";
 import type { MatchResultSelection, MatchWithTeams } from "@/types/database";
 
 interface BetSlipProps {
   match: MatchWithTeams;
   points: number;
+  boostsAvailable: number;
 }
 
-export function BetSlip({ match, points }: BetSlipProps) {
+export function BetSlip({ match, points, boostsAvailable }: BetSlipProps) {
   const router = useRouter();
   const bettingOpen = useClassicBettingOpen(match);
   const [selection, setSelection] = useState<MatchResultSelection | null>(null);
+  const [useBoost, setUseBoost] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const canUseBoost = boostsAvailable > 0;
 
   const outcomes = useMemo(
     () =>
@@ -60,7 +67,10 @@ export function BetSlip({ match, points }: BetSlipProps) {
           ? match.odd_away
           : null;
 
-  const pointsIfWin =
+  const boosted = useBoost && canUseBoost;
+  const pointsIfWinValue =
+    selectedOdd != null ? pointsIfWin(selectedOdd, boosted) : 0;
+  const basePointsIfWin =
     selectedOdd != null ? pointsFromOdd(selectedOdd) : 0;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -76,7 +86,7 @@ export function BetSlip({ match, points }: BetSlipProps) {
     setLoading(true);
     setError(null);
 
-    const result = await placeBetAction(match.id, selection);
+    const result = await placeBetAction(match.id, selection, boosted);
 
     if (!result.success) {
       setError(result.error);
@@ -121,7 +131,12 @@ export function BetSlip({ match, points }: BetSlipProps) {
                 Pari enregistré
               </motion.p>
               <p className="text-sm text-muted-foreground">
-                Si vous avez raison : +{formatPoints(pointsIfWin)} points
+                Si vous avez raison : +{formatPoints(pointsIfWinValue)} points
+                {boosted && (
+                  <Badge variant="outline" className="ml-2 text-[10px]">
+                    Boost x2
+                  </Badge>
+                )}
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => router.push("/bets")}>
@@ -159,36 +174,67 @@ export function BetSlip({ match, points }: BetSlipProps) {
                 <div className="space-y-2">
                   <Label>Résultat</Label>
                   <div className="grid grid-cols-3 gap-2">
-                    {outcomes.map((outcome) => (
-                      <motion.button
-                        key={outcome.key}
-                        type="button"
-                        layout
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => setSelection(outcome.key)}
-                        className={cn(
-                          "flex flex-col items-center rounded-lg border py-3 transition-colors",
-                          selection === outcome.key
-                            ? "border-primary bg-primary/15 ring-1 ring-primary"
-                            : "border-border bg-muted/20 hover:border-primary/50",
-                        )}
-                      >
-                        <span className="text-[10px] font-medium text-muted-foreground">
-                          {outcome.label}
-                        </span>
-                        <span className="mt-0.5 max-w-full truncate px-1 text-xs font-medium">
-                          {outcome.name}
-                        </span>
-                        <span className="mt-1 text-sm font-bold tabular-nums text-primary">
-                          {formatOdd(outcome.odd!)}
-                        </span>
-                        <span className="mt-0.5 text-[10px] text-muted-foreground">
-                          +{formatPoints(pointsFromOdd(outcome.odd!))} pts
-                        </span>
-                      </motion.button>
-                    ))}
+                    {outcomes.map((outcome) => {
+                      const base = pointsFromOdd(outcome.odd!);
+                      const display = boosted ? base * 2 : base;
+                      return (
+                        <motion.button
+                          key={outcome.key}
+                          type="button"
+                          layout
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => setSelection(outcome.key)}
+                          className={cn(
+                            "flex flex-col items-center rounded-lg border py-3 transition-colors",
+                            selection === outcome.key
+                              ? "border-primary bg-primary/15 ring-1 ring-primary"
+                              : "border-border bg-muted/20 hover:border-primary/50",
+                          )}
+                        >
+                          <span className="text-[10px] font-medium text-muted-foreground">
+                            {outcome.label}
+                          </span>
+                          <span className="mt-0.5 max-w-full truncate px-1 text-xs font-medium">
+                            {outcome.name}
+                          </span>
+                          <span className="mt-1 text-sm font-bold tabular-nums text-primary">
+                            {formatOdd(outcome.odd!)}
+                          </span>
+                          <span className="mt-0.5 text-[10px] text-muted-foreground">
+                            +{formatPoints(display)} pts
+                            {boosted && " (x2)"}
+                          </span>
+                        </motion.button>
+                      );
+                    })}
                   </div>
                 </div>
+
+                {canUseBoost && (
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-3">
+                    <div className="flex min-w-0 items-start gap-2">
+                      <Zap className="mt-0.5 size-4 shrink-0 text-amber-500" />
+                      <div>
+                        <Label
+                          htmlFor="boost-switch"
+                          className="cursor-pointer font-medium"
+                        >
+                          Utiliser mon Boost x2
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Un seul joker pour tout le tournoi · double vos points
+                          si vous gagnez
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      id="boost-switch"
+                      checked={useBoost}
+                      onCheckedChange={(checked) => setUseBoost(checked)}
+                      disabled={!selection}
+                    />
+                  </div>
+                )}
 
                 <AnimatePresence>
                   {selection && (
@@ -203,9 +249,19 @@ export function BetSlip({ match, points }: BetSlipProps) {
                           Points si gagné
                         </span>
                         <span className="font-bold tabular-nums text-primary">
-                          +{formatPoints(pointsIfWin)}
+                          +{formatPoints(pointsIfWinValue)}
+                          {boosted && (
+                            <span className="ml-1.5 text-xs font-normal text-muted-foreground line-through">
+                              {formatPoints(basePointsIfWin)}
+                            </span>
+                          )}
                         </span>
                       </div>
+                      {boosted && (
+                        <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                          Cote × 10 × 2 (Boost x2)
+                        </p>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
