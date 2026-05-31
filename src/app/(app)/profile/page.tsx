@@ -1,11 +1,20 @@
+import { PointsEvolutionChart } from "@/components/profile/points-evolution-chart";
 import { UsernameForm } from "@/components/profile/username-form";
-import { requireAuth } from "@/lib/auth-server";
+import { hasSupabaseConfig, requireAuth } from "@/lib/auth-server";
+import {
+  getMockPointsHistory,
+  getPointsHistory,
+} from "@/lib/profile/points-history";
 import { getPlayerLabel } from "@/lib/profile/player-label";
 
 export const metadata = { title: "Mon profil · WC2026 Pool" };
 
 export default async function ProfilePage() {
   const profile = await requireAuth();
+
+  const history = hasSupabaseConfig
+    ? await getPointsHistory(profile.id, profile.points)
+    : getMockPointsHistory(profile.points);
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
@@ -18,6 +27,8 @@ export default async function ProfilePage() {
           </span>
         </p>
       </div>
+
+      <PointsEvolutionChart points={history} currentPoints={profile.points} />
 
       <UsernameForm currentUsername={profile.username} />
     </div>
