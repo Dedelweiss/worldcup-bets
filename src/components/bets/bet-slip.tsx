@@ -174,7 +174,11 @@ export function BetSlip({
         )
       : null;
 
+  const hasClassicBet = pending.hasMatchResult || pending.hasExactScore;
+
   function switchMode(next: BetMode) {
+    if (pending.hasMatchResult && next === "exact") return;
+    if (pending.hasExactScore && next === "1n2") return;
     setMode(next);
     setError(null);
     if (next === "1n2") {
@@ -194,6 +198,12 @@ export function BetSlip({
     }
     if (pending.hasMatchResult) {
       setError("Vous avez déjà un pronostic 1N2 sur ce match.");
+      return;
+    }
+    if (pending.hasExactScore) {
+      setError(
+        "Vous avez déjà un score exact sur ce match. Un seul pronostic classique est autorisé.",
+      );
       return;
     }
 
@@ -220,6 +230,12 @@ export function BetSlip({
       setError("Vous avez déjà un score exact sur ce match.");
       return;
     }
+    if (pending.hasMatchResult) {
+      setError(
+        "Vous avez déjà un pronostic 1N2 sur ce match. Un seul pronostic classique est autorisé.",
+      );
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -238,9 +254,7 @@ export function BetSlip({
     router.refresh();
   }
 
-  const hasAnyLockedBet = pending.hasMatchResult || pending.hasExactScore;
-
-  if (!bettingOpen && !hasAnyLockedBet) {
+  if (!bettingOpen && !hasClassicBet) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground">
@@ -317,47 +331,52 @@ export function BetSlip({
               <div>
                 <CardTitle className="text-base">Mon pronostic</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Choisissez un mode — un pari par type et par match. Vos points :{" "}
+                  {hasClassicBet
+                    ? "Votre pronostic classique pour ce match."
+                    : "Un seul choix par match : 1N2 rapide ou score exact."}{" "}
+                  Vos points :{" "}
                   <span className="font-semibold text-primary tabular-nums">
                     {formatPoints(points)}
                   </span>
                 </p>
               </div>
 
-              <div
-                className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1"
-                role="tablist"
-                aria-label="Type de pari"
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={mode === "1n2"}
-                  onClick={() => switchMode("1n2")}
-                  className={cn(
-                    "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                    mode === "1n2"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
+              {!hasClassicBet && (
+                <div
+                  className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1"
+                  role="tablist"
+                  aria-label="Type de pari"
                 >
-                  1N2 rapide
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={mode === "exact"}
-                  onClick={() => switchMode("exact")}
-                  className={cn(
-                    "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                    mode === "exact"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  Score exact
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === "1n2"}
+                    onClick={() => switchMode("1n2")}
+                    className={cn(
+                      "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      mode === "1n2"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    1N2 rapide
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === "exact"}
+                    onClick={() => switchMode("exact")}
+                    className={cn(
+                      "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      mode === "exact"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Score exact
+                  </button>
+                </div>
+              )}
             </CardHeader>
 
             <CardContent>

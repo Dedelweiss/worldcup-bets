@@ -25,6 +25,9 @@ function mapBetError(message: string): string {
   if (m.includes("boost only allowed")) {
     return "Le boost ne s'applique qu'aux paris classiques 1N2.";
   }
+  if (m.includes("already have a classic bet")) {
+    return "Vous avez déjà un pronostic sur ce match (1N2 ou score exact, pas les deux).";
+  }
   return message;
 }
 
@@ -103,10 +106,14 @@ export async function placeExactScoreBetAction(
 
   if (error) {
     const m = error.message.toLowerCase();
-    if (m.includes("already have a pending exact score")) {
+    if (
+      m.includes("already have a pending exact score") ||
+      m.includes("already have a classic bet")
+    ) {
       return {
         success: false,
-        error: "Vous avez déjà un score exact en attente sur ce match.",
+        error:
+          "Vous avez déjà un pronostic sur ce match (1N2 ou score exact, pas les deux).",
       };
     }
     if (m.includes("invalid exact score")) {
