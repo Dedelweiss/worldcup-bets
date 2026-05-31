@@ -31,6 +31,8 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 23. `022_boost_x2_joker.sql` (joker Boost x2 unique sur paris classiques 1N2)
 24. `023_match_chat_reveal_bets.sql` (chat temps réel par match + paris publics après coup d'envoi)
 25. `024_match_delete_cascade.sql` (suppression match → cascade paris, fun, chat, transactions)
+26. `025_exact_score_precision.sql` (score exact : Tendance / Tout pile)
+27. `026_exact_score_odds_based_points.sql` (score exact indexé sur la cote du vainqueur implicite)
 
 ### Workflow admin CDM 2026
 

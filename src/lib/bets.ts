@@ -10,7 +10,7 @@ export async function getUserBets(userId: string): Promise<BetRow[]> {
     .select(
       `
       id, match_id, market_id, bet_type, selection, odd_at_placement,
-      stake, potential_payout, is_boosted, status, placed_at,
+      stake, potential_payout, is_boosted, score_precision, status, placed_at,
       match:matches (
         id, round, status, kickoff_at,
         home_team:teams!matches_home_team_id_fkey (id, name, code, logo_url),

@@ -30,6 +30,7 @@ function betEventLabel(
   home?: string | null,
   away?: string | null,
   funQuestion?: string | null,
+  scorePrecision?: string | null,
 ): string {
   const match = matchLabel(home, away);
   if (betType === "fun") {
@@ -39,7 +40,16 @@ function betEventLabel(
       : `Pari fun perdu${q}`;
   }
   if (betType === "exact_score") {
-    return status === "won" ? `Score exact · ${match}` : `Score exact raté · ${match}`;
+    if (status === "won" && scorePrecision === "exact") {
+      return `Tout pile · ${match}`;
+    }
+    if (status === "won" && scorePrecision === "tendance") {
+      return `Tendance · ${match}`;
+    }
+    if (status === "won") {
+      return `Score exact · ${match}`;
+    }
+    return `Score exact raté · ${match}`;
   }
   return status === "won" ? `Victoire · ${match}` : `Défaite · ${match}`;
 }
@@ -100,7 +110,7 @@ export async function getPointsHistory(
       .from("bets")
       .select(
         `
-        bet_type, status, potential_payout, settled_at,
+        bet_type, status, potential_payout, score_precision, settled_at,
         match:matches (
           home_team:teams!matches_home_team_id_fkey (name),
           away_team:teams!matches_away_team_id_fkey (name)
@@ -146,7 +156,14 @@ export async function getPointsHistory(
     events.push({
       at: settledAt,
       delta: status === "won" ? payout : 0,
-      label: betEventLabel(betType, status, home, away, funQuestion),
+      label: betEventLabel(
+        betType,
+        status,
+        home,
+        away,
+        funQuestion,
+        r.score_precision as string | null,
+      ),
       kind: status === "won" ? "win" : "loss",
     });
   }

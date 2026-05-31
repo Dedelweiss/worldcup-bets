@@ -19,6 +19,9 @@ export type FunMarketStatus = "open" | "closed" | "settled";
 
 export type BetStatus = "pending" | "won" | "lost" | "void" | "cancelled";
 
+/** Résultat d'un pari score exact : bon vainqueur ou score parfait. */
+export type ScorePrecision = "tendance" | "exact";
+
 export type UserRole = "user" | "admin";
 
 export type MatchStage =
@@ -161,11 +164,14 @@ export interface BetRow {
     selection?: MatchResultSelection;
     outcome?: FunOutcome;
     fun_market_id?: string;
+    home?: number;
+    away?: number;
   };
   odd_at_placement: number;
   stake: number;
   potential_payout: number;
   is_boosted?: boolean;
+  score_precision?: ScorePrecision | null;
   status: BetStatus;
   placed_at: string;
   match: Pick<

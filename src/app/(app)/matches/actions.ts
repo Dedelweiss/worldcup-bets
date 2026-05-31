@@ -74,6 +74,55 @@ export async function placeBetAction(
   return { success: true, betId: betId as string };
 }
 
+export async function placeExactScoreBetAction(
+  matchId: number,
+  homeScore: number,
+  awayScore: number,
+): Promise<PlaceBetResult> {
+  await requireAuth();
+
+  const match = await getMatchById(matchId);
+  if (!match) {
+    return { success: false, error: "Match introuvable." };
+  }
+
+  const { allowed, reason } = canPlaceBetOnMatch(match);
+  if (!allowed) {
+    return { success: false, error: reason ?? "Paris impossible." };
+  }
+
+  const supabase = await createClient();
+  const { data: betId, error } = await supabase.rpc("place_bet", {
+    p_match_id: matchId,
+    p_bet_type: "exact_score",
+    p_selection: { home: homeScore, away: awayScore },
+    p_odd: 3,
+    p_stake: 0,
+    p_use_boost: false,
+  });
+
+  if (error) {
+    const m = error.message.toLowerCase();
+    if (m.includes("already have a pending exact score")) {
+      return {
+        success: false,
+        error: "Vous avez déjà un score exact en attente sur ce match.",
+      };
+    }
+    if (m.includes("invalid exact score")) {
+      return { success: false, error: "Score invalide." };
+    }
+    return { success: false, error: mapBetError(error.message) };
+  }
+
+  revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/dashboard");
+  revalidatePath("/bets");
+  revalidatePath("/leaderboard");
+
+  return { success: true, betId: betId as string };
+}
+
 export type PostMatchCommentResult =
   | { success: true; comment: MatchCommentRow }
   | { success: false; error: string };

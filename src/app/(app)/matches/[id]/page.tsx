@@ -7,6 +7,7 @@ import { MatchHeader } from "@/components/matches/match-header";
 import { MatchLiveBets } from "@/components/matches/match-live-bets";
 import { requireAuth } from "@/lib/auth-server";
 import { getMatchRevealedBets } from "@/lib/bets/match-live-bets";
+import { getMatchUserPendingBets } from "@/lib/bets/match-user-bets";
 import { hasKickoffStarted } from "@/lib/format";
 import { getFunMarketsByMatch } from "@/lib/fun-markets";
 import { getMatchComments } from "@/lib/match-comments";
@@ -43,10 +44,11 @@ export default async function MatchBetPage({
   const adminEditHref =
     profile.role === "admin" ? `/admin/matches/${matchId}` : undefined;
 
-  const [funMarkets, revealedBets, comments] = await Promise.all([
+  const [funMarkets, revealedBets, comments, pendingBets] = await Promise.all([
     getFunMarketsByMatch(matchId),
     kickoffStarted ? getMatchRevealedBets(matchId) : Promise.resolve([]),
     kickoffStarted ? getMatchComments(matchId) : Promise.resolve([]),
+    getMatchUserPendingBets(matchId, profile.id),
   ]);
 
   const openFunMarkets = funMarkets.filter((m) => m.status === "open");
@@ -71,6 +73,7 @@ export default async function MatchBetPage({
         match={match}
         points={profile.points}
         boostsAvailable={profile.boosts_available ?? 0}
+        pending={pendingBets}
       />
 
       {(funMarkets.length > 0 || openFunMarkets.length > 0) && (

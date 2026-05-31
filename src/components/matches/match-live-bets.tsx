@@ -1,4 +1,8 @@
 import { Badge } from "@/components/ui/badge";
+import {
+  formatExactScoreSelection,
+  parseExactScoreSelection,
+} from "@/lib/exact-score";
 import { formatOdd, formatPoints } from "@/lib/format";
 import type { BetStatus } from "@/types/database";
 import { betDisplayPayout } from "@/lib/points";
@@ -14,6 +18,13 @@ const SELECTION_LABEL: Record<string, string> = {
 };
 
 function betChoiceLabel(bet: MatchLiveBetRow): string {
+  if (bet.bet_type === "exact_score") {
+    const parsed = parseExactScoreSelection(bet.selection);
+    if (parsed) {
+      return `Score ${formatExactScoreSelection(parsed.home, parsed.away)}`;
+    }
+    return "Score exact";
+  }
   if (bet.bet_type === "fun") {
     const out = bet.selection?.outcome ?? "";
     const q = bet.fun_question ? `${bet.fun_question} — ` : "";

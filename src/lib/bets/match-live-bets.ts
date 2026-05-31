@@ -10,6 +10,8 @@ export interface MatchLiveBetRow {
   selection: {
     selection?: MatchResultSelection;
     outcome?: string;
+    home?: number;
+    away?: number;
   };
   odd_at_placement: number;
   potential_payout: number;

@@ -38,7 +38,7 @@ export const MOCK_PLAYER_BADGES: PlayerBadge[] = [
   {
     id: "nostradamus",
     name: "Nostradamus",
-    description: "A gagné 3 paris « Score exact ».",
+    description: "A réussi 3 scores exacts « tout pile ».",
     icon_name: "sparkles",
     unlocked_at: new Date().toISOString(),
   },

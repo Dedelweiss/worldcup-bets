@@ -70,7 +70,11 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
     } else {
       const s = result.settlement;
       setMessage(
-        `Match clôturé — ${s?.bets_won ?? 0} pari(s) gagnant(s), ${s?.bets_lost ?? 0} perdant(s).`,
+        `Match clôturé — ${s?.bets_won ?? 0} pari(s) gagnant(s), ${s?.bets_lost ?? 0} perdant(s)${
+          s?.exact_score_exact != null
+            ? ` (${s.exact_score_exact} tout pile, ${s.exact_score_tendance ?? 0} tendance)`
+            : ""
+        }.`,
       );
       router.refresh();
     }
