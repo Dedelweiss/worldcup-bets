@@ -30,6 +30,7 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 22. `021_badges_points_era.sql` (remplace Le Flambeur par succès basés sur points & cotes)
 23. `022_boost_x2_joker.sql` (joker Boost x2 unique sur paris classiques 1N2)
 24. `023_match_chat_reveal_bets.sql` (chat temps réel par match + paris publics après coup d'envoi)
+25. `024_match_delete_cascade.sql` (suppression match → cascade paris, fun, chat, transactions)
 
 ### Workflow admin CDM 2026
 

@@ -291,27 +291,37 @@ export async function deleteMatchAction(matchId: number): Promise<ActionResult> 
   await requireAdmin();
   const supabase = await createClient();
 
-  const { count } = await supabase
-    .from("bets")
-    .select("id", { count: "exact", head: true })
-    .eq("match_id", matchId);
-
-  if (count && count > 0) {
-    return {
-      success: false,
-      error: "Impossible de supprimer : des paris existent sur ce match.",
-    };
-  }
-
-  const { error } = await supabase.from("matches").delete().eq("id", matchId);
+  const { data, error } = await supabase.rpc("admin_delete_match", {
+    p_match_id: matchId,
+  });
 
   if (error) {
-    return { success: false, error: error.message };
+    if (error.message.includes("Could not find the function")) {
+      const { error: deleteError } = await supabase
+        .from("matches")
+        .delete()
+        .eq("id", matchId);
+      if (deleteError) {
+        return { success: false, error: deleteError.message };
+      }
+    } else {
+      return { success: false, error: error.message };
+    }
   }
+
+  const summary = data as Record<string, unknown> | null;
 
   revalidatePath("/admin");
   revalidatePath("/dashboard");
-  return { success: true };
+  revalidatePath("/bets");
+  revalidatePath("/leaderboard");
+  revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/matches");
+
+  return {
+    success: true,
+    settlement: summary ?? undefined,
+  };
 }
 
 export async function createFunMarketAction(

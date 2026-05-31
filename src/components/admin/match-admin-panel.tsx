@@ -78,13 +78,25 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
   }
 
   async function handleDelete() {
-    if (!confirm("Supprimer ce match ?")) return;
+    if (
+      !confirm(
+        "Supprimer ce match et tout ce qui est lié (paris classiques & fun, chat, transactions) ?\n\nLes points déjà crédités aux joueurs ne sont pas recalculés automatiquement.",
+      )
+    ) {
+      return;
+    }
     setLoading("delete");
     const result = await deleteMatchAction(match.id);
     if (!result.success) {
       setError(result.error);
       setLoading(null);
     } else {
+      const s = result.settlement;
+      if (s && typeof s.bets_deleted === "number") {
+        setMessage(
+          `Match supprimé — ${s.bets_deleted} pari(s), ${s.fun_markets_deleted ?? 0} pari(s) fun, ${s.comments_deleted ?? 0} message(s) chat.`,
+        );
+      }
       router.push("/admin");
       router.refresh();
     }
