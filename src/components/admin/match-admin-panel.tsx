@@ -11,6 +11,7 @@ import {
 } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -160,18 +161,18 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
 
             <div className="space-y-2">
               <Label htmlFor="status">Statut</Label>
-              <select
+              <Select
                 id="status"
                 name="status"
                 defaultValue={match.status}
-                className="flex h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm"
+                className="h-8 bg-background"
               >
                 {STATUS_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

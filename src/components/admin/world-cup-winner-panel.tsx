@@ -8,6 +8,7 @@ import { TeamFlag } from "@/components/shared/team-flag";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { formatPoints } from "@/lib/format";
 import type { TournamentConfig } from "@/lib/tournament/config";
@@ -120,11 +121,11 @@ export function WorldCupWinnerPanel({ teams, config }: WorldCupWinnerPanelProps)
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="wc-winner">Vainqueur</Label>
-            <select
+            <Select
               id="wc-winner"
               value={teamId}
               onChange={(e) => setTeamId(e.target.value)}
-              className="flex h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm"
+              className="bg-background"
               required
             >
               <option value="">— Équipe —</option>
@@ -136,7 +137,7 @@ export function WorldCupWinnerPanel({ teams, config }: WorldCupWinnerPanelProps)
                     : ""}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="wc-bonus">Points bonus par joueur</Label>

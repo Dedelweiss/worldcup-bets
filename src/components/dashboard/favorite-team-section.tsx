@@ -7,6 +7,7 @@ import { setFavoriteTeamAction } from "@/app/(app)/dashboard/favorite-team-actio
 import { TeamFlag } from "@/components/shared/team-flag";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { formatPoints } from "@/lib/format";
 import type { ProfileFavoriteTeam } from "@/lib/profile/favorite-team";
 import type { TournamentConfig } from "@/lib/tournament/config";
@@ -147,13 +148,13 @@ export function FavoriteTeamSection({
             className="h-8 text-sm"
             aria-label="Rechercher une équipe"
           />
-          <select
+          <Select
             value={selectedId}
             onChange={(e) => {
               setSelectedId(e.target.value);
               setError(null);
             }}
-            className="flex h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm"
+            className="bg-background"
             aria-label="Choisir une équipe"
           >
             <option value="">— Sélectionner —</option>
@@ -165,7 +166,7 @@ export function FavoriteTeamSection({
                   : ""}
               </option>
             ))}
-          </select>
+          </Select>
           <Button
             type="button"
             size="sm"

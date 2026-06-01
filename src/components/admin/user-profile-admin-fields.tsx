@@ -120,7 +120,7 @@ export function UserProfileAdminFields({
               setError(null);
               setMessage(null);
             }}
-            className={cn(fieldClass, "min-w-0 flex-1 truncate pr-7")}
+            className={cn(fieldClass, "min-w-0 flex-1 truncate")}
           >
             <option value="">Aucune</option>
             {teams.map((t) => (

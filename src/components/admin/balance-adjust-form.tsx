@@ -5,6 +5,7 @@ import { useState } from "react";
 import { adjustBalanceAction } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatPoints } from "@/lib/format";
@@ -52,11 +53,11 @@ export function BalanceAdjustForm({ players }: { players: PlayerOption[] }) {
         <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
           <div className="space-y-2">
             <Label htmlFor="userId">Joueur</Label>
-            <select
+            <Select
               id="userId"
               name="userId"
               required
-              className="flex h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm"
+              className="h-8 bg-background"
             >
               <option value="">Choisir…</option>
               {players.map((p) => (
@@ -65,7 +66,7 @@ export function BalanceAdjustForm({ players }: { players: PlayerOption[] }) {
                   {formatPoints(p.points)} pts
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="amount">Points (+ / −)</Label>
