@@ -201,6 +201,8 @@ export interface BetRow {
     | "status"
     | "kickoff_at"
     | "is_golden"
+    | "home_score"
+    | "away_score"
     | "home_team"
     | "away_team"
   > | null;

@@ -22,8 +22,13 @@ export const MATCH_SELECT = `
   away_team:teams!matches_away_team_id_fkey (id, name, code, logo_url)
 `;
 
-export async function getMatchById(id: number): Promise<MatchWithTeams | null> {
-  await syncLiveMatches();
+export async function getMatchById(
+  id: number,
+  options?: { skipLiveSync?: boolean },
+): Promise<MatchWithTeams | null> {
+  if (!options?.skipLiveSync) {
+    await syncLiveMatches();
+  }
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("matches")

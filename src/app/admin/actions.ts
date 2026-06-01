@@ -17,6 +17,17 @@ export type ActionResult =
   | { success: true; matchId?: number; settlement?: Record<string, unknown> }
   | { success: false; error: string };
 
+/** Champ score vide du formulaire admin → NULL en base (efface le score). */
+function parseOptionalAdminScore(
+  raw: FormDataEntryValue | null,
+): number | null {
+  if (raw === null) return null;
+  const trimmed = String(raw).trim();
+  if (trimmed === "") return null;
+  const n = Number(trimmed);
+  return Number.isNaN(n) ? null : n;
+}
+
 export async function createLeagueAction(
   name: string,
 ): Promise<ActionResult & { leagueId?: string }> {
@@ -230,16 +241,8 @@ export async function updateMatchAction(formData: FormData): Promise<ActionResul
 
   const matchId = Number(formData.get("matchId"));
   const status = (formData.get("status") as MatchStatus) || null;
-  const homeScoreRaw = formData.get("homeScore");
-  const awayScoreRaw = formData.get("awayScore");
-  const homeScore =
-    homeScoreRaw === "" || homeScoreRaw === null
-      ? null
-      : Number(homeScoreRaw);
-  const awayScore =
-    awayScoreRaw === "" || awayScoreRaw === null
-      ? null
-      : Number(awayScoreRaw);
+  const homeScore = parseOptionalAdminScore(formData.get("homeScore"));
+  const awayScore = parseOptionalAdminScore(formData.get("awayScore"));
 
   const isGoldenRaw = formData.get("isGolden");
   const p_is_golden =
@@ -249,25 +252,12 @@ export async function updateMatchAction(formData: FormData): Promise<ActionResul
         ? false
         : null;
 
-  const bothScoresSet =
-    homeScore !== null &&
-    !Number.isNaN(homeScore) &&
-    awayScore !== null &&
-    !Number.isNaN(awayScore);
-
-  const effectiveStatus: MatchStatus | null =
-    bothScoresSet &&
-    status !== "finished" &&
-    status !== "cancelled" &&
-    status !== "postponed"
-      ? "live"
-      : status;
-
   const { error } = await supabase.rpc("admin_update_match", {
     p_match_id: matchId,
-    p_status: effectiveStatus,
+    p_status: status,
     p_home_score: homeScore,
     p_away_score: awayScore,
+    p_apply_scores: true,
     p_odd_home: formData.get("oddHome")
       ? Number(formData.get("oddHome"))
       : null,
@@ -281,7 +271,12 @@ export async function updateMatchAction(formData: FormData): Promise<ActionResul
   });
 
   if (error) {
-    return { success: false, error: error.message };
+    const msg = error.message.includes("Could not find the function")
+      ? "Exécutez les migrations Supabase 040 et 041 (admin match / statut à venir)."
+      : error.message.includes("suppress_auto_live")
+        ? "Exécutez supabase/migrations/041_fix_scheduled_status_sync.sql dans Supabase."
+        : error.message;
+    return { success: false, error: msg };
   }
 
   revalidatePath(`/admin/matches/${matchId}`);
@@ -290,6 +285,123 @@ export async function updateMatchAction(formData: FormData): Promise<ActionResul
   revalidatePath("/matches");
   revalidatePath(`/matches/${matchId}`);
   return { success: true, matchId };
+}
+
+export async function correctMatchResultAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const matchId = Number(formData.get("matchId"));
+  const status = (formData.get("status") as MatchStatus) || null;
+  const homeScore = Number(formData.get("homeScore"));
+  const awayScore = Number(formData.get("awayScore"));
+
+  if (
+    Number.isNaN(matchId) ||
+    Number.isNaN(homeScore) ||
+    Number.isNaN(awayScore)
+  ) {
+    return { success: false, error: "Score final requis pour la correction." };
+  }
+
+  const isGoldenRaw = formData.get("isGolden");
+  const p_is_golden =
+    isGoldenRaw === "true" || isGoldenRaw === "on"
+      ? true
+      : isGoldenRaw === "false" || isGoldenRaw === "off"
+        ? false
+        : null;
+
+  const { data, error } = await supabase.rpc("admin_correct_match_result", {
+    p_match_id: matchId,
+    p_home_score: homeScore,
+    p_away_score: awayScore,
+    p_status: status,
+    p_odd_home: formData.get("oddHome")
+      ? Number(formData.get("oddHome"))
+      : null,
+    p_odd_draw: formData.get("oddDraw")
+      ? Number(formData.get("oddDraw"))
+      : null,
+    p_odd_away: formData.get("oddAway")
+      ? Number(formData.get("oddAway"))
+      : null,
+    p_is_golden,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Exécutez supabase/migrations/040_admin_match_correction.sql dans Supabase."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  revalidatePath(`/admin/matches/${matchId}`);
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
+  revalidatePath("/matches");
+  revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/leaderboard");
+  revalidatePath("/bets");
+
+  return {
+    success: true,
+    matchId,
+    settlement: data as Record<string, unknown>,
+  };
+}
+
+export async function reopenMatchAction(matchId: number): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("reopen_match_settlement", {
+    p_match_id: matchId,
+    p_target_status: null,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Exécutez supabase/migrations/040_admin_match_correction.sql dans Supabase."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  revalidatePath(`/admin/matches/${matchId}`);
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
+  revalidatePath("/leaderboard");
+  revalidatePath("/bets");
+  revalidatePath(`/matches/${matchId}`);
+
+  return { success: true, matchId, settlement: data as Record<string, unknown> };
+}
+
+export async function resettleMatchAction(matchId: number): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("admin_resettle_match", {
+    p_match_id: matchId,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Exécutez supabase/migrations/040_admin_match_correction.sql dans Supabase."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  revalidatePath(`/admin/matches/${matchId}`);
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
+  revalidatePath("/leaderboard");
+  revalidatePath("/bets");
+  revalidatePath(`/matches/${matchId}`);
+
+  return { success: true, matchId, settlement: data as Record<string, unknown> };
 }
 
 export async function settleMatchAction(matchId: number): Promise<ActionResult> {

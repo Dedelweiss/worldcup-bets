@@ -127,6 +127,14 @@ export function MatchesExplorer({
         >
           Voir l&apos;arbre →
         </Link>
+        {filter === "group" && (
+          <Link
+            href="/matches/quick"
+            className="rounded-lg border border-lime-400/40 bg-lime-400/10 px-4 py-2 text-sm font-medium text-lime-300 hover:bg-lime-400/20"
+          >
+            Mode rapide ⚡
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2">

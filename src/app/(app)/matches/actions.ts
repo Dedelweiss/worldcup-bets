@@ -71,6 +71,8 @@ export async function placeBetAction(
   }
 
   revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/matches");
+  revalidatePath("/matches/quick");
   revalidatePath("/dashboard");
   revalidatePath("/bets");
   revalidatePath("/leaderboard");

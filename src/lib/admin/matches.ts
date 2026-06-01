@@ -3,13 +3,11 @@ import {
   MATCH_SELECT,
   normalizeMatch,
 } from "@/lib/matches";
-import { syncLiveMatches } from "@/lib/matches/sync-live";
 import { createClient } from "@/lib/supabase/server";
 
 export { getMatchById, normalizeMatch, MATCH_SELECT };
 
 export async function getAdminMatches() {
-  await syncLiveMatches();
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("matches")
@@ -21,7 +19,7 @@ export async function getAdminMatches() {
 }
 
 export async function getAdminMatch(id: number) {
-  return getMatchById(id);
+  return getMatchById(id, { skipLiveSync: true });
 }
 
 export async function getPendingBetsCount(matchId: number) {

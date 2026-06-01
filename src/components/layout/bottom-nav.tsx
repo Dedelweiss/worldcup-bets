@@ -18,7 +18,8 @@ function isActive(pathname: string, href: string): boolean {
     return (
       pathname === "/matches" ||
       pathname.startsWith("/matches/") ||
-      pathname.startsWith("/matches?")
+      pathname.startsWith("/matches?") ||
+      pathname === "/matches/quick"
     );
   }
   return pathname.startsWith(`${href}/`);

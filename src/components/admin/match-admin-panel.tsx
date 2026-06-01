@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ExternalLink, Sparkles } from "lucide-react";
 import {
+  correctMatchResultAction,
   deleteMatchAction,
+  reopenMatchAction,
+  resettleMatchAction,
   settleMatchAction,
   updateMatchAction,
 } from "@/app/admin/actions";
@@ -77,20 +80,88 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
     const formData = new FormData(e.currentTarget);
     formData.set("isGolden", form.isGolden ? "true" : "false");
 
-    const result = await updateMatchAction(formData);
+    const home = String(formData.get("homeScore") ?? "");
+    const away = String(formData.get("awayScore") ?? "");
+    const scoresSet = home !== "" && away !== "";
+    const scoresChanged =
+      scoresSet &&
+      (Number(home) !== match.home_score || Number(away) !== match.away_score);
+    const useCorrection =
+      match.status === "finished" && scoresSet && scoresChanged;
+
+    const result = useCorrection
+      ? await correctMatchResultAction(formData)
+      : await updateMatchAction(formData);
+
     if (!result.success) {
       setError(result.error);
     } else {
       const status = String(formData.get("status") ?? "");
-      const home = String(formData.get("homeScore") ?? "");
-      const away = String(formData.get("awayScore") ?? "");
-      const scoresSet = home !== "" && away !== "";
+      if (useCorrection) {
+        const s = result.settlement;
+        setMessage(
+          `Résultat corrigé — ${s?.bets_won ?? 0} pari(s) gagnant(s), ${s?.bets_lost ?? 0} perdant(s). Points recalculés.`,
+        );
+      } else if (status === "scheduled") {
+        setMessage("Match repassé à « À venir ».");
+      } else if (status === "live" && scoresSet) {
+        setMessage(
+          "Match mis à jour — en direct (scores visibles pour les joueurs).",
+        );
+      } else if (status === "live") {
+        setMessage("Match mis à jour — passé en direct.");
+      } else {
+        setMessage("Match mis à jour.");
+      }
+      router.refresh();
+    }
+    setLoading(null);
+  }
+
+  async function handleReopen() {
+    if (
+      !confirm(
+        "Rouvrir ce match ? Les paris classiques repassent en attente et les points déjà crédités sont retirés.",
+      )
+    ) {
+      return;
+    }
+    setLoading("reopen");
+    setError(null);
+    setMessage(null);
+
+    const result = await reopenMatchAction(match.id);
+    if (!result.success) {
+      setError(result.error);
+    } else {
+      const s = result.settlement;
       setMessage(
-        status === "live" && scoresSet
-          ? "Match mis à jour — en direct (scores visibles pour les joueurs)."
-          : status === "live"
-            ? "Match mis à jour — passé en direct."
-            : "Match mis à jour.",
+        `Match rouvert — ${s?.bets_reopened ?? 0} pari(s) en attente, ${s?.points_reversed ?? 0} pt retirés.`,
+      );
+      router.refresh();
+    }
+    setLoading(null);
+  }
+
+  async function handleResettle() {
+    if (
+      !confirm(
+        "Recalculer les points avec le score actuel ? Les anciens gains seront annulés puis redistribués.",
+      )
+    ) {
+      return;
+    }
+    setLoading("resettle");
+    setError(null);
+    setMessage(null);
+
+    const result = await resettleMatchAction(match.id);
+    if (!result.success) {
+      setError(result.error);
+    } else {
+      const s = result.settlement;
+      setMessage(
+        `Points recalculés — ${s?.bets_won ?? 0} gagnant(s), ${s?.bets_lost ?? 0} perdant(s).`,
       );
       router.refresh();
     }
@@ -100,7 +171,7 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
   async function handleSettle() {
     if (
       !confirm(
-        "Clôturer ce match et créditer les gagnants ? Cette action est irréversible.",
+        "Clôturer ce match et créditer les gagnants selon le score enregistré ?",
       )
     ) {
       return;
@@ -151,10 +222,18 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
     }
   }
 
+  const scoresComplete =
+    form.homeScore !== "" &&
+    form.awayScore !== "" &&
+    !Number.isNaN(Number(form.homeScore)) &&
+    !Number.isNaN(Number(form.awayScore));
+
   const canSettle =
-    match.status !== "finished" &&
-    match.home_score !== null &&
-    match.away_score !== null;
+    match.status !== "finished" && scoresComplete;
+
+  const canResettle = match.status === "finished" && scoresComplete;
+
+  const canReopen = match.status === "finished";
 
   return (
     <div className="space-y-6">
@@ -210,6 +289,11 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
                   </option>
                 ))}
               </Select>
+              <p className="text-xs text-muted-foreground">
+                « À venir » retire le match du direct même si un score est saisi.
+                Pour corriger un match terminé, modifiez le score puis enregistrez
+                (recalcul automatique des points).
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -325,22 +409,50 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
             {pendingBetsCount} pari(s) en attente sur le résultat de ce match.
-            Saisissez
-            le score final, enregistrez, puis clôturez pour créditer les
-            gagnants.
+            Saisissez le score final, enregistrez, puis clôturez pour créditer
+            les gagnants.
           </p>
-          <Button
-            type="button"
-            disabled={!canSettle || loading === "settle"}
-            onClick={handleSettle}
-            className="w-full sm:w-auto"
-          >
-            {loading === "settle"
-              ? "Clôture en cours…"
-              : "Clôturer le match & payer les gagnants"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              disabled={!canSettle || loading === "settle"}
+              onClick={handleSettle}
+            >
+              {loading === "settle"
+                ? "Clôture en cours…"
+                : "Clôturer & payer les gagnants"}
+            </Button>
+            {canReopen && (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={loading === "reopen"}
+                onClick={handleReopen}
+              >
+                {loading === "reopen"
+                  ? "Réouverture…"
+                  : "Rouvrir le match (sans reclôturer)"}
+              </Button>
+            )}
+            {canResettle && (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={loading === "resettle"}
+                onClick={handleResettle}
+              >
+                {loading === "resettle"
+                  ? "Recalcul…"
+                  : "Recalculer les points (score actuel)"}
+              </Button>
+            )}
+          </div>
           {match.status === "finished" && (
-            <p className="text-sm text-primary">Match déjà clôturé.</p>
+            <p className="text-sm text-muted-foreground">
+              Match clôturé. Pour corriger le score : modifiez-le ci-dessus puis
+              « Enregistrer », ou utilisez « Recalculer » si le score est déjà à
+              jour.
+            </p>
           )}
         </CardContent>
       </Card>

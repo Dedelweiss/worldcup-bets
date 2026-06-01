@@ -71,10 +71,13 @@ export function BetSlip({
   const [awayScore, setAwayScore] = useState(() =>
     pending.exactScore != null ? String(pending.exactScore.away) : "",
   );
-  const [useBoost, setUseBoost] = useState(false);
+  const [useBoost, setUseBoost] = useState(
+    () => pending.matchResult?.is_boosted ?? false,
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<"1n2" | "exact" | null>(null);
+  const [savedNotice, setSavedNotice] = useState<string | null>(null);
 
   const canUseBoost = boostsAvailable > 0;
   const isGolden = match.is_golden ?? false;
@@ -115,34 +118,46 @@ export function BetSlip({
 
   const locked1n2 = pending.matchResult;
   const lockedExact = pending.exactScore;
-  const active1n2Selection = locked1n2?.selection ?? selection;
-  const displayHomeScore = lockedExact
-    ? String(lockedExact.home)
-    : homeScore;
-  const displayAwayScore = lockedExact
-    ? String(lockedExact.away)
-    : awayScore;
-  const lockedExactParsed = lockedExact
-    ? { home: lockedExact.home, away: lockedExact.away }
-    : parsedScore;
-  const lockedImpliedWinner = lockedExactParsed
-    ? impliedMatchResult(lockedExactParsed.home, lockedExactParsed.away)
-    : impliedWinner;
-  const lockedImpliedOdd =
-    lockedImpliedWinner != null
-      ? impliedOddFromMatch(match, lockedImpliedWinner)
-      : impliedOdd;
-  const lockedTendancePts =
-    lockedImpliedOdd != null
+  const canEditClassic = bettingOpen;
+
+  /** En édition, l’UI suit l’état local ; après coup d’envoi, les valeurs figées du pari. */
+  const active1n2Selection = canEditClassic
+    ? selection
+    : (locked1n2?.selection ?? selection);
+  const displayHomeScore = canEditClassic
+    ? homeScore
+    : lockedExact
+      ? String(lockedExact.home)
+      : homeScore;
+  const displayAwayScore = canEditClassic
+    ? awayScore
+    : lockedExact
+      ? String(lockedExact.away)
+      : awayScore;
+
+  const previewExactParsed = canEditClassic
+    ? parsedScore
+    : lockedExact
+      ? { home: lockedExact.home, away: lockedExact.away }
+      : parsedScore;
+  const previewImpliedWinner = previewExactParsed
+    ? impliedMatchResult(previewExactParsed.home, previewExactParsed.away)
+    : null;
+  const previewImpliedOdd =
+    previewImpliedWinner != null
+      ? impliedOddFromMatch(match, previewImpliedWinner)
+      : null;
+  const previewTendancePts =
+    previewImpliedOdd != null
       ? goldenMatchPoints(
-          exactScorePointsTendance(lockedImpliedOdd),
+          exactScorePointsTendance(previewImpliedOdd),
           isGolden,
         )
       : null;
-  const lockedPerfectPts =
-    lockedImpliedOdd != null
+  const previewPerfectPts =
+    previewImpliedOdd != null
       ? goldenMatchPoints(
-          exactScorePointsPerfect(lockedImpliedOdd),
+          exactScorePointsPerfect(previewImpliedOdd),
           isGolden,
         )
       : null;
@@ -157,17 +172,52 @@ export function BetSlip({
 
   const hasClassicBet = pending.hasMatchResult || pending.hasExactScore;
 
+  const has1n2Change =
+    selection != null &&
+    (pending.matchResult == null ||
+      selection !== pending.matchResult.selection ||
+      useBoost !== pending.matchResult.is_boosted);
+
+  const hasExactChange =
+    parsedScore != null &&
+    (pending.exactScore == null ||
+      parsedScore.home !== pending.exactScore.home ||
+      parsedScore.away !== pending.exactScore.away);
+
   function switchMode(next: BetMode) {
-    if (pending.hasMatchResult && next === "exact") return;
-    if (pending.hasExactScore && next === "1n2") return;
+    if (!canEditClassic) {
+      if (pending.hasMatchResult && next === "exact") return;
+      if (pending.hasExactScore && next === "1n2") return;
+    }
     setMode(next);
+    setSavedNotice(null);
     setError(null);
+
     if (next === "1n2") {
-      setHomeScore("");
-      setAwayScore("");
+      if (pending.matchResult) {
+        setSelection(pending.matchResult.selection);
+        setUseBoost(pending.matchResult.is_boosted);
+      } else if (!pending.hasExactScore) {
+        setSelection(null);
+        setUseBoost(false);
+      }
+      if (!canEditClassic && !pending.hasExactScore) {
+        setHomeScore("");
+        setAwayScore("");
+      }
     } else {
-      setSelection(null);
-      setUseBoost(false);
+      const scoresEmpty = homeScore === "" && awayScore === "";
+      if (scoresEmpty && pending.exactScore) {
+        setHomeScore(String(pending.exactScore.home));
+        setAwayScore(String(pending.exactScore.away));
+      } else if (!pending.hasMatchResult && scoresEmpty) {
+        setHomeScore("");
+        setAwayScore("");
+      }
+      if (!pending.hasMatchResult) {
+        setSelection(null);
+        setUseBoost(false);
+      }
     }
   }
 
@@ -177,24 +227,34 @@ export function BetSlip({
       setError("Choisissez 1, N ou 2.");
       return;
     }
-    if (pending.hasMatchResult) {
+    if (!canEditClassic && pending.hasMatchResult) {
       setError(MATCH_RESULT_COPY.alreadyOnMatch);
       return;
     }
-    if (pending.hasExactScore) {
+    if (!canEditClassic && pending.hasExactScore) {
       setError(
         "Vous avez déjà un score exact sur ce match. Un seul pronostic classique est autorisé.",
       );
       return;
     }
+    if (pending.hasMatchResult && !has1n2Change) {
+      setSavedNotice(MATCH_RESULT_COPY.pronosticUpdated);
+      return;
+    }
 
     setLoading(true);
     setError(null);
+    setSavedNotice(null);
     const result = await placeBetAction(match.id, selection, boosted);
     setLoading(false);
 
     if (!result.success) {
       setError(result.error);
+      return;
+    }
+    if (pending.hasMatchResult) {
+      setSavedNotice(MATCH_RESULT_COPY.pronosticUpdated);
+      router.refresh();
       return;
     }
     setSuccess("1n2");
@@ -207,19 +267,24 @@ export function BetSlip({
       setError("Saisissez un score valide pour chaque équipe (0 à 20).");
       return;
     }
-    if (pending.hasExactScore) {
+    if (!canEditClassic && pending.hasExactScore) {
       setError("Vous avez déjà un score exact sur ce match.");
       return;
     }
-    if (pending.hasMatchResult) {
+    if (!canEditClassic && pending.hasMatchResult) {
       setError(
         `${MATCH_RESULT_COPY.alreadyOnMatch} Un seul pronostic classique est autorisé.`,
       );
       return;
     }
+    if (pending.hasExactScore && !hasExactChange) {
+      setSavedNotice(MATCH_RESULT_COPY.exactScoreUpdated);
+      return;
+    }
 
     setLoading(true);
     setError(null);
+    setSavedNotice(null);
     const result = await placeExactScoreBetAction(
       match.id,
       parsedScore.home,
@@ -229,6 +294,11 @@ export function BetSlip({
 
     if (!result.success) {
       setError(result.error);
+      return;
+    }
+    if (pending.hasExactScore) {
+      setSavedNotice(MATCH_RESULT_COPY.exactScoreUpdated);
+      router.refresh();
       return;
     }
     setSuccess("exact");
@@ -312,9 +382,11 @@ export function BetSlip({
               <div>
                 <CardTitle className="text-base">Mon pronostic</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {hasClassicBet
-                    ? "Votre pronostic classique pour ce match."
-                    : MATCH_RESULT_COPY.oneChoicePerMatch}{" "}
+                  {hasClassicBet && canEditClassic
+                    ? MATCH_RESULT_COPY.modifyHint
+                    : hasClassicBet
+                      ? "Votre pronostic classique pour ce match."
+                      : MATCH_RESULT_COPY.oneChoicePerMatch}{" "}
                   Vos points :{" "}
                   <span className="font-semibold text-primary tabular-nums">
                     {formatPoints(points)}
@@ -322,7 +394,7 @@ export function BetSlip({
                 </p>
               </div>
 
-              {!hasClassicBet && (
+              {(!hasClassicBet || canEditClassic) && (
                 <div
                   className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1"
                   role="tablist"
@@ -369,13 +441,18 @@ export function BetSlip({
                     </p>
                   )}
 
-                  {pending.hasMatchResult && locked1n2 && (
+                  {pending.hasMatchResult && locked1n2 && !canEditClassic && (
                     <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-primary">
                       <Lock className="size-4 shrink-0" aria-hidden />
                       <span>
                         {MATCH_RESULT_COPY.pronosticSavedResult} — non modifiable
                       </span>
                     </div>
+                  )}
+                  {savedNotice && mode === "1n2" && (
+                    <p className="rounded-lg border border-lime-400/30 bg-lime-400/10 px-3 py-2 text-sm text-lime-300">
+                      {savedNotice}
+                    </p>
                   )}
 
                   <div className="space-y-2">
@@ -396,16 +473,17 @@ export function BetSlip({
                           <button
                             key={outcome.key}
                             type="button"
-                            disabled={pending.hasMatchResult || !bettingOpen}
-                            onClick={() => setSelection(outcome.key)}
+                            disabled={!canEditClassic}
+                            onClick={() => {
+                              setSelection(outcome.key);
+                              setSavedNotice(null);
+                            }}
                             className={cn(
                               "flex flex-col items-center rounded-lg border py-3 transition-colors",
-                              pending.hasMatchResult &&
-                                "cursor-default disabled:opacity-100",
-                              !pending.hasMatchResult && "disabled:opacity-50",
+                              !canEditClassic && "cursor-default opacity-60",
                               isChosen
                                 ? "border-primary bg-primary/15 ring-2 ring-primary"
-                                : pending.hasMatchResult
+                                : !canEditClassic
                                   ? "border-border/50 bg-muted/10 opacity-40"
                                   : "border-border bg-muted/20 hover:border-primary/50",
                             )}
@@ -428,7 +506,7 @@ export function BetSlip({
                     </div>
                   </div>
 
-                  {canUseBoost && !pending.hasMatchResult && (
+                  {canUseBoost && canEditClassic && (
                     <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-3">
                       <div className="flex min-w-0 items-start gap-2">
                         <Zap className="mt-0.5 size-4 shrink-0 text-amber-500" />
@@ -495,7 +573,7 @@ export function BetSlip({
                     </p>
                   )}
 
-                  {pending.hasMatchResult ? (
+                  {!canEditClassic && pending.hasMatchResult ? (
                     <Button type="button" className="w-full" disabled>
                       <Lock className="mr-2 size-4" aria-hidden />
                       {MATCH_RESULT_COPY.pronosticLocked}
@@ -504,9 +582,18 @@ export function BetSlip({
                     <Button
                       type="submit"
                       className="w-full"
-                      disabled={loading || !selection || !bettingOpen}
+                      disabled={
+                        loading ||
+                        !selection ||
+                        !bettingOpen ||
+                        (pending.hasMatchResult && !has1n2Change)
+                      }
                     >
-                      {loading ? "Validation…" : MATCH_RESULT_COPY.validate}
+                      {loading
+                        ? "Validation…"
+                        : pending.hasMatchResult
+                          ? MATCH_RESULT_COPY.update
+                          : MATCH_RESULT_COPY.validate}
                     </Button>
                   )}
                 </form>
@@ -519,11 +606,16 @@ export function BetSlip({
                     </p>
                   )}
 
-                  {pending.hasExactScore && lockedExact && (
+                  {pending.hasExactScore && lockedExact && !canEditClassic && (
                     <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
                       <Lock className="size-4 shrink-0" aria-hidden />
                       <span>Score exact enregistré — non modifiable</span>
                     </div>
+                  )}
+                  {savedNotice && mode === "exact" && (
+                    <p className="rounded-lg border border-lime-400/30 bg-lime-400/10 px-3 py-2 text-sm text-lime-300">
+                      {savedNotice}
+                    </p>
                   )}
 
                   <div className="space-y-2">
@@ -532,25 +624,26 @@ export function BetSlip({
                         ? "Votre score exact"
                         : "Score final prédit"}
                     </Label>
-                    {!pending.hasExactScore && (
-                      <p className="text-xs text-muted-foreground">
-                        Utilisez +/− ou un raccourci — le vainqueur est calculé
-                        automatiquement.
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {pending.hasExactScore && canEditClassic
+                        ? "Modifiez le score avec +/− ou un raccourci."
+                        : "Utilisez +/− ou un raccourci — le vainqueur est calculé automatiquement."}
+                    </p>
                     <ScorePicker
                       homeTeam={match.home_team}
                       awayTeam={match.away_team}
                       homeScore={displayHomeScore}
                       awayScore={displayAwayScore}
-                      disabled={pending.hasExactScore || !bettingOpen}
+                      disabled={!canEditClassic}
                       onHomeChange={(v) => {
                         setHomeScore(v);
                         setError(null);
+                        setSavedNotice(null);
                       }}
                       onAwayChange={(v) => {
                         setAwayScore(v);
                         setError(null);
+                        setSavedNotice(null);
                       }}
                     />
                   </div>
@@ -561,11 +654,10 @@ export function BetSlip({
                     </p>
                   )}
 
-                  {((pending.hasExactScore && lockedExactParsed) ||
-                    (parsedScore && !pending.hasExactScore)) &&
-                    lockedImpliedOdd != null &&
-                    lockedTendancePts != null &&
-                    lockedPerfectPts != null && (
+                  {previewExactParsed &&
+                    previewImpliedOdd != null &&
+                    previewTendancePts != null &&
+                    previewPerfectPts != null && (
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm">
                         <Target className="size-4 shrink-0 text-primary" />
@@ -573,7 +665,7 @@ export function BetSlip({
                           Vainqueur selon votre score :{" "}
                           <strong>
                             {matchResultLabel(
-                              lockedImpliedWinner!,
+                              previewImpliedWinner!,
                               match.home_team.name,
                               match.away_team.name,
                             )}
@@ -583,7 +675,7 @@ export function BetSlip({
 
                       <div className="grid grid-cols-3 gap-2">
                         {outcomes.map((outcome) => {
-                          const active = lockedImpliedWinner === outcome.key;
+                          const active = previewImpliedWinner === outcome.key;
                           return (
                             <div
                               key={outcome.key}
@@ -611,25 +703,25 @@ export function BetSlip({
                           Score{" "}
                           <strong className="text-foreground">
                             {formatExactScoreSelection(
-                              lockedExactParsed!.home,
-                              lockedExactParsed!.away,
+                              previewExactParsed.home,
+                              previewExactParsed.away,
                             )}
                           </strong>
                           {" · "}
-                          cote {lockedImpliedOdd.toFixed(2)} (
+                          cote {previewImpliedOdd.toFixed(2)} (
                           {MATCH_RESULT_COPY.equivalentOdd})
                         </p>
                         <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
                           <span className="text-emerald-600 dark:text-emerald-400">
-                            Tendance : +{formatPoints(lockedTendancePts)} pts
+                            Tendance : +{formatPoints(previewTendancePts)} pts
                             {isGolden
                               ? " (×2 Golden)"
                               : ` (${MATCH_RESULT_COPY.sameAsResult})`}
                           </span>
                           <span className="text-amber-600 dark:text-amber-400">
-                            Tout pile : +{formatPoints(lockedPerfectPts)} pts
-                            {lockedPerfectPts > lockedTendancePts &&
-                              ` (×${Math.round(lockedPerfectPts / lockedTendancePts)})`}
+                            Tout pile : +{formatPoints(previewPerfectPts)} pts
+                            {previewPerfectPts > previewTendancePts &&
+                              ` (×${Math.round(previewPerfectPts / previewTendancePts)})`}
                           </span>
                         </p>
                       </div>
@@ -642,7 +734,7 @@ export function BetSlip({
                     </p>
                   )}
 
-                  {pending.hasExactScore ? (
+                  {!canEditClassic && pending.hasExactScore ? (
                     <Button type="button" variant="secondary" className="w-full" disabled>
                       <Lock className="mr-2 size-4" aria-hidden />
                       Score exact verrouillé
@@ -653,10 +745,18 @@ export function BetSlip({
                       variant="secondary"
                       className="w-full"
                       disabled={
-                        loading || !parsedScore || impliedOdd == null || !bettingOpen
+                        loading ||
+                        !parsedScore ||
+                        impliedOdd == null ||
+                        !bettingOpen ||
+                        (pending.hasExactScore && !hasExactChange)
                       }
                     >
-                      {loading ? "Validation…" : "Valider le score exact"}
+                      {loading
+                        ? "Validation…"
+                        : pending.hasExactScore
+                          ? MATCH_RESULT_COPY.update
+                          : "Valider le score exact"}
                     </Button>
                   )}
                 </form>

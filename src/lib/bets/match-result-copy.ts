@@ -14,6 +14,11 @@ export const MATCH_RESULT_COPY = {
   yourPronostic: "Votre pronostic sur le résultat",
   pronosticLocked: "Pronostic sur le résultat verrouillé",
   validate: "Valider mon pronostic",
+  update: "Enregistrer les modifications",
+  modifyHint:
+    "Vous pouvez modifier votre choix jusqu'au coup d'envoi.",
+  pronosticUpdated: "Pronostic mis à jour",
+  exactScoreUpdated: "Score exact mis à jour",
   alreadyOnMatch: "Vous avez déjà un pronostic sur le résultat pour ce match.",
   alreadyOnMatchClassic:
     "Vous avez déjà un pronostic sur ce match (résultat ou score exact, pas les deux).",

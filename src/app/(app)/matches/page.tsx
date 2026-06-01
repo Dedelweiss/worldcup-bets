@@ -42,7 +42,9 @@ export default async function MatchesPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Calendrier</h1>
+        <h1 className="font-heading text-2xl font-bold tracking-tight">
+          Calendrier
+        </h1>
         <p className="text-muted-foreground">
           Matchs à venir et en direct — filtres par poules ou phase finale.
         </p>
