@@ -1,134 +1,158 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Check } from "lucide-react";
 import {
   adminSetUserFavoriteTeamAction,
   adminSetUserUsernameAction,
 } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import type { AdminUserRow } from "@/components/admin/users-table";
 import type { TournamentTeam } from "@/types/database";
+import { cn } from "@/lib/utils";
 
 interface UserProfileAdminFieldsProps {
   user: AdminUserRow;
   teams: TournamentTeam[];
 }
 
+const fieldClass =
+  "h-7 min-h-7 py-0 text-xs shadow-none focus-visible:ring-2 focus-visible:ring-ring/40";
+
 export function UserProfileAdminFields({
   user,
   teams,
 }: UserProfileAdminFieldsProps) {
   const router = useRouter();
-  const [username, setUsername] = useState(user.username ?? "");
-  const [teamId, setTeamId] = useState(
-    user.favorite_team_id != null ? String(user.favorite_team_id) : "",
-  );
-  const [loading, setLoading] = useState<"username" | "team" | null>(null);
+  const initialUsername = user.username ?? "";
+  const initialTeamId =
+    user.favorite_team_id != null ? String(user.favorite_team_id) : "";
+
+  const [username, setUsername] = useState(initialUsername);
+  const [teamId, setTeamId] = useState(initialTeamId);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  async function saveUsername() {
-    setLoading("username");
-    setError(null);
-    setMessage(null);
-    const result = await adminSetUserUsernameAction(user.id, username);
-    setLoading(null);
-    if (!result.success) {
-      setError(result.error);
-      return;
-    }
-    setMessage("Pseudo enregistré.");
-    router.refresh();
-  }
+  const isDirty = useMemo(
+    () => username !== initialUsername || teamId !== initialTeamId,
+    [username, initialUsername, teamId, initialTeamId],
+  );
 
-  async function saveFavoriteTeam() {
-    setLoading("team");
+  async function saveChanges() {
+    if (!isDirty) return;
+
+    setLoading(true);
     setError(null);
     setMessage(null);
-    const result = await adminSetUserFavoriteTeamAction(
-      user.id,
-      teamId === "" ? null : Number(teamId),
-    );
-    setLoading(null);
-    if (!result.success) {
-      setError(result.error);
-      return;
+
+    if (username !== initialUsername) {
+      const result = await adminSetUserUsernameAction(user.id, username);
+      if (!result.success) {
+        setError(result.error);
+        setLoading(false);
+        return;
+      }
     }
-    setMessage("Équipe favorite mise à jour.");
+
+    if (teamId !== initialTeamId) {
+      const result = await adminSetUserFavoriteTeamAction(
+        user.id,
+        teamId === "" ? null : Number(teamId),
+      );
+      if (!result.success) {
+        setError(result.error);
+        setLoading(false);
+        return;
+      }
+    }
+
+    setMessage("Modifications enregistrées.");
+    setLoading(false);
     router.refresh();
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-        <div className="min-w-0 flex-1 space-y-1">
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="flex items-center gap-1.5">
           <label
             htmlFor={`username-${user.id}`}
-            className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+            className="shrink-0 text-[11px] font-medium text-muted-foreground"
           >
             Pseudo
           </label>
           <Input
             id={`username-${user.id}`}
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="pseudo_joueur"
-            className="h-8 text-sm"
+            onChange={(e) => {
+              setUsername(e.target.value);
+              setError(null);
+              setMessage(null);
+            }}
+            placeholder="pseudo"
+            className={cn(fieldClass, "w-[7.5rem] sm:w-28")}
             autoComplete="off"
+            spellCheck={false}
           />
         </div>
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          disabled={loading != null}
-          onClick={saveUsername}
-        >
-          {loading === "username" ? "…" : "Pseudo"}
-        </Button>
-      </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-        <div className="min-w-0 flex-1 space-y-1">
+        <div
+          className="hidden h-4 w-px shrink-0 bg-border/80 sm:block"
+          aria-hidden
+        />
+
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:max-w-[14rem]">
           <label
             htmlFor={`team-${user.id}`}
-            className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
+            className="shrink-0 text-[11px] font-medium text-muted-foreground"
           >
-            Équipe favorite
+            Équipe
           </label>
-          <select
+          <Select
             id={`team-${user.id}`}
             value={teamId}
-            onChange={(e) => setTeamId(e.target.value)}
-            className="flex h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm"
+            onChange={(e) => {
+              setTeamId(e.target.value);
+              setError(null);
+              setMessage(null);
+            }}
+            className={cn(fieldClass, "min-w-0 flex-1 truncate pr-7")}
           >
-            <option value="">— Aucune —</option>
+            <option value="">Aucune</option>
             {teams.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
+
         <Button
           type="button"
           size="sm"
-          variant="secondary"
-          disabled={loading != null}
-          onClick={saveFavoriteTeam}
+          variant={isDirty ? "default" : "outline"}
+          className="h-7 shrink-0 gap-1 px-2.5 text-xs"
+          disabled={loading || !isDirty}
+          onClick={saveChanges}
+          title="Enregistrer les modifications"
         >
-          {loading === "team" ? "…" : "Équipe"}
+          <Check className="size-3.5" aria-hidden />
+          {loading ? "…" : "OK"}
         </Button>
       </div>
 
       {error && (
-        <p className="text-xs text-destructive" role="alert">
+        <p className="text-[11px] text-destructive" role="alert">
           {error}
         </p>
       )}
-      {message && <p className="text-xs text-primary">{message}</p>}
+      {message && !error && (
+        <p className="text-[11px] text-primary">{message}</p>
+      )}
     </div>
   );
 }

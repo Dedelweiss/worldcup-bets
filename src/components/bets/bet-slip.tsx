@@ -25,6 +25,10 @@ import {
   parseScoreInputs,
 } from "@/lib/exact-score";
 import { formatOdd, formatPoints } from "@/lib/format";
+import {
+  buildMatchResultOutcomes,
+  MATCH_RESULT_COPY,
+} from "@/lib/bets/match-result-copy";
 import type { MatchUserPendingBets } from "@/lib/bets/match-user-bets";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { goldenMatchCardClass, goldenMatchPoints } from "@/lib/golden-match";
@@ -75,30 +79,7 @@ export function BetSlip({
   const canUseBoost = boostsAvailable > 0;
   const isGolden = match.is_golden ?? false;
 
-  const outcomes = useMemo(
-    () =>
-      [
-        {
-          key: "home" as const,
-          label: "1",
-          name: match.home_team.name,
-          odd: match.odd_home,
-        },
-        {
-          key: "draw" as const,
-          label: "N",
-          name: "Match nul",
-          odd: match.odd_draw,
-        },
-        {
-          key: "away" as const,
-          label: "2",
-          name: match.away_team.name,
-          odd: match.odd_away,
-        },
-      ].filter((o) => o.odd != null),
-    [match],
-  );
+  const outcomes = useMemo(() => buildMatchResultOutcomes(match), [match]);
 
   const selectedOdd =
     selection === "home"
@@ -197,7 +178,7 @@ export function BetSlip({
       return;
     }
     if (pending.hasMatchResult) {
-      setError("Vous avez déjà un pronostic 1N2 sur ce match.");
+      setError(MATCH_RESULT_COPY.alreadyOnMatch);
       return;
     }
     if (pending.hasExactScore) {
@@ -232,7 +213,7 @@ export function BetSlip({
     }
     if (pending.hasMatchResult) {
       setError(
-        "Vous avez déjà un pronostic 1N2 sur ce match. Un seul pronostic classique est autorisé.",
+        `${MATCH_RESULT_COPY.alreadyOnMatch} Un seul pronostic classique est autorisé.`,
       );
       return;
     }
@@ -284,7 +265,7 @@ export function BetSlip({
             <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
               <p className="text-lg font-semibold text-primary">
                 {success === "1n2"
-                  ? "Pronostic 1N2 enregistré"
+                  ? MATCH_RESULT_COPY.pronosticSavedResult
                   : "Score exact enregistré"}
               </p>
               <p className="text-sm text-muted-foreground">
@@ -333,7 +314,7 @@ export function BetSlip({
                 <p className="mt-1 text-sm text-muted-foreground">
                   {hasClassicBet
                     ? "Votre pronostic classique pour ce match."
-                    : "Un seul choix par match : 1N2 rapide ou score exact."}{" "}
+                    : MATCH_RESULT_COPY.oneChoicePerMatch}{" "}
                   Vos points :{" "}
                   <span className="font-semibold text-primary tabular-nums">
                     {formatPoints(points)}
@@ -359,7 +340,7 @@ export function BetSlip({
                         : "text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    1N2 rapide
+                    {MATCH_RESULT_COPY.tabQuick}
                   </button>
                   <button
                     type="button"
@@ -384,22 +365,23 @@ export function BetSlip({
                 <form onSubmit={handleSubmit1n2} className="space-y-5">
                   {!bettingOpen && !pending.hasMatchResult && (
                     <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
-                      Coup d&apos;envoi passé — plus de pari 1N2 possible sur ce
-                      match.
+                      {MATCH_RESULT_COPY.kickoffClosed}
                     </p>
                   )}
 
                   {pending.hasMatchResult && locked1n2 && (
                     <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-primary">
                       <Lock className="size-4 shrink-0" aria-hidden />
-                      <span>Pronostic 1N2 enregistré — non modifiable</span>
+                      <span>
+                        {MATCH_RESULT_COPY.pronosticSavedResult} — non modifiable
+                      </span>
                     </div>
                   )}
 
                   <div className="space-y-2">
                     <Label>
                       {pending.hasMatchResult
-                        ? "Votre pronostic 1N2"
+                        ? MATCH_RESULT_COPY.yourPronostic
                         : "Qui gagne selon vous ?"}
                     </Label>
                     <div className="grid grid-cols-3 gap-2">
@@ -516,7 +498,7 @@ export function BetSlip({
                   {pending.hasMatchResult ? (
                     <Button type="button" className="w-full" disabled>
                       <Lock className="mr-2 size-4" aria-hidden />
-                      Pronostic 1N2 verrouillé
+                      {MATCH_RESULT_COPY.pronosticLocked}
                     </Button>
                   ) : (
                     <Button
@@ -524,7 +506,7 @@ export function BetSlip({
                       className="w-full"
                       disabled={loading || !selection || !bettingOpen}
                     >
-                      {loading ? "Validation…" : "Valider le 1N2"}
+                      {loading ? "Validation…" : MATCH_RESULT_COPY.validate}
                     </Button>
                   )}
                 </form>
@@ -634,12 +616,15 @@ export function BetSlip({
                             )}
                           </strong>
                           {" · "}
-                          cote {lockedImpliedOdd.toFixed(2)} (1N2 équivalent)
+                          cote {lockedImpliedOdd.toFixed(2)} (
+                          {MATCH_RESULT_COPY.equivalentOdd})
                         </p>
                         <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
                           <span className="text-emerald-600 dark:text-emerald-400">
                             Tendance : +{formatPoints(lockedTendancePts)} pts
-                            {isGolden ? " (×2 Golden)" : " (= 1N2)"}
+                            {isGolden
+                              ? " (×2 Golden)"
+                              : ` (${MATCH_RESULT_COPY.sameAsResult})`}
                           </span>
                           <span className="text-amber-600 dark:text-amber-400">
                             Tout pile : +{formatPoints(lockedPerfectPts)} pts

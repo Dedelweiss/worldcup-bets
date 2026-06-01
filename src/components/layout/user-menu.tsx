@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogOut, User } from "lucide-react";
+import { CircleHelp, LogOut, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { buttonVariants } from "@/components/ui/button";
 import { formatPoints } from "@/lib/format";
@@ -33,6 +33,15 @@ export function UserMenu({ profile }: UserMenuProps) {
           {formatPoints(profile.points)} pts
         </p>
       </div>
+      <Link
+        href="/help"
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "icon-sm" }),
+        )}
+        title="Aide & règles"
+      >
+        <CircleHelp className="size-4" />
+      </Link>
       <Link
         href="/profile"
         className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}

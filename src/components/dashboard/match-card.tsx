@@ -8,6 +8,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LiveMatchAnimation } from "@/components/matches/live-match-animation";
 import { MatchScoreInline } from "@/components/matches/match-score-inline";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
+import {
+  MATCH_RESULT_COPY,
+  MATCH_RESULT_OUTCOME,
+} from "@/lib/bets/match-result-copy";
 import { formatKickoff, formatKickoffRelative, formatOdd } from "@/lib/format";
 import { MatchCardStatusBadges } from "@/components/dashboard/match-card-status-badges";
 import { goldenMatchCardClass } from "@/lib/golden-match";
@@ -143,9 +147,9 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
           {!hasScore && !isLive && match.odd_home && match.odd_draw && match.odd_away && (
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: "1", odd: match.odd_home },
-                { label: "N", odd: match.odd_draw },
-                { label: "2", odd: match.odd_away },
+                { label: MATCH_RESULT_OUTCOME.home, odd: match.odd_home },
+                { label: MATCH_RESULT_OUTCOME.draw, odd: match.odd_draw },
+                { label: MATCH_RESULT_OUTCOME.away, odd: match.odd_away },
               ].map((outcome) => (
                 <div
                   key={outcome.label}
@@ -164,7 +168,7 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
 
           {isLive && (
             <p className="text-center text-xs text-primary">
-              Paris 1N2 fermés — paris fun toujours possibles
+              {MATCH_RESULT_COPY.betsClosedLive}
             </p>
           )}
         </div>

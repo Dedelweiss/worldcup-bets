@@ -110,7 +110,7 @@ export function LeaderboardTable({
                 active={highlightSort === "points"}
               />
               <StatCell
-                label="1N2"
+                label="Résultat"
                 value={`${player.classic_won}G · ${player.classic_lost}P`}
                 active={highlightSort === "classic_won"}
               />

@@ -25,7 +25,7 @@ interface MatchParticipationProps {
 
 function betDetailLabel(player: MatchParticipationPlayer): string {
   const parts: string[] = [];
-  if (player.has_match_result) parts.push("1N2");
+  if (player.has_match_result) parts.push("Résultat");
   if (player.has_exact_score) parts.push("Score exact");
   return parts.join(" · ");
 }
@@ -150,7 +150,7 @@ export function MatchParticipation({
         <CardTitle className="text-base">Qui a parié ?</CardTitle>
         <p className="text-xs text-muted-foreground">
           {kickoffStarted
-            ? "Paris classiques (1N2 ou score exact) — pronostics visibles ci-dessus après le coup d'envoi."
+            ? "Paris classiques (résultat ou score exact) — pronostics visibles ci-dessus après le coup d'envoi."
             : "Survolez un avatar pour voir le joueur. Les pronostics restent secrets jusqu'au coup d'envoi."}
         </p>
       </CardHeader>

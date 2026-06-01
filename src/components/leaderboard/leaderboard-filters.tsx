@@ -14,7 +14,7 @@ const SCOPE_OPTIONS: { value: LeaderboardScope; label: string }[] = [
 
 const SORT_OPTIONS: { value: LeaderboardSort; label: string; short: string }[] = [
   { value: "points", label: "Points", short: "pts" },
-  { value: "classic_won", label: "Paris matchs", short: "1N2" },
+  { value: "classic_won", label: "Paris matchs", short: "Résultat" },
   { value: "fun_won", label: "Paris fun", short: "Fun" },
 ];
 

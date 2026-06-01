@@ -99,10 +99,10 @@ where id = 'TON-UUID-ICI';
 
 ## 4. Workflow admin
 
-1. **Nouveau match** — équipes, date/heure, cotes 1N2
+1. **Nouveau match** — équipes, date/heure, cotes (domicile · nul · extérieur)
 2. **Paris fun** — question + cotes Oui/Non sur la page admin du match
-3. Les joueurs parient sur `/matches/[id]` (1N2 fermé au coup d'envoi, fun ouverts jusqu'à clôture admin)
-4. Pendant / après le match — score final + **Clôturer le match** (1N2)
+3. Les joueurs parient sur `/matches/[id]` (résultat du match fermé au coup d'envoi, fun ouverts jusqu'à clôture admin)
+4. Pendant / après le match — score final + **Clôturer le match** (paris sur le résultat)
 5. **Oui/Non gagnant** sur chaque pari fun pour payer les gagnants
 6. **Soldes** — `/admin/users` pour bonus/malus manuels
 7. **Réinitialisation tests** — `/admin/users` → zone rouge « Réinitialiser » (tapez `RESET`)
@@ -116,7 +116,7 @@ where id = 'TON-UUID-ICI';
 | Layout `requireAdmin()` | Double contrôle côté serveur |
 | Supabase RLS + RPC | `is_admin()` sur insert/update matchs et `settle_match` |
 
-## 6. Format des paris 1N2 (pour la clôture)
+## 6. Format des paris sur le résultat (pour la clôture)
 
 Les paris doivent avoir `bet_type = 'match_result'` et :
 

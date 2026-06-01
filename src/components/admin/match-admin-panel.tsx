@@ -222,7 +222,7 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
 
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="oddHome">Cote 1</Label>
+                <Label htmlFor="oddHome">Domicile</Label>
                 <Input
                   id="oddHome"
                   name="oddHome"
@@ -244,7 +244,7 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="oddAway">Cote 2</Label>
+                <Label htmlFor="oddAway">Extérieur</Label>
                 <Input
                   id="oddAway"
                   name="oddAway"
@@ -269,7 +269,8 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            {pendingBetsCount} pari(s) en attente sur ce match (1N2). Saisissez
+            {pendingBetsCount} pari(s) en attente sur le résultat de ce match.
+            Saisissez
             le score final, enregistrez, puis clôturez pour créditer les
             gagnants.
           </p>

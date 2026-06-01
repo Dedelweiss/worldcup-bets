@@ -1,7 +1,7 @@
 import { pointsFromOdd } from "@/lib/points";
 import type { MatchResultSelection, MatchWithTeams, ScorePrecision } from "@/types/database";
 
-/** Multiplicateur « tout pile » sur la base 1N2 équivalente. */
+/** Multiplicateur « tout pile » sur la base du résultat équivalent. */
 export const EXACT_SCORE_PERFECT_MULTIPLIER = 3;
 /** Bonus minimum tout pile vs tendance (favoris). */
 export const EXACT_SCORE_PERFECT_MIN_BONUS = 20;
@@ -26,7 +26,7 @@ export function impliedOddFromMatch(
   return null;
 }
 
-/** Même barème qu'un 1N2 gagnant sur le même vainqueur. */
+/** Même barème qu'un pari sur le résultat gagnant sur le même vainqueur. */
 export function exactScorePointsTendance(odd: number): number {
   return pointsFromOdd(odd);
 }

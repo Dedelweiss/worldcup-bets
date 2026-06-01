@@ -95,10 +95,10 @@ export function CreateMatchForm() {
           </div>
 
           <div>
-            <p className="mb-3 text-sm font-medium">Cotes 1N2</p>
+            <p className="mb-3 text-sm font-medium">Cotes du résultat</p>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="oddHome">Victoire A (1)</Label>
+                <Label htmlFor="oddHome">Domicile</Label>
                 <Input
                   id="oddHome"
                   name="oddHome"
@@ -110,7 +110,7 @@ export function CreateMatchForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="oddDraw">Nul (N)</Label>
+                <Label htmlFor="oddDraw">Nul</Label>
                 <Input
                   id="oddDraw"
                   name="oddDraw"
@@ -122,7 +122,7 @@ export function CreateMatchForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="oddAway">Victoire B (2)</Label>
+                <Label htmlFor="oddAway">Extérieur</Label>
                 <Input
                   id="oddAway"
                   name="oddAway"

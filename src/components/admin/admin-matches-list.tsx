@@ -102,7 +102,7 @@ export function AdminMatchesList({
 
             <div className="mt-3 grid grid-cols-2 gap-2 text-center text-xs">
               <div className="rounded-lg bg-muted/30 px-2 py-2">
-                <p className="text-[10px] text-muted-foreground">Cotes 1-N-2</p>
+                <p className="text-[10px] text-muted-foreground">Cotes résultat</p>
                 <p className="mt-0.5 font-medium tabular-nums">{formatOddsLine(m)}</p>
               </div>
               <div className="rounded-lg bg-muted/30 px-2 py-2">
@@ -140,7 +140,7 @@ export function AdminMatchesList({
                 sortOrder={sortOrder}
               />
               <th className="px-4 py-3 font-medium text-muted-foreground">
-                Cotes 1-N-2
+                Cotes résultat
               </th>
               <th className="px-4 py-3 font-medium text-muted-foreground">
                 Score

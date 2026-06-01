@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PointsEvolutionChart } from "@/components/profile/points-evolution-chart";
 import { UsernameForm } from "@/components/profile/username-form";
 import { hasSupabaseConfig, requireAuth } from "@/lib/auth-server";
@@ -25,6 +26,10 @@ export default async function ProfilePage() {
           <span className="font-medium text-foreground">
             {getPlayerLabel(profile)}
           </span>
+          {" · "}
+          <Link href="/help" className="text-primary hover:underline">
+            Aide & règles
+          </Link>
         </p>
       </div>
 

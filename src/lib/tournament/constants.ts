@@ -35,4 +35,4 @@ export const STAGE_LABELS: Record<MatchStage, string> = {
 };
 
 export const DEFAULT_KNOCKOUT_BET_NOTE =
-  "Paris 1N2 sur le temps réglementaire uniquement (prolongations et tirs au but exclus).";
+  "Paris sur le résultat à la fin du temps réglementaire uniquement (prolongations et tirs au but exclus).";

@@ -121,8 +121,8 @@ export function UsersTable({
                       </Button>
                     </td>
                   </tr>
-                  <tr className="border-t border-border/40 bg-muted/15">
-                    <td colSpan={4} className="px-4 py-3">
+                  <tr className="border-t border-border/40 bg-muted/10">
+                    <td colSpan={4} className="px-3 py-2 sm:px-4">
                       <UserProfileAdminFields user={p} teams={teams} />
                     </td>
                   </tr>

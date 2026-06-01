@@ -1,5 +1,5 @@
 export interface UserMatchBetStatus {
-  /** Au moins un pari classique (1N2 ou score exact) en attente. */
+  /** Au moins un pari classique (résultat ou score exact) en attente. */
   hasClassicBet: boolean;
   hasMatchResult: boolean;
   hasExactScore: boolean;

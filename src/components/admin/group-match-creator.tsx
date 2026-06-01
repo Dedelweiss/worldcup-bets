@@ -15,6 +15,10 @@ import {
   groupMatchSchema,
   type GroupMatchFormValues,
 } from "@/lib/validations/match-creator";
+import {
+  MATCH_RESULT_COPY,
+  MATCH_RESULT_ODDS_FIELDS,
+} from "@/lib/bets/match-result-copy";
 import type { TournamentGroup, TournamentTeam } from "@/types/database";
 
 interface GroupMatchCreatorProps {
@@ -243,15 +247,9 @@ function OddsFields({
 }) {
   return (
     <div>
-      <p className="mb-3 text-sm font-medium">Cotes 1 · N · 2</p>
+      <p className="mb-3 text-sm font-medium">{MATCH_RESULT_COPY.oddsHeading}</p>
       <div className="grid grid-cols-3 gap-3">
-        {(
-          [
-            ["oddHome", "1"],
-            ["oddDraw", "N"],
-            ["oddAway", "2"],
-          ] as const
-        ).map(([name, label]) => (
+        {MATCH_RESULT_ODDS_FIELDS.map(([name, label]) => (
           <div key={name} className="space-y-2">
             <Label htmlFor={name}>{label}</Label>
             <Input

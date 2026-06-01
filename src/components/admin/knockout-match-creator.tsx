@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { MATCH_RESULT_COPY, MATCH_RESULT_ODDS_FIELDS } from "@/lib/bets/match-result-copy";
 import { DEFAULT_KNOCKOUT_BET_NOTE, STAGE_LABELS } from "@/lib/tournament/constants";
 import {
   knockoutMatchSchema,
@@ -107,8 +108,7 @@ export function KnockoutMatchCreator({
         <CardTitle>Phase finale</CardTitle>
         <CardDescription>
           Sélection libre des deux équipes qualifiées, date, cotes et emplacement
-          dans l&apos;arbre. Les paris 1N2 concernent en général le temps réglementaire
-          uniquement.
+          dans l&apos;arbre. {MATCH_RESULT_COPY.knockoutBetNote}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -171,15 +171,9 @@ export function KnockoutMatchCreator({
           </div>
 
           <div>
-            <p className="mb-3 text-sm font-medium">Cotes 1 · N · 2</p>
+            <p className="mb-3 text-sm font-medium">{MATCH_RESULT_COPY.oddsHeading}</p>
             <div className="grid grid-cols-3 gap-3">
-              {(
-                [
-                  ["oddHome", "1"],
-                  ["oddDraw", "N"],
-                  ["oddAway", "2"],
-                ] as const
-              ).map(([name, label]) => (
+              {MATCH_RESULT_ODDS_FIELDS.map(([name, label]) => (
                 <div key={name} className="space-y-2">
                   <Label htmlFor={name}>{label}</Label>
                   <Input

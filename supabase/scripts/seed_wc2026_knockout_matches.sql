@@ -102,7 +102,7 @@ begin
       3.20,
       2.80,
       v_stage,
-      'Paris 1N2 sur le temps réglementaire uniquement (prolongations et tirs au but exclus).',
+      'Paris sur le résultat à la fin du temps réglementaire uniquement (prolongations et tirs au but exclus).',
       2026
     )
     on conflict (id) do update set

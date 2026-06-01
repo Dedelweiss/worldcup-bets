@@ -81,7 +81,7 @@ export default async function DashboardPage() {
           <div>
             <h2 className="text-lg font-semibold">Prochains matchs</h2>
             <p className="text-sm text-muted-foreground">
-              Coupe du Monde FIFA 2026 · Paris 1N2
+              Coupe du Monde FIFA 2026 · Pronostics sur le résultat
             </p>
           </div>
           {!isDemo && (

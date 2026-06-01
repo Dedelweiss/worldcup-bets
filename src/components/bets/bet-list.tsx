@@ -7,6 +7,7 @@ import {
   parseExactScoreSelection,
   scorePrecisionLabel,
 } from "@/lib/exact-score";
+import { MATCH_RESULT_OUTCOME } from "@/lib/bets/match-result-copy";
 import { formatKickoff, formatOdd, formatPoints } from "@/lib/format";
 import { betDisplayPayout } from "@/lib/points";
 import { cn } from "@/lib/utils";
@@ -32,9 +33,9 @@ const STATUS_VARIANT: Record<
 };
 
 const SELECTION_LABEL: Record<string, string> = {
-  home: "Victoire domicile (1)",
-  draw: "Match nul (N)",
-  away: "Victoire extérieur (2)",
+  home: `Victoire à domicile`,
+  draw: MATCH_RESULT_OUTCOME.draw,
+  away: `Victoire à l'extérieur`,
   yes: "Oui",
   no: "Non",
 };

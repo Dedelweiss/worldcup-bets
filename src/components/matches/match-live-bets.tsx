@@ -3,6 +3,7 @@ import {
   formatExactScoreSelection,
   parseExactScoreSelection,
 } from "@/lib/exact-score";
+import { MATCH_RESULT_OUTCOME } from "@/lib/bets/match-result-copy";
 import { formatOdd, formatPoints } from "@/lib/format";
 import type { BetStatus } from "@/types/database";
 import { betDisplayPayout } from "@/lib/points";
@@ -10,9 +11,9 @@ import { getPlayerLabel } from "@/lib/profile/player-label";
 import type { MatchLiveBetRow } from "@/lib/bets/match-live-bets";
 
 const SELECTION_LABEL: Record<string, string> = {
-  home: "1 · Domicile",
-  draw: "N · Nul",
-  away: "2 · Extérieur",
+  home: MATCH_RESULT_OUTCOME.home,
+  draw: MATCH_RESULT_OUTCOME.draw,
+  away: MATCH_RESULT_OUTCOME.away,
   yes: "Oui",
   no: "Non",
 };

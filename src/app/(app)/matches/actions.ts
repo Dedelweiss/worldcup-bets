@@ -5,6 +5,7 @@ import { requireAuth } from "@/lib/auth-server";
 import type { MatchCommentRow } from "@/lib/match-comments";
 import { canPlaceBetOnMatch, getMatchById } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/server";
+import { MATCH_RESULT_COPY } from "@/lib/bets/match-result-copy";
 import type { MatchResultSelection } from "@/types/database";
 
 export type PlaceBetResult =
@@ -23,10 +24,10 @@ function mapBetError(message: string): string {
     return "Vous avez déjà utilisé votre Boost x2 pour ce tournoi.";
   }
   if (m.includes("boost only allowed")) {
-    return "Le boost ne s'applique qu'aux paris classiques 1N2.";
+    return MATCH_RESULT_COPY.boostHint;
   }
   if (m.includes("already have a classic bet")) {
-    return "Vous avez déjà un pronostic sur ce match (1N2 ou score exact, pas les deux).";
+    return MATCH_RESULT_COPY.alreadyOnMatchClassic;
   }
   return message;
 }
@@ -113,7 +114,7 @@ export async function placeExactScoreBetAction(
       return {
         success: false,
         error:
-          "Vous avez déjà un pronostic sur ce match (1N2 ou score exact, pas les deux).",
+          MATCH_RESULT_COPY.alreadyOnMatchClassic,
       };
     }
     if (m.includes("invalid exact score")) {
