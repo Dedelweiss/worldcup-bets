@@ -51,7 +51,7 @@ export function DashboardSummary({
   ] as const;
 
   return (
-    <Card className="border-primary/30 bg-gradient-to-br from-card via-card to-primary/5">
+    <Card className="rounded-3xl border-lime-400/20 bg-gradient-to-br from-zinc-900/60 via-zinc-900/40 to-lime-400/5">
       <CardContent className="space-y-4 p-5 sm:p-6">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(220px,320px)] lg:items-stretch">
           <div className="min-w-0">

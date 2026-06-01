@@ -1,7 +1,7 @@
 import { Shield } from "lucide-react";
 import { AdminNav } from "@/components/layout/admin-nav";
 import { AppHeader } from "@/components/layout/app-header";
-import { requireAdmin } from "@/lib/auth-server";
+import { getProfile, requireAdmin } from "@/lib/auth-server";
 
 const adminNav = [
   { href: "/admin", label: "Matchs" },
@@ -17,10 +17,11 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   await requireAdmin();
+  const profile = await getProfile();
 
   return (
-    <div className="min-h-full bg-background">
-      <AppHeader />
+    <div className="min-h-full bg-zinc-950">
+      <AppHeader profile={profile} />
       <div className="mx-auto max-w-5xl px-4 py-6">
         <div className="mb-6 flex items-center gap-2 text-primary">
           <Shield className="size-5" />

@@ -4,12 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NavFunBadge } from "@/components/layout/nav-fun-badge";
 import { cn } from "@/lib/utils";
-import type { NavItem } from "@/components/layout/mobile-nav";
+import type { NavItem } from "@/components/layout/app-nav";
 
 interface AppNavLinksProps {
   items: NavItem[];
   showAdmin?: boolean;
-  variant?: "desktop" | "mobile";
+  variant?: "desktop" | "mobile" | "sidebar";
   onNavigate?: () => void;
 }
 
@@ -31,12 +31,14 @@ export function AppNavLinks({
   }
 
   const linkClass =
-    variant === "desktop"
-      ? "rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      : cn(
-          "block rounded-lg px-4 py-3 text-base font-medium transition-colors",
-          "text-foreground hover:bg-muted",
-        );
+    variant === "sidebar"
+      ? "flex w-full items-center rounded-xl px-3 py-2.5 font-medium text-zinc-400 transition-colors hover:bg-white/5 hover:text-zinc-100"
+      : variant === "desktop"
+        ? "rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        : cn(
+            "block rounded-lg px-4 py-3 text-base font-medium transition-colors",
+            "text-foreground hover:bg-muted",
+          );
 
   return (
     <>
@@ -53,6 +55,9 @@ export function AppNavLinks({
               variant === "mobile" &&
                 active &&
                 "bg-primary/15 text-primary",
+              variant === "sidebar" &&
+                active &&
+                "bg-lime-400/10 text-lime-400 shadow-[inset_0_0_0_1px_rgb(163_230_53/0.25)]",
               variant === "desktop" && active && "bg-muted text-foreground",
               isFun && "relative",
             )}
@@ -62,9 +67,17 @@ export function AppNavLinks({
           </Link>
         );
 
-        return variant === "mobile" ? (
-          <li key={item.href}>{link}</li>
-        ) : (
+        if (variant === "mobile") {
+          return <li key={item.href}>{link}</li>;
+        }
+        if (variant === "sidebar") {
+          return (
+            <div key={item.href} className="w-full">
+              {link}
+            </div>
+          );
+        }
+        return (
           <span key={item.href} className="contents">
             {link}
           </span>
@@ -86,6 +99,21 @@ export function AppNavLinks({
               Admin
             </Link>
           </li>
+        ) : variant === "sidebar" ? (
+          <div className="w-full">
+            <Link
+              href="/admin"
+              onClick={onNavigate}
+              className={cn(
+                linkClass,
+                pathname.startsWith("/admin") &&
+                  "bg-lime-400/10 text-lime-400",
+                !pathname.startsWith("/admin") && "text-lime-400/90 hover:bg-lime-400/10",
+              )}
+            >
+              Admin
+            </Link>
+          </div>
         ) : (
           <Link
             href="/admin"

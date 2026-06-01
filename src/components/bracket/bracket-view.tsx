@@ -64,7 +64,7 @@ function BracketMobileList({
   })).filter((s) => s.items.length > 0);
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-8 pb-2">
       {byStage.map(({ stage, label, items }) => (
         <section key={stage}>
           <h2 className="mb-3 flex items-center gap-2 text-base font-semibold">

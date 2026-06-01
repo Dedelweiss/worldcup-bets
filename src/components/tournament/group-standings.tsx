@@ -30,8 +30,8 @@ export function GroupStandingsView({ standings }: GroupStandingsViewProps) {
       : (withTeams.find((s) => s.group.id === filter) ?? withTeams[0]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="min-w-0 space-y-4">
+      <div className="flex max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <FilterPill
           active={filter === "all"}
           onClick={() => setFilter("all")}
@@ -102,7 +102,7 @@ function GroupStandingsTable({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-xl border border-border bg-card",
+        "min-w-0 overflow-hidden rounded-xl border border-border bg-card",
         className,
       )}
     >

@@ -1,49 +1,52 @@
 import Link from "next/link";
 import { AppNavLinks } from "@/components/layout/app-nav-links";
-import { MobileNav } from "@/components/layout/mobile-nav";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { UserMenu } from "@/components/layout/user-menu";
-import { getProfile, hasSupabaseConfig } from "@/lib/auth-server";
+import { appNav } from "@/components/layout/app-nav";
 import { buttonVariants } from "@/components/ui/button";
+import type { Profile } from "@/types/database";
 import { cn } from "@/lib/utils";
 
-export const appNav = [
-  { href: "/dashboard", label: "Paris" },
-  { href: "/matches", label: "Calendrier" },
-  { href: "/matches/fun", label: "Paris fun" },
-  { href: "/bracket", label: "Tournoi" },
-  { href: "/leaderboard", label: "Classement" },
-  { href: "/leagues", label: "Ligues" },
-  { href: "/bets", label: "Mes paris" },
-];
+interface AppHeaderProps {
+  profile: Profile | null;
+}
 
-export async function AppHeader() {
-  const profile = hasSupabaseConfig ? await getProfile() : null;
-
+export function AppHeader({ profile }: AppHeaderProps) {
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+    <header className="sticky top-0 z-30 border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl">
+      <div className="flex h-14 items-center justify-between px-4 md:px-6">
         <Link
           href="/dashboard"
-          className="flex min-w-0 items-center gap-2 font-semibold tracking-tight"
+          className="flex min-w-0 items-center gap-2 font-heading font-semibold tracking-tight md:hidden"
         >
           <SiteLogo size={32} className="size-8" priority />
-          <span className="truncate text-sm sm:text-base">
-            WC<span className="text-primary">2026</span>
-            <span className="hidden min-[380px]:inline"> Pool</span>
+          <span className="truncate text-sm">
+            WC<span className="text-lime-400">2026</span> Pool
           </span>
         </Link>
-        <div className="flex items-center gap-1 sm:gap-2">
-          <MobileNav
-            items={appNav}
-            showAdmin={profile?.role === "admin"}
-          />
-          <nav className="hidden items-center gap-1 text-sm lg:flex">
-            <AppNavLinks items={appNav} showAdmin={profile?.role === "admin"} />
+
+        <div className="hidden flex-1 items-center justify-center md:flex">
+          <nav className="flex items-center gap-1 text-sm" aria-label="Raccourcis">
+            <AppNavLinks
+              items={appNav.slice(0, 4)}
+              showAdmin={profile?.role === "admin"}
+              variant="desktop"
+            />
           </nav>
+        </div>
+
+        <div className="flex items-center gap-2 md:hidden">
           {profile ? (
             <UserMenu profile={profile} />
           ) : (
+            <Link href="/login" className={cn(buttonVariants({ size: "sm" }))}>
+              Connexion
+            </Link>
+          )}
+        </div>
+
+        <div className="hidden md:block">
+          {profile ? null : (
             <Link href="/login" className={cn(buttonVariants({ size: "sm" }))}>
               Connexion
             </Link>

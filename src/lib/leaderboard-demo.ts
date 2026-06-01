@@ -1,0 +1,47 @@
+import type { LeaderboardEntry } from "@/types/database";
+
+/** Podium de démo lorsque Supabase n'est pas configuré. */
+export const DEMO_LEADERBOARD_TOP: LeaderboardEntry[] = [
+  {
+    id: "demo-1",
+    display_name: "Joueur Démo",
+    username: "joueur_demo",
+    balance: 120,
+    classic_won: 4,
+    classic_lost: 1,
+    fun_won: 2,
+    fun_lost: 0,
+    total_won: 6,
+    total_lost: 1,
+    on_fire: true,
+    heat_streak: 3,
+  },
+  {
+    id: "demo-2",
+    display_name: "Alex",
+    username: "alex_pool",
+    balance: 98,
+    classic_won: 3,
+    classic_lost: 2,
+    fun_won: 1,
+    fun_lost: 1,
+    total_won: 4,
+    total_lost: 3,
+    on_fire: false,
+    heat_streak: 0,
+  },
+  {
+    id: "demo-3",
+    display_name: "Sam",
+    username: "sam_wc",
+    balance: 87,
+    classic_won: 2,
+    classic_lost: 2,
+    fun_won: 2,
+    fun_lost: 1,
+    total_won: 4,
+    total_lost: 3,
+    on_fire: false,
+    heat_streak: 0,
+  },
+];

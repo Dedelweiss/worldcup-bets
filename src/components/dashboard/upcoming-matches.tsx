@@ -1,4 +1,5 @@
 import { MatchCard } from "@/components/dashboard/match-card";
+import { MotionReveal } from "@/components/ui/motion-reveal";
 import {
   sortMatchesByUserPriority,
   type UserMatchBetStatus,
@@ -36,12 +37,13 @@ export function UpcomingMatches({
         </p>
       )}
       <div className="grid gap-4 sm:grid-cols-2">
-        {sorted.map((match) => (
-          <MatchCard
-            key={match.id}
-            match={match}
-            betStatus={betStatuses[match.id]}
-          />
+        {sorted.map((match, index) => (
+          <MotionReveal key={match.id} index={index}>
+            <MatchCard
+              match={match}
+              betStatus={betStatuses[match.id]}
+            />
+          </MotionReveal>
         ))}
       </div>
       {withBet.length > 0 && (

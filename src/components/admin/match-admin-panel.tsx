@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ExternalLink, Sparkles } from "lucide-react";
 import {
   deleteMatchAction,
@@ -32,12 +32,41 @@ interface MatchAdminPanelProps {
   pendingBetsCount: number;
 }
 
+function optionalNumberField(value: number | null | undefined): string {
+  return value != null ? String(value) : "";
+}
+
+function buildFormState(match: MatchWithTeams) {
+  return {
+    status: match.status,
+    homeScore: optionalNumberField(match.home_score),
+    awayScore: optionalNumberField(match.away_score),
+    oddHome: optionalNumberField(match.odd_home),
+    oddDraw: optionalNumberField(match.odd_draw),
+    oddAway: optionalNumberField(match.odd_away),
+    isGolden: match.is_golden ?? false,
+  };
+}
+
 export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
-  const [isGolden, setIsGolden] = useState(match.is_golden ?? false);
+  const [form, setForm] = useState(() => buildFormState(match));
+
+  useEffect(() => {
+    setForm(buildFormState(match));
+  }, [
+    match.id,
+    match.status,
+    match.home_score,
+    match.away_score,
+    match.odd_home,
+    match.odd_draw,
+    match.odd_away,
+    match.is_golden,
+  ]);
 
   async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -46,20 +75,22 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
     setMessage(null);
 
     const formData = new FormData(e.currentTarget);
-    formData.set("isGolden", isGolden ? "true" : "false");
+    formData.set("isGolden", form.isGolden ? "true" : "false");
 
     const result = await updateMatchAction(formData);
     if (!result.success) {
       setError(result.error);
     } else {
-      const form = e.currentTarget;
-      const home = form.homeScore.value;
-      const away = form.awayScore.value;
+      const status = String(formData.get("status") ?? "");
+      const home = String(formData.get("homeScore") ?? "");
+      const away = String(formData.get("awayScore") ?? "");
       const scoresSet = home !== "" && away !== "";
       setMessage(
-        scoresSet
-          ? "Match mis à jour — passé en direct (scores visibles pour les joueurs)."
-          : "Match mis à jour.",
+        status === "live" && scoresSet
+          ? "Match mis à jour — en direct (scores visibles pour les joueurs)."
+          : status === "live"
+            ? "Match mis à jour — passé en direct."
+            : "Match mis à jour.",
       );
       router.refresh();
     }
@@ -164,7 +195,13 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
               <Select
                 id="status"
                 name="status"
-                defaultValue={match.status}
+                value={form.status}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    status: e.target.value as MatchStatus,
+                  }))
+                }
                 className="h-8 bg-background"
               >
                 {STATUS_OPTIONS.map((opt) => (
@@ -183,7 +220,10 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
                   name="homeScore"
                   type="number"
                   min={0}
-                  defaultValue={match.home_score ?? ""}
+                  value={form.homeScore}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, homeScore: e.target.value }))
+                  }
                   placeholder="—"
                 />
               </div>
@@ -194,7 +234,10 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
                   name="awayScore"
                   type="number"
                   min={0}
-                  defaultValue={match.away_score ?? ""}
+                  value={form.awayScore}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, awayScore: e.target.value }))
+                  }
                   placeholder="—"
                 />
               </div>
@@ -216,8 +259,10 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
               </div>
               <Switch
                 id="isGolden"
-                checked={isGolden}
-                onCheckedChange={setIsGolden}
+                checked={form.isGolden}
+                onCheckedChange={(checked) =>
+                  setForm((prev) => ({ ...prev, isGolden: checked }))
+                }
               />
             </div>
 
@@ -230,7 +275,10 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
                   type="number"
                   step="0.01"
                   min="1.01"
-                  defaultValue={match.odd_home ?? ""}
+                  value={form.oddHome}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, oddHome: e.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -241,7 +289,10 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
                   type="number"
                   step="0.01"
                   min="1.01"
-                  defaultValue={match.odd_draw ?? ""}
+                  value={form.oddDraw}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, oddDraw: e.target.value }))
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -252,7 +303,10 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
                   type="number"
                   step="0.01"
                   min="1.01"
-                  defaultValue={match.odd_away ?? ""}
+                  value={form.oddAway}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, oddAway: e.target.value }))
+                  }
                 />
               </div>
             </div>

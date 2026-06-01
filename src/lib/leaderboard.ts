@@ -201,6 +201,11 @@ export async function getLeaderboard(options?: {
   return { players: await attachPlayerBadges(labeled) };
 }
 
+export async function getLeaderboardTop3(): Promise<LeaderboardEntry[]> {
+  const { players } = await getLeaderboard({ sort: "points" });
+  return players.slice(0, 3);
+}
+
 export function parseLeaderboardSort(value: string | undefined): LeaderboardSort {
   if (value === "classic_won" || value === "fun_won") return value;
   if (value === "points" || value === "balance") return "points";

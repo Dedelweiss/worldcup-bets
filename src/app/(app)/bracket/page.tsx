@@ -15,7 +15,7 @@ export default async function BracketPage() {
   const isAdmin = profile?.role === "admin";
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6 scroll-mt-16 pb-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Tournoi</h1>

@@ -159,8 +159,8 @@ export function BracketTree({ slots, isAdmin }: BracketTreeProps) {
   }
 
   return (
-    <div className="overflow-x-auto pb-4">
-      <div className="mx-auto min-w-[920px] max-w-[1400px] px-2">
+    <div className="w-full min-w-0 overflow-x-auto overscroll-x-contain rounded-2xl border border-white/10 bg-zinc-900/30 pb-4 [-webkit-overflow-scrolling:touch]">
+      <div className="mx-auto w-max min-w-[min(920px,100%)] max-w-[1400px] px-2 sm:min-w-[720px] lg:min-w-[920px]">
         {firstLabel && (
           <p className="mb-4 text-center text-xs font-medium uppercase tracking-widest text-muted-foreground">
             {firstLabel} → Quarts → Demies → Finale
@@ -256,7 +256,7 @@ function RoundLabel({
   return (
     <p
       className={cn(
-        "sticky top-0 z-10 bg-background/90 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur-sm",
+        "sticky top-14 z-10 bg-zinc-950/95 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur-sm md:top-14",
         className,
       )}
     >

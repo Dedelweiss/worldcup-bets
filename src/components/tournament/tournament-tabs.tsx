@@ -23,8 +23,8 @@ export function TournamentTabs({
   const [tab, setTab] = useState<Tab>("groups");
 
   return (
-    <div className="space-y-6">
-      <div className="flex gap-2 rounded-lg border border-border p-1">
+    <div className="min-w-0 space-y-6">
+      <div className="flex min-w-0 gap-2 rounded-lg border border-border p-1">
         {(
           [
             ["groups", "Classement poules"],

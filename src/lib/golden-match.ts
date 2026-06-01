@@ -10,17 +10,17 @@ export function goldenMatchPoints(base: number, isGolden = false): number {
 export function goldenMatchCardClass(isGolden: boolean, isLive = false): string {
   return cn(
     isGolden &&
-      "border-amber-400/80 ring-2 ring-amber-400/50 shadow-[0_0_20px_-4px] shadow-amber-500/30 animate-golden-border",
+      "border-fuchsia-500/80 ring-2 ring-fuchsia-500/50 shadow-[0_0_20px_-4px] shadow-fuchsia-500/30 animate-golden-border md:hover:border-fuchsia-400/70",
     isLive && !isGolden && "border-primary ring-2 ring-primary/30 animate-pulse",
     isLive &&
       isGolden &&
-      "border-amber-400 ring-amber-400/60 shadow-amber-500/40",
+      "border-fuchsia-400 ring-fuchsia-400/60 shadow-fuchsia-500/40",
   );
 }
 
 export function goldenMatchHeaderClass(isGolden: boolean): string {
   return cn(
     isGolden &&
-      "border border-amber-400/40 bg-gradient-to-b from-amber-500/15 to-transparent rounded-xl px-4 py-3 animate-golden-border",
+      "animate-golden-border rounded-xl border border-fuchsia-500/40 bg-gradient-to-b from-fuchsia-500/15 to-transparent px-4 py-3",
   );
 }

@@ -81,7 +81,7 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
   return (
     <Card
       className={cn(
-        "overflow-hidden transition-colors hover:border-primary/40",
+        "overflow-hidden",
         goldenMatchCardClass(isGolden, isLive),
         hasClassicBet && !isGolden && "ring-1 ring-primary/40",
         hasFunToPlay && "ring-1 ring-amber-500/40",

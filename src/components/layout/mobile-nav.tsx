@@ -6,10 +6,9 @@ import Link from "next/link";
 import { CircleHelp, Menu, X } from "lucide-react";
 import { AppNavLinks } from "@/components/layout/app-nav-links";
 
-export interface NavItem {
-  href: string;
-  label: string;
-}
+import type { NavItem } from "@/components/layout/app-nav";
+
+export type { NavItem };
 
 interface MobileNavProps {
   items: NavItem[];

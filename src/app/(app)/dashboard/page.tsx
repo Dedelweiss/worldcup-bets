@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
-import { DashboardSummary } from "@/components/dashboard/dashboard-summary";
-import { UpcomingMatches } from "@/components/dashboard/upcoming-matches";
+import { DashboardBento } from "@/components/dashboard/dashboard-bento";
 import { getUserMatchBetStatuses } from "@/lib/bets/user-match-status-query";
 import { getDashboardData } from "@/lib/dashboard";
+import { DEMO_LEADERBOARD_TOP } from "@/lib/leaderboard-demo";
+import { getLeaderboardTop3 } from "@/lib/leaderboard";
 import { getProfileFavoriteTeam } from "@/lib/profile/favorite-team";
 import { getAllTournamentTeams } from "@/lib/tournament/queries";
 import { getTournamentConfig } from "@/lib/tournament/config";
@@ -20,12 +21,23 @@ export const metadata = {
 export default async function DashboardPage() {
   const { profile, upcomingMatches, stats, isDemo } = await getDashboardData();
 
-  const [favoriteTeam, tournamentConfig, tournamentTeams] = isDemo
-    ? [null, { favoriteTeamBonusPoints: 100, worldCupWinnerTeamId: null, worldCupWinnerTeam: null, favoriteBonusSettled: false }, [] as Awaited<ReturnType<typeof getAllTournamentTeams>>]
+  const [favoriteTeam, tournamentConfig, tournamentTeams, topPlayers] = isDemo
+    ? [
+        null,
+        {
+          favoriteTeamBonusPoints: 100,
+          worldCupWinnerTeamId: null,
+          worldCupWinnerTeam: null,
+          favoriteBonusSettled: false,
+        },
+        [] as Awaited<ReturnType<typeof getAllTournamentTeams>>,
+        DEMO_LEADERBOARD_TOP,
+      ]
     : await Promise.all([
         getProfileFavoriteTeam(profile.id),
         getTournamentConfig(),
         getAllTournamentTeams(),
+        getLeaderboardTop3(),
       ]);
 
   const betStatuses =
@@ -41,22 +53,26 @@ export default async function DashboardPage() {
       {!isDemo && <LiveStatusPoller />}
       <section className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="font-heading text-3xl font-bold tracking-tight md:text-4xl">
             Bonjour, {getPlayerLabel(profile)}
           </h1>
           {isDemo && (
-            <Badge variant="outline" className="text-[10px]">
+            <Badge
+              variant="outline"
+              className="border-lime-400/40 bg-lime-400/10 text-[10px] text-lime-300"
+            >
               Mode démo — configurez Supabase
             </Badge>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">
-          Pariez entre amis sur la Coupe du Monde 2026 et cumulez des points selon les cotes.
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          Pariez entre amis sur la Coupe du Monde 2026 et cumulez des points selon
+          les cotes.
         </p>
       </section>
 
       {!isDemo && !profile.username && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-lime-400/30 bg-lime-400/10 px-4 py-3 backdrop-blur-md">
           <p className="text-sm">
             Choisissez un <strong>pseudo</strong> pour apparaître dans le
             classement et les matchs en direct.
@@ -67,46 +83,17 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <DashboardSummary
+      <DashboardBento
         profile={profile}
         stats={stats}
         teams={tournamentTeams}
         favorite={favoriteTeam}
         tournamentConfig={tournamentConfig}
         isDemo={isDemo}
+        upcomingMatches={upcomingMatches}
+        betStatuses={betStatuses}
+        topPlayers={topPlayers}
       />
-
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 className="text-lg font-semibold">Prochains matchs</h2>
-            <p className="text-sm text-muted-foreground">
-              Coupe du Monde FIFA 2026 · Pronostics sur le résultat
-            </p>
-          </div>
-          {!isDemo && (
-            <Link
-              href="/matches?bets=my"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-              )}
-            >
-              Mes pronostics
-            </Link>
-          )}
-        </div>
-        {upcomingMatches.length === 0 && !isDemo ? (
-          <p className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
-            Aucun match à venir. Un administrateur peut en créer depuis{" "}
-            <strong className="text-foreground">/admin</strong>.
-          </p>
-        ) : (
-          <UpcomingMatches
-            matches={upcomingMatches}
-            betStatuses={betStatuses}
-          />
-        )}
-      </section>
     </div>
   );
 }
