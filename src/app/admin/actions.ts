@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth-server";
+import { generateAndSaveMatchSummary } from "@/lib/ai/generate-match-summary";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { parseRpcUuid } from "@/lib/leagues/parse-uuid";
@@ -708,4 +709,20 @@ export async function setWorldCupWinnerAction(
   revalidatePath("/bets");
 
   return { success: true, summary: data as Record<string, unknown> };
+}
+
+export async function generateGazetteAction(
+  matchId: number,
+): Promise<ActionResult & { summary?: string }> {
+  await requireAdmin();
+
+  const result = await generateAndSaveMatchSummary(matchId);
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+
+  revalidatePath(`/admin/matches/${matchId}`);
+  revalidatePath(`/matches/${matchId}`);
+
+  return { success: true, matchId, summary: result.summary };
 }

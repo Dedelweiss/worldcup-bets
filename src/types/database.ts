@@ -33,6 +33,8 @@ export type MatchStage =
   | "third_place"
   | "final";
 
+export type TacklePhase = "group" | "knockout";
+
 export interface TournamentGroup {
   id: number;
   letter: string;
@@ -96,6 +98,7 @@ export interface MatchWithTeams {
   odd_draw: number | null;
   odd_away: number | null;
   is_golden?: boolean;
+  ai_summary?: string | null;
   home_team: Team;
   away_team: Team;
 }

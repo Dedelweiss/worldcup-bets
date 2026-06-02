@@ -31,8 +31,12 @@ import {
 } from "@/lib/bets/match-result-copy";
 import type { MatchUserPendingBets } from "@/lib/bets/match-user-bets";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
+import { TacklePicker } from "@/components/bets/tackle-picker";
 import { goldenMatchCardClass, goldenMatchPoints } from "@/lib/golden-match";
 import { betDisplayPayout, pointsFromOdd, pointsIfWin } from "@/lib/points";
+import type { MatchParticipationPlayer } from "@/lib/bets/match-participation";
+import type { MatchTackleState } from "@/lib/bets/match-tackle-utils";
+import { tackleEligibleRivals } from "@/lib/bets/match-tackle-utils";
 import { cn } from "@/lib/utils";
 import type { MatchResultSelection, MatchWithTeams } from "@/types/database";
 
@@ -43,6 +47,9 @@ interface BetSlipProps {
   points: number;
   boostsAvailable: number;
   pending?: MatchUserPendingBets;
+  currentUserId: string;
+  participation?: MatchParticipationPlayer[];
+  tackleState?: MatchTackleState;
 }
 
 export function BetSlip({
@@ -55,6 +62,9 @@ export function BetSlip({
     matchResult: null,
     exactScore: null,
   },
+  currentUserId,
+  participation = [],
+  tackleState,
 }: BetSlipProps) {
   const router = useRouter();
   const bettingOpen = useClassicBettingOpen(match);
@@ -171,6 +181,7 @@ export function BetSlip({
       : null;
 
   const hasClassicBet = pending.hasMatchResult || pending.hasExactScore;
+  const tackleRivals = tackleEligibleRivals(participation, currentUserId);
 
   const has1n2Change =
     selection != null &&
@@ -762,6 +773,18 @@ export function BetSlip({
                 </form>
               )}
             </CardContent>
+            {tackleState && (
+              <CardContent className="border-t border-border/50 pt-4">
+                <TacklePicker
+                  matchId={match.id}
+                  currentUserId={currentUserId}
+                  hasClassicBet={hasClassicBet}
+                  bettingOpen={bettingOpen}
+                  rivals={tackleRivals}
+                  tackleState={tackleState}
+                />
+              </CardContent>
+            )}
           </Card>
         </motion.div>
       )}

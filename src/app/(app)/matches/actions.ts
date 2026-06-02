@@ -133,6 +133,52 @@ export async function placeExactScoreBetAction(
   return { success: true, betId: betId as string };
 }
 
+export type PlaceTackleResult =
+  | { success: true; tackleId: string }
+  | { success: false; error: string };
+
+function mapTackleError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes("already used")) {
+    return "Tu as déjà utilisé ton tacle pour cette phase.";
+  }
+  if (m.includes("must have a classic bet")) {
+    return "Tu dois avoir un pronostic classique sur ce match.";
+  }
+  if (m.includes("target has no classic bet")) {
+    return "Ce rival n'a pas encore parié sur ce match.";
+  }
+  if (m.includes("cannot tackle yourself")) {
+    return "Tu ne peux pas te tacler toi-même.";
+  }
+  if (m.includes("kickoff") || m.includes("before match")) {
+    return "Le tacle est fermé pour ce match.";
+  }
+  return message;
+}
+
+export async function placeTackleAction(
+  matchId: number,
+  targetId: string,
+): Promise<PlaceTackleResult> {
+  await requireAuth();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("place_tackle", {
+    p_match_id: matchId,
+    p_target_id: targetId,
+  });
+
+  if (error) {
+    return { success: false, error: mapTackleError(error.message) };
+  }
+
+  revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/leaderboard");
+
+  return { success: true, tackleId: data as string };
+}
+
 export type PostMatchCommentResult =
   | { success: true; comment: MatchCommentRow }
   | { success: false; error: string };

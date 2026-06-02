@@ -1,3 +1,5 @@
+import type { Team } from "@/types/database";
+
 const TBD_TEAM_IDS = new Set([9001, 9002]);
 
 export type TeamLike = {
@@ -20,7 +22,7 @@ export function tbdTeamDisplayName(team: TeamLike): string {
   return "À déterminer";
 }
 
-export const TBD_PLACEHOLDER_TEAM: TeamLike = {
+export const TBD_PLACEHOLDER_TEAM: Pick<Team, "id" | "name" | "code" | "logo_url"> = {
   id: 9001,
   name: "À déterminer",
   code: "TBD",

@@ -5,11 +5,13 @@ import { MarkFunBetsSeen } from "@/components/fun-bets/mark-fun-bets-seen";
 import { MatchChat } from "@/components/matches/match-chat";
 import { MatchHeader } from "@/components/matches/match-header";
 import { MatchLiveBets } from "@/components/matches/match-live-bets";
+import { MatchGazette } from "@/components/matches/match-gazette";
 import { MatchParticipation } from "@/components/matches/match-participation";
 import { MatchScoreboard } from "@/components/matches/match-scoreboard";
 import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
 import { requireAuth } from "@/lib/auth-server";
 import { getMatchBettingParticipation } from "@/lib/bets/match-participation";
+import { getMatchTackleState } from "@/lib/bets/match-tackle";
 import { getMatchRevealedBets } from "@/lib/bets/match-live-bets";
 import { getMatchUserFunBets } from "@/lib/bets/match-user-fun-bets";
 import { getMatchUserPendingBets } from "@/lib/bets/match-user-bets";
@@ -51,7 +53,7 @@ export default async function MatchBetPage({
   const adminEditHref =
     profile.role === "admin" ? `/admin/matches/${matchId}` : undefined;
 
-  const [funMarkets, revealedBets, comments, pendingBets, funBetsByMarket, participation] =
+  const [funMarkets, revealedBets, comments, pendingBets, funBetsByMarket, participation, tackleState] =
     await Promise.all([
       getFunMarketsByMatch(matchId),
       kickoffStarted ? getMatchRevealedBets(matchId) : Promise.resolve([]),
@@ -59,6 +61,7 @@ export default async function MatchBetPage({
       getMatchUserPendingBets(matchId, profile.id),
       getMatchUserFunBets(matchId, profile.id),
       getMatchBettingParticipation(matchId),
+      getMatchTackleState(matchId, profile.id, match.stage),
     ]);
 
   const hasFunSection = funMarkets.length > 0;
@@ -80,6 +83,9 @@ export default async function MatchBetPage({
           points={profile.points}
           boostsAvailable={profile.boosts_available ?? 0}
           pending={pendingBets}
+          currentUserId={profile.id}
+          participation={participation.bettors}
+          tackleState={tackleState}
         />
       </section>
 
@@ -113,6 +119,12 @@ export default async function MatchBetPage({
           kickoffStarted={kickoffStarted}
         />
       </section>
+
+      {match.ai_summary && (
+        <section id="gazette" className="scroll-mt-20">
+          <MatchGazette summary={match.ai_summary} />
+        </section>
+      )}
 
       {kickoffStarted && (
         <>

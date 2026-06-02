@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ExternalLink, Sparkles } from "lucide-react";
+import { ExternalLink, Sparkles, Bot } from "lucide-react";
 import {
   correctMatchResultAction,
   deleteMatchAction,
+  generateGazetteAction,
   reopenMatchAction,
   resettleMatchAction,
   settleMatchAction,
@@ -192,6 +193,26 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
             : ""
         }.`,
       );
+      router.refresh();
+    }
+    setLoading(null);
+  }
+
+  async function handleGenerateGazette() {
+    if (match.ai_summary) {
+      setError("La Gazette a déjà été générée pour ce match.");
+      return;
+    }
+
+    setLoading("gazette");
+    setError(null);
+    setMessage(null);
+
+    const result = await generateGazetteAction(match.id);
+    if (!result.success) {
+      setError(result.error);
+    } else {
+      setMessage("Gazette du Match générée et enregistrée.");
       router.refresh();
     }
     setLoading(null);
@@ -399,6 +420,39 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
               {loading === "update" ? "Enregistrement…" : "Enregistrer"}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card className="border-lime-400/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Bot className="size-4 text-lime-400" />
+            Gazette du Match (IA)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Génère un résumé sarcastique des pronostics du groupe via Groq/Gemini.
+            Une seule génération par match (gratuit).
+          </p>
+          {match.ai_summary ? (
+            <blockquote className="rounded-lg border border-lime-400/25 bg-lime-400/5 p-3 text-sm italic text-foreground/90">
+              {match.ai_summary}
+            </blockquote>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            className="border-lime-400/40 text-lime-300 hover:bg-lime-400/10"
+            disabled={Boolean(match.ai_summary) || loading === "gazette"}
+            onClick={handleGenerateGazette}
+          >
+            {loading === "gazette"
+              ? "Génération…"
+              : match.ai_summary
+                ? "Gazette déjà générée"
+                : "Générer la Gazette"}
+          </Button>
         </CardContent>
       </Card>
 
