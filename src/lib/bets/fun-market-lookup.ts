@@ -1,6 +1,11 @@
+import type { FunMarketStatus } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type FunMarketSnippet = { id: string; question: string };
+export type FunMarketSnippet = {
+  id: string;
+  question: string;
+  status: FunMarketStatus;
+};
 
 /** ID du marché fun lié au pari. */
 export function resolveFunMarketId(bet: {
@@ -25,7 +30,7 @@ export async function fetchFunMarketSnippets(
 
   const { data, error } = await supabase
     .from("fun_markets")
-    .select("id, question")
+    .select("id, question, status")
     .in("id", unique);
 
   if (error || !data) return new Map();
@@ -33,7 +38,11 @@ export async function fetchFunMarketSnippets(
   return new Map(
     data.map((row) => [
       row.id as string,
-      { id: row.id as string, question: row.question as string },
+      {
+        id: row.id as string,
+        question: row.question as string,
+        status: row.status as FunMarketStatus,
+      },
     ]),
   );
 }

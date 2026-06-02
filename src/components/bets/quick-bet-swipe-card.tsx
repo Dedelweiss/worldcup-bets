@@ -12,6 +12,10 @@ import { TeamFlag } from "@/components/shared/team-flag";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { formatKickoff, formatKickoffRelative, formatOdd } from "@/lib/format";
 import { selectionLabel } from "@/lib/bets/match-result-copy";
+import {
+  triggerCountryExplosion,
+  triggerDrawExplosion,
+} from "@/lib/gamification/trigger-country-explosion";
 import { cn } from "@/lib/utils";
 import type { MatchResultSelection, MatchWithTeams } from "@/types/database";
 
@@ -60,6 +64,14 @@ export function QuickBetSwipeCard({
     const choice = resolveChoice(info);
     if (!choice) {
       return;
+    }
+
+    if (choice === "home") {
+      triggerCountryExplosion(match.home_team.code, "left");
+    } else if (choice === "away") {
+      triggerCountryExplosion(match.away_team.code, "right");
+    } else {
+      triggerDrawExplosion();
     }
 
     const exitX =

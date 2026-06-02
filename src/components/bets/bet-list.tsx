@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Radio, Star } from "lucide-react";
+import { BetCancelButton } from "@/components/bets/bet-cancel-button";
 import { Badge } from "@/components/ui/badge";
 import { BetResultAnimation } from "@/components/bets/bet-result-animation";
 import { LiveMatchAnimation } from "@/components/matches/live-match-animation";
@@ -13,6 +14,7 @@ import {
 import { MATCH_RESULT_OUTCOME } from "@/lib/bets/match-result-copy";
 import { formatKickoff, formatOdd, formatPoints } from "@/lib/format";
 import { goldenMatchCardClass } from "@/lib/golden-match";
+import { canCancelPendingBet } from "@/lib/bets/can-cancel-bet";
 import { betDisplayPayout } from "@/lib/points";
 import { cn } from "@/lib/utils";
 import type { BetRow, BetStatus } from "@/types/database";
@@ -89,14 +91,18 @@ function BetCard({ bet }: { bet: BetRow }) {
     bet.bet_type === "exact_score" &&
     bet.status === "won" &&
     bet.score_precision;
+  const cancellable = canCancelPendingBet(bet);
 
   return (
-    <Link
-      href={`/matches/${bet.match_id}${isLive ? "#paris-fun" : ""}`}
+    <div
       className={cn(
-        "block overflow-hidden rounded-xl border transition-colors",
+        "overflow-hidden rounded-xl border transition-colors",
         cardSurfaceClass(bet, isLive),
       )}
+    >
+    <Link
+      href={`/matches/${bet.match_id}${isLive ? "#paris-fun" : ""}`}
+      className="block"
     >
       {isLive && (
         <div className="flex items-center justify-between gap-2 border-b border-lime-400/20 bg-lime-400/10 px-4 py-2">
@@ -272,6 +278,12 @@ function BetCard({ bet }: { bet: BetRow }) {
         </div>
       </div>
     </Link>
+      {cancellable && (
+        <div className="border-t border-border/80 bg-muted/20 px-4 py-3">
+          <BetCancelButton betId={bet.id} matchId={bet.match_id} />
+        </div>
+      )}
+    </div>
   );
 }
 

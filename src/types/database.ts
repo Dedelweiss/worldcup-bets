@@ -206,5 +206,5 @@ export interface BetRow {
     | "home_team"
     | "away_team"
   > | null;
-  fun_market?: Pick<FunMarket, "id" | "question"> | null;
+  fun_market?: Pick<FunMarket, "id" | "question" | "status"> | null;
 }
