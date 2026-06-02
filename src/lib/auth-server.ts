@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { MOCK_DASHBOARD } from "@/lib/mock-matches";
 import { createClient } from "@/lib/supabase/server";
-import type { Profile, UserRole } from "@/types/database";
+import type { Profile } from "@/types/database";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 export const hasSupabaseConfig =
@@ -10,7 +11,7 @@ export const hasSupabaseConfig =
 const PROFILE_SELECT =
   "id, username, display_name, avatar_url, points, boosts_available, favorite_team_id, role" as const;
 
-export async function getSessionUser() {
+export const getSessionUser = cache(async () => {
   if (!hasSupabaseConfig) return null;
 
   const supabase = await createClient();
@@ -18,9 +19,9 @@ export async function getSessionUser() {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-}
+});
 
-export async function getProfile(): Promise<Profile | null> {
+export const getProfile = cache(async (): Promise<Profile | null> => {
   const user = await getSessionUser();
   if (!user) return null;
 
@@ -32,7 +33,7 @@ export async function getProfile(): Promise<Profile | null> {
     .single();
 
   return data as Profile | null;
-}
+});
 
 export async function isAdmin(): Promise<boolean> {
   const profile = await getProfile();

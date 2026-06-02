@@ -34,10 +34,13 @@ export default async function MatchesPage({
     getTournamentGroups(),
   ]);
 
-  const betStatuses = await getUserMatchBetStatuses(
-    profile.id,
-    matches.map((m) => m.id),
-  );
+  const betStatuses =
+    matches.length > 0
+      ? await getUserMatchBetStatuses(
+          profile.id,
+          matches.map((m) => m.id),
+        )
+      : {};
 
   return (
     <div className="space-y-6">

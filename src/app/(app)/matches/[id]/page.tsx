@@ -36,12 +36,14 @@ export default async function MatchBetPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const profile = await requireAuth();
   const { id } = await params;
   const matchId = Number(id);
   if (Number.isNaN(matchId)) notFound();
 
-  const match = await getMatchById(matchId);
+  const [profile, match] = await Promise.all([
+    requireAuth(),
+    getMatchById(matchId),
+  ]);
   if (!match) notFound();
 
   const kickoffStarted = hasKickoffStarted(match.kickoff_at);

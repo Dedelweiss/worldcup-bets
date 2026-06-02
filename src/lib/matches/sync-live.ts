@@ -1,10 +1,36 @@
 import { hasSupabaseConfig } from "@/lib/auth-server";
 import { createClient } from "@/lib/supabase/server";
 
-/** Met à jour status → live pour les matchs dont le coup d'envoi est passé */
-export async function syncLiveMatches(): Promise<void> {
+const SYNC_INTERVAL_MS = 30_000;
+
+let lastSyncAt = 0;
+let syncInFlight: Promise<void> | null = null;
+
+/** Met à jour status → live pour les matchs dont le coup d'envoi est passé. */
+export async function syncLiveMatches(options?: {
+  force?: boolean;
+}): Promise<void> {
   if (!hasSupabaseConfig) return;
 
-  const supabase = await createClient();
-  await supabase.rpc("sync_live_matches");
+  const now = Date.now();
+  if (!options?.force && now - lastSyncAt < SYNC_INTERVAL_MS) {
+    return;
+  }
+
+  if (syncInFlight) {
+    await syncInFlight;
+    return;
+  }
+
+  syncInFlight = (async () => {
+    try {
+      const supabase = await createClient();
+      await supabase.rpc("sync_live_matches");
+      lastSyncAt = Date.now();
+    } finally {
+      syncInFlight = null;
+    }
+  })();
+
+  await syncInFlight;
 }

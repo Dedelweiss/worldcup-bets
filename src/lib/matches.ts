@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { hasKickoffStarted } from "@/lib/format";
 import { syncLiveMatches } from "@/lib/matches/sync-live";
 import { createClient } from "@/lib/supabase/server";
@@ -22,10 +23,10 @@ export const MATCH_SELECT = `
   away_team:teams!matches_away_team_id_fkey (id, name, code, logo_url)
 `;
 
-export async function getMatchById(
+export const getMatchById = cache(async (
   id: number,
   options?: { skipLiveSync?: boolean },
-): Promise<MatchWithTeams | null> {
+): Promise<MatchWithTeams | null> => {
   if (!options?.skipLiveSync) {
     await syncLiveMatches();
   }
@@ -38,7 +39,7 @@ export async function getMatchById(
 
   if (error || !data) return null;
   return normalizeMatch(data);
-}
+});
 
 export function canPlaceBetOnMatch(match: MatchWithTeams): {
   allowed: boolean;

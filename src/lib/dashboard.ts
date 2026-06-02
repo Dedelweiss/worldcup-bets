@@ -30,26 +30,27 @@ export async function getDashboardData(): Promise<DashboardData> {
   await syncLiveMatches();
   const supabase = await createClient();
 
-  const { data: matches } = await supabase
-    .from("matches")
-    .select(
-      `
+  const [{ data: matches }, stats] = await Promise.all([
+    supabase
+      .from("matches")
+      .select(
+        `
       id, round, status, kickoff_at, venue, is_golden,
       home_score, away_score, odd_home, odd_draw, odd_away,
       home_team:teams!matches_home_team_id_fkey (id, name, code, logo_url),
       away_team:teams!matches_away_team_id_fkey (id, name, code, logo_url)
     `,
-    )
-    .in("status", ["scheduled", "live"])
-    .order("kickoff_at", { ascending: true })
-    .limit(30);
+      )
+      .in("status", ["scheduled", "live"])
+      .order("kickoff_at", { ascending: true })
+      .limit(30),
+    getDashboardStats(profile.id, profile.points),
+  ]);
 
   const upcoming = normalizeMatches(matches).filter((m) => {
     if (m.status === "live") return true;
     return new Date(m.kickoff_at) >= new Date();
   });
-
-  const stats = await getDashboardStats(profile.id, profile.points);
 
   return {
     profile,

@@ -2,15 +2,11 @@ import { BetList } from "@/components/bets/bet-list";
 import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
 import { requireAuth } from "@/lib/auth-server";
 import { getUserBets } from "@/lib/bets";
-import { syncLiveMatches } from "@/lib/matches/sync-live";
 
 export const metadata = { title: "Mes paris · WC2026 Pool" };
 
-export const dynamic = "force-dynamic";
-
 export default async function BetsPage() {
   const profile = await requireAuth();
-  await syncLiveMatches();
   const bets = await getUserBets(profile.id);
 
   const pending = bets.filter((b) => b.status === "pending").length;
