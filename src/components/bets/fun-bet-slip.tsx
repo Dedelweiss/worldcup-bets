@@ -107,7 +107,7 @@ export function FunBetSlip({
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-start justify-between gap-2 p-4 text-left"
+        className="flex w-full cursor-pointer items-start justify-between gap-2 p-4 text-left"
       >
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -208,7 +208,7 @@ export function FunBetSlip({
                       type="button"
                       onClick={() => setOutcome(o.key)}
                       className={cn(
-                        "rounded-lg border py-2 text-sm transition-colors",
+                        "cursor-pointer rounded-lg border py-2 text-sm transition-colors",
                         outcome === o.key
                           ? "border-primary bg-primary/15"
                           : "border-border hover:border-primary/50",

@@ -3,6 +3,7 @@ import {
   MatchesExplorer,
   type MatchBetFilter,
 } from "@/components/matches/matches-explorer";
+import { PageLoadingSkeleton } from "@/components/layout/page-loading-skeleton";
 import { requireAuth } from "@/lib/auth-server";
 import { getUserMatchBetStatuses } from "@/lib/bets/user-match-status-query";
 import { listMatchesForPlayers, getTournamentGroups } from "@/lib/tournament/queries";
@@ -53,7 +54,7 @@ export default async function MatchesPage({
         </p>
       </div>
 
-      <Suspense fallback={<p className="text-muted-foreground">Chargement…</p>}>
+      <Suspense fallback={<PageLoadingSkeleton />}>
         <MatchesExplorer
           matches={matches}
           groups={groups}

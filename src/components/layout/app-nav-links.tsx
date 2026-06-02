@@ -32,11 +32,11 @@ export function AppNavLinks({
 
   const linkClass =
     variant === "sidebar"
-      ? "flex w-full items-center rounded-xl px-3 py-2.5 font-medium text-zinc-400 transition-colors hover:bg-white/5 hover:text-zinc-100"
+      ? "flex w-full cursor-pointer items-center rounded-xl px-3 py-2.5 font-medium text-zinc-400 transition-colors hover:bg-white/5 hover:text-zinc-100"
       : variant === "desktop"
-        ? "rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        ? "cursor-pointer rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         : cn(
-            "block rounded-lg px-4 py-3 text-base font-medium transition-colors",
+            "block cursor-pointer rounded-lg px-4 py-3 text-base font-medium transition-colors",
             "text-foreground hover:bg-muted",
           );
 

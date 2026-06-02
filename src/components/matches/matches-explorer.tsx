@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MatchCard } from "@/components/dashboard/match-card";
-import { Select } from "@/components/ui/select";
+import { MatchesFilterBar } from "@/components/matches/matches-filter-bar";
+import type { MatchBetFilter } from "@/components/matches/matches-filter-bar";
 import {
   sortMatchesByUserPriority,
   type UserMatchBetStatus,
@@ -11,7 +11,7 @@ import {
 import { STAGE_LABELS } from "@/lib/tournament/constants";
 import type { MatchWithTeams, TournamentGroup } from "@/types/database";
 
-export type MatchBetFilter = "all" | "my-bets" | "fun-pending";
+export type { MatchBetFilter };
 
 interface MatchesExplorerProps {
   matches: MatchWithTeams[];
@@ -53,10 +53,10 @@ export function MatchesExplorer({
     router.push(`/matches?${p.toString()}`);
   }
 
-  function setGroup(id: string) {
+  function setGroup(id: number | null) {
     const p = new URLSearchParams(searchParams.toString());
     p.set("view", "group");
-    if (id) p.set("group", id);
+    if (id != null) p.set("group", String(id));
     else p.delete("group");
     router.push(`/matches?${p.toString()}`);
   }
@@ -98,100 +98,24 @@ export function MatchesExplorer({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setView("group")}
-          className={`rounded-lg px-4 py-2 text-sm font-medium ${
-            filter === "group"
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground"
-          }`}
-        >
-          Groupes
-        </button>
-        <button
-          type="button"
-          onClick={() => setView("knockout")}
-          className={`rounded-lg px-4 py-2 text-sm font-medium ${
-            filter === "knockout"
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground"
-          }`}
-        >
-          Phase finale
-        </button>
-        <Link
-          href="/bracket"
-          className="rounded-lg bg-muted px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          Voir l&apos;arbre →
-        </Link>
-        {filter === "group" && (
-          <Link
-            href="/matches/quick"
-            className="rounded-lg border border-lime-400/40 bg-lime-400/10 px-4 py-2 text-sm font-medium text-lime-300 hover:bg-lime-400/20"
-          >
-            Mode rapide ⚡
-          </Link>
-        )}
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {(
-          [
-            { key: "all" as const, label: "Tous" },
-            { key: "my-bets" as const, label: `Mes pronostics (${myBetsCount})` },
-            {
-              key: "fun-pending" as const,
-              label: `Paris fun à jouer (${funPendingCount})`,
-            },
-          ] as const
-        ).map((opt) => (
-          <button
-            key={opt.key}
-            type="button"
-            onClick={() => setBetFilter(opt.key)}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-              betFilter === opt.key
-                ? opt.key === "fun-pending"
-                  ? "bg-amber-500 text-white"
-                  : "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      {filter === "group" && groups.length > 0 && (
-        <div className="flex items-center gap-2">
-          <label htmlFor="groupFilter" className="text-sm text-muted-foreground">
-            Groupe
-          </label>
-          <Select
-            id="groupFilter"
-            value={groupId ?? ""}
-            onChange={(e) => setGroup(e.target.value)}
-            className="max-w-[180px]"
-          >
-            <option value="">Tous les groupes</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-      )}
+      <MatchesFilterBar
+        view={filter}
+        groupId={groupId}
+        betFilter={betFilter}
+        groups={groups}
+        myBetsCount={myBetsCount}
+        funPendingCount={funPendingCount}
+        onViewChange={setView}
+        onGroupChange={setGroup}
+        onBetFilterChange={setBetFilter}
+      />
 
       {byGroup.length === 0 ? (
-        <p className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
+        <p className="rounded-2xl border border-dashed border-white/15 bg-zinc-900/30 p-10 text-center text-muted-foreground">
           Aucun match à venir dans cette sélection.
         </p>
       ) : displayMatches.length === 0 ? (
-        <p className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
+        <p className="rounded-2xl border border-dashed border-white/15 bg-zinc-900/30 p-10 text-center text-muted-foreground">
           {betFilter === "my-bets"
             ? "Aucun pronostic classique dans cette sélection."
             : betFilter === "fun-pending"

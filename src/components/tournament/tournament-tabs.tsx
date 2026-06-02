@@ -36,7 +36,7 @@ export function TournamentTabs({
             type="button"
             onClick={() => setTab(id)}
             className={cn(
-              "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "flex-1 cursor-pointer rounded-md px-3 py-2 text-sm font-medium transition-colors",
               tab === id
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",

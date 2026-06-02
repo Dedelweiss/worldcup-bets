@@ -102,7 +102,7 @@ function BetCard({ bet }: { bet: BetRow }) {
     >
     <Link
       href={`/matches/${bet.match_id}${isLive ? "#paris-fun" : ""}`}
-      className="block"
+      className="block cursor-pointer"
     >
       {isLive && (
         <div className="flex items-center justify-between gap-2 border-b border-lime-400/20 bg-lime-400/10 px-4 py-2">

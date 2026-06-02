@@ -41,7 +41,7 @@ export function BottomNav() {
               <Link
                 href={href}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-[10px] font-medium transition-colors",
+                  "flex cursor-pointer flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-[10px] font-medium transition-colors",
                   active
                     ? "text-lime-400"
                     : "text-zinc-500 hover:text-zinc-300",

@@ -88,6 +88,7 @@ export function QuickBetSwipeCard({
     <motion.div
       className={cn(
         "relative mx-auto w-full max-w-sm touch-none select-none",
+        !disabled && "cursor-grab active:cursor-grabbing",
         disabled && "pointer-events-none opacity-60",
       )}
       style={{ x, y, rotate }}
