@@ -434,17 +434,7 @@ export async function deleteMatchAction(matchId: number): Promise<ActionResult> 
   });
 
   if (error) {
-    if (error.message.includes("Could not find the function")) {
-      const { error: deleteError } = await supabase
-        .from("matches")
-        .delete()
-        .eq("id", matchId);
-      if (deleteError) {
-        return { success: false, error: deleteError.message };
-      }
-    } else {
-      return { success: false, error: error.message };
-    }
+    return { success: false, error: error.message };
   }
 
   const summary = data as Record<string, unknown> | null;

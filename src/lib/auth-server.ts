@@ -42,6 +42,9 @@ export async function isAdmin(): Promise<boolean> {
 
 export async function requireAuth(): Promise<Profile> {
   if (!hasSupabaseConfig) {
+    if (process.env.NODE_ENV === "production") {
+      redirect("/login");
+    }
     return { ...MOCK_DASHBOARD.profile, role: "user" };
   }
   const profile = await getProfile();

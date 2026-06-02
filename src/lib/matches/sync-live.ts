@@ -1,4 +1,5 @@
 import { hasSupabaseConfig } from "@/lib/auth-server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const SYNC_INTERVAL_MS = 30_000;
@@ -24,7 +25,10 @@ export async function syncLiveMatches(options?: {
 
   syncInFlight = (async () => {
     try {
-      const supabase = await createClient();
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+      const supabase = serviceRoleKey
+        ? createAdminClient()
+        : await createClient();
       await supabase.rpc("sync_live_matches");
       lastSyncAt = Date.now();
     } finally {

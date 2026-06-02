@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { generateAndSaveMatchSummary } from "@/lib/ai/generate-match-summary";
-import { isAdmin } from "@/lib/auth-server";
+import { getProfile } from "@/lib/auth-server";
 
 export async function POST(request: Request) {
-  const admin = await isAdmin();
-  if (!admin) {
+  const profile = await getProfile();
+  if (!profile || profile.role !== "admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
