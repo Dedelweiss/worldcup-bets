@@ -6,6 +6,7 @@ import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { cn } from "@/lib/utils";
 import { formatKickoff, formatKickoffRelative } from "@/lib/format";
 import { goldenMatchHeaderClass } from "@/lib/golden-match";
+import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
 import type { MatchStatus, MatchWithTeams } from "@/types/database";
 
 const STATUS_LABEL: Record<MatchStatus, string> = {
@@ -52,9 +53,9 @@ export function MatchHeader({ match, adminEditHref }: MatchHeaderProps) {
 
       <div>
         <h1 className="text-xl font-bold leading-tight">
-          {match.home_team.name}{" "}
+          {tbdTeamDisplayName(match.home_team)}{" "}
           <span className="font-normal text-muted-foreground">vs</span>{" "}
-          {match.away_team.name}
+          {tbdTeamDisplayName(match.away_team)}
         </h1>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {isGolden && <GoldenMatchBadge compact />}

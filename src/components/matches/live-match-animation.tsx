@@ -1,29 +1,24 @@
 "use client";
 
-import Image from "next/image";
 import { motion } from "framer-motion";
+import { TeamFlag } from "@/components/shared/team-flag";
 import { cn } from "@/lib/utils";
+import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
 import type { Team } from "@/types/database";
 
 function TeamBadge({ team }: { team: Team }) {
   return (
     <div className="relative z-10 flex shrink-0 flex-col items-center gap-1">
-      {team.logo_url ? (
-        <Image
-          src={team.logo_url}
-          alt={team.name}
-          width={40}
-          height={40}
-          className="size-10 rounded-full border-2 border-primary/50 bg-muted object-contain p-0.5 shadow-sm"
-          unoptimized
-        />
-      ) : (
-        <span className="flex size-10 items-center justify-center rounded-full border-2 border-primary/50 bg-muted text-xs font-bold">
-          {team.code ?? team.name.slice(0, 2).toUpperCase()}
-        </span>
-      )}
+      <TeamFlag
+        name={team.name}
+        code={team.code}
+        logoUrl={team.logo_url}
+        teamId={team.id}
+        size={40}
+        className="border-2 border-primary/50 shadow-sm"
+      />
       <span className="max-w-[72px] truncate text-[10px] font-medium text-muted-foreground">
-        {team.name}
+        {tbdTeamDisplayName(team)}
       </span>
     </div>
   );

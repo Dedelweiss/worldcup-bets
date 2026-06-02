@@ -1,5 +1,7 @@
 import Image from "next/image";
+import { TbdTeamBadge } from "@/components/shared/tbd-team-badge";
 import { teamLogoUrl } from "@/lib/flags";
+import { isTbdTeam } from "@/lib/tournament/tbd-team";
 import { cn } from "@/lib/utils";
 
 interface TeamFlagProps {
@@ -8,6 +10,7 @@ interface TeamFlagProps {
   logoUrl?: string | null;
   size?: number;
   className?: string;
+  teamId?: number;
 }
 
 export function TeamFlag({
@@ -16,7 +19,20 @@ export function TeamFlag({
   logoUrl,
   size = 32,
   className,
+  teamId,
 }: TeamFlagProps) {
+  if (isTbdTeam({ id: teamId, name, code, logo_url: logoUrl })) {
+    return (
+      <span
+        role="img"
+        aria-label={name}
+        className={cn("inline-flex shrink-0", className)}
+      >
+        <TbdTeamBadge size={size} />
+      </span>
+    );
+  }
+
   const src = teamLogoUrl({ logo_url: logoUrl ?? null, code });
 
   if (src) {

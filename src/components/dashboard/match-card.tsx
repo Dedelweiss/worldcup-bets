@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { TeamFlag } from "@/components/shared/team-flag";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { LiveMatchAnimation } from "@/components/matches/live-match-animation";
@@ -15,40 +15,28 @@ import {
 import { formatKickoff, formatKickoffRelative, formatOdd } from "@/lib/format";
 import { MatchCardStatusBadges } from "@/components/dashboard/match-card-status-badges";
 import { goldenMatchCardClass } from "@/lib/golden-match";
+import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
 import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
-import type { MatchWithTeams } from "@/types/database";
+import type { MatchWithTeams, Team } from "@/types/database";
 
 interface MatchCardProps {
   match: MatchWithTeams;
   betStatus?: UserMatchBetStatus;
 }
 
-function TeamRow({
-  name,
-  code,
-  logoUrl,
-}: {
-  name: string;
-  code: string | null;
-  logoUrl: string | null;
-}) {
+function TeamRow({ team }: { team: Team }) {
   return (
     <div className="flex flex-1 items-center gap-2">
-      {logoUrl ? (
-        <Image
-          src={logoUrl}
-          alt={name}
-          width={28}
-          height={28}
-          className="size-7 rounded-full bg-muted object-contain p-0.5"
-          unoptimized
-        />
-      ) : (
-        <span className="flex size-7 items-center justify-center rounded-full bg-muted text-[10px] font-bold">
-          {code ?? "?"}
-        </span>
-      )}
-      <span className="truncate text-sm font-medium">{name}</span>
+      <TeamFlag
+        name={team.name}
+        code={team.code}
+        logoUrl={team.logo_url}
+        teamId={team.id}
+        size={28}
+      />
+      <span className="truncate text-sm font-medium">
+        {tbdTeamDisplayName(team)}
+      </span>
     </div>
   );
 }
@@ -130,17 +118,9 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
             />
           ) : (
             <div className="flex items-center gap-3">
-              <TeamRow
-                name={match.home_team.name}
-                code={match.home_team.code}
-                logoUrl={match.home_team.logo_url}
-              />
+              <TeamRow team={match.home_team} />
               <span className="text-xs font-semibold text-muted-foreground">vs</span>
-              <TeamRow
-                name={match.away_team.name}
-                code={match.away_team.code}
-                logoUrl={match.away_team.logo_url}
-              />
+              <TeamRow team={match.away_team} />
             </div>
           )}
 

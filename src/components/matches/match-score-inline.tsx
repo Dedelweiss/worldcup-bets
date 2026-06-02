@@ -1,31 +1,20 @@
-import Image from "next/image";
+import { TeamFlag } from "@/components/shared/team-flag";
 import { cn } from "@/lib/utils";
+import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
 import type { MatchWithTeams } from "@/types/database";
 
 type Team = MatchWithTeams["home_team"];
 
 function TeamLogo({ team, className }: { team: Team; className?: string }) {
-  if (team.logo_url) {
-    return (
-      <Image
-        src={team.logo_url}
-        alt=""
-        width={36}
-        height={36}
-        className={cn("size-9 rounded-full bg-muted object-contain p-0.5", className)}
-        unoptimized
-      />
-    );
-  }
   return (
-    <span
-      className={cn(
-        "flex size-9 items-center justify-center rounded-full bg-muted text-xs font-bold",
-        className,
-      )}
-    >
-      {team.code ?? "?"}
-    </span>
+    <TeamFlag
+      name={team.name}
+      code={team.code}
+      logoUrl={team.logo_url}
+      teamId={team.id}
+      size={36}
+      className={className}
+    />
   );
 }
 
@@ -82,8 +71,12 @@ export function MatchScoreInline({
         <TeamLogo team={awayTeam} />
       </div>
       <div className="flex w-full max-w-[min(100%,280px)] justify-between gap-6 px-1 text-[11px] text-muted-foreground sm:text-xs">
-        <span className="max-w-[42%] truncate text-right">{homeTeam.name}</span>
-        <span className="max-w-[42%] truncate text-left">{awayTeam.name}</span>
+        <span className="max-w-[42%] truncate text-right">
+          {tbdTeamDisplayName(homeTeam)}
+        </span>
+        <span className="max-w-[42%] truncate text-left">
+          {tbdTeamDisplayName(awayTeam)}
+        </span>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { BracketSlotCard } from "@/components/bracket/bracket-slot-card";
+import { TbdTeamBadge } from "@/components/shared/tbd-team-badge";
 import { cn } from "@/lib/utils";
 import { STAGE_LABELS } from "@/lib/tournament/constants";
 import type { BracketSlotWithMatch, MatchStage } from "@/types/database";
@@ -200,13 +201,14 @@ export function BracketTree({ slots, isAdmin }: BracketTreeProps) {
                 />
               ) : (
                 <div className="rounded-xl border-2 border-dashed border-primary/40 bg-card/50 p-6 text-center">
-                  <span className="text-2xl" aria-hidden>
-                    🏆
-                  </span>
-                  <p className="mt-2 text-sm font-medium text-muted-foreground">
+                  <div className="mx-auto flex w-fit items-center justify-center gap-2">
+                    <TbdTeamBadge size={36} />
+                    <TbdTeamBadge size={36} />
+                  </div>
+                  <p className="mt-3 text-sm font-medium text-muted-foreground">
                     Finale
                   </p>
-                  <p className="text-xs text-muted-foreground/70">À définir</p>
+                  <p className="text-xs text-muted-foreground/70">À déterminer</p>
                 </div>
               )}
             </div>

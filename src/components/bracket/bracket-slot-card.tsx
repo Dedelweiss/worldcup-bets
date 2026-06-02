@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { formatKickoff } from "@/lib/format";
 import { goldenMatchCardClass } from "@/lib/golden-match";
-import type { BracketSlotWithMatch } from "@/types/database";
+import { TBD_PLACEHOLDER_TEAM, tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
+import type { BracketSlotWithMatch, Team } from "@/types/database";
 
 interface BracketSlotCardProps {
   slot: BracketSlotWithMatch;
@@ -42,9 +43,10 @@ export function BracketSlotCard({
             {formatKickoff(kickoffAt)}
           </p>
         ) : null}
-        <p className="mt-1 text-xs text-muted-foreground/80">
-          {kickoffAt ? "Équipes à déterminer" : "À définir"}
-        </p>
+        <div className="mt-2 space-y-1">
+          <TeamLine team={TBD_PLACEHOLDER_TEAM} compact={compact} muted />
+          <TeamLine team={TBD_PLACEHOLDER_TEAM} compact={compact} muted />
+        </div>
       </div>
     );
   }
@@ -134,17 +136,20 @@ function TeamLine({
   score,
   highlight,
   compact,
+  muted,
 }: {
-  team: { name: string; code: string | null; logo_url: string | null };
-  score: number | null;
+  team: Pick<Team, "id" | "name" | "code" | "logo_url">;
+  score?: number | null;
   highlight?: boolean;
   compact?: boolean;
+  muted?: boolean;
 }) {
   return (
     <div
       className={cn(
         "flex items-center justify-between gap-1",
         highlight && "font-semibold text-primary",
+        muted && "text-muted-foreground/80",
       )}
     >
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
@@ -152,13 +157,14 @@ function TeamLine({
           name={team.name}
           code={team.code}
           logoUrl={team.logo_url}
+          teamId={team.id}
           size={compact ? 18 : 20}
         />
         <span className={cn("truncate", compact ? "text-[11px]" : "text-xs")}>
-          {team.name}
+          {tbdTeamDisplayName(team)}
         </span>
       </div>
-      {score !== null && (
+      {score != null && (
         <span className="shrink-0 tabular-nums text-[11px] font-bold">{score}</span>
       )}
     </div>
