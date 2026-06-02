@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Lock, Target, Zap } from "lucide-react";
 import {
   placeBetAction,
@@ -86,8 +86,8 @@ export function BetSlip({
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<"1n2" | "exact" | null>(null);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
+  const [classicBetConfirmed, setClassicBetConfirmed] = useState(false);
 
   const canUseBoost = boostsAvailable > 0;
   const isGolden = match.is_golden ?? false;
@@ -180,7 +180,8 @@ export function BetSlip({
         )
       : null;
 
-  const hasClassicBet = pending.hasMatchResult || pending.hasExactScore;
+  const hasClassicBet =
+    pending.hasMatchResult || pending.hasExactScore || classicBetConfirmed;
   const tackleRivals = tackleEligibleRivals(participation, currentUserId);
 
   const has1n2Change =
@@ -268,7 +269,8 @@ export function BetSlip({
       router.refresh();
       return;
     }
-    setSuccess("1n2");
+    setClassicBetConfirmed(true);
+    setSavedNotice(MATCH_RESULT_COPY.pronosticSavedResult);
     router.refresh();
   }
 
@@ -312,7 +314,8 @@ export function BetSlip({
       router.refresh();
       return;
     }
-    setSuccess("exact");
+    setClassicBetConfirmed(true);
+    setSavedNotice("Score exact enregistré.");
     router.refresh();
   }
 
@@ -330,60 +333,11 @@ export function BetSlip({
   }
 
   return (
-    <AnimatePresence mode="wait">
-      {success ? (
-        <motion.div
-          key="success"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <Card
-            className={cn(
-              "border-primary/40",
-              success === "exact" && "border-emerald-500/40",
-            )}
-          >
-            <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
-              <p className="text-lg font-semibold text-primary">
-                {success === "1n2"
-                  ? MATCH_RESULT_COPY.pronosticSavedResult
-                  : "Score exact enregistré"}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {success === "1n2" ? (
-                  <>
-                    Si vous avez raison : +{formatPoints(pointsIfWinValue)} points
-                    {boosted && (
-                      <Badge variant="outline" className="ml-2 text-[10px]">
-                        Boost x2
-                      </Badge>
-                    )}
-                  </>
-                ) : tendancePts != null && perfectPts != null ? (
-                  <>
-                    Tendance +{formatPoints(tendancePts)} pts · Tout pile +
-                    {formatPoints(perfectPts)} pts
-                  </>
-                ) : null}
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => router.push("/bets")}>
-                  Mes paris
-                </Button>
-                <Button onClick={() => router.push("/dashboard")}>
-                  Tableau de bord
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      ) : (
-        <motion.div
-          key="form"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <Card className={cn(goldenMatchCardClass(isGolden))}>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      <Card className={cn(goldenMatchCardClass(isGolden), "overflow-visible")}>
             <CardHeader className="space-y-3">
               {isGolden && (
                 <div className="flex justify-center">
@@ -775,6 +729,11 @@ export function BetSlip({
             </CardContent>
             {tackleState && (
               <CardContent className="border-t border-border/50 pt-4">
+                {classicBetConfirmed && (
+                  <p className="mb-3 rounded-lg border border-lime-400/30 bg-lime-400/10 px-3 py-2 text-sm text-lime-200">
+                    Pronostic enregistré — choisis ton rival à tacler ci-dessous.
+                  </p>
+                )}
                 <TacklePicker
                   matchId={match.id}
                   currentUserId={currentUserId}
@@ -786,8 +745,6 @@ export function BetSlip({
               </CardContent>
             )}
           </Card>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </motion.div>
   );
 }

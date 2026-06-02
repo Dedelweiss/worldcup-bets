@@ -154,7 +154,63 @@ function mapTackleError(message: string): string {
   if (m.includes("kickoff") || m.includes("before match")) {
     return "Le tacle est fermé pour ce match.";
   }
+  if (m.includes("not your tackle")) {
+    return "Ce tacle ne t'appartient pas.";
+  }
+  if (m.includes("already resolved")) {
+    return "Ce tacle est déjà réglé.";
+  }
+  if (m.includes("target unchanged")) {
+    return "Tu as déjà sélectionné ce rival.";
+  }
+  if (m.includes("tackle not found")) {
+    return "Tacle introuvable.";
+  }
   return message;
+}
+
+export async function cancelTackleAction(
+  tackleId: string,
+  matchId: number,
+): Promise<{ success: true } | { success: false; error: string }> {
+  await requireAuth();
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancel_tackle", {
+    p_tackle_id: tackleId,
+  });
+
+  if (error) {
+    return { success: false, error: mapTackleError(error.message) };
+  }
+
+  revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/leaderboard");
+
+  return { success: true };
+}
+
+export async function updateTackleAction(
+  tackleId: string,
+  matchId: number,
+  targetId: string,
+): Promise<PlaceTackleResult> {
+  await requireAuth();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("update_tackle", {
+    p_tackle_id: tackleId,
+    p_target_id: targetId,
+  });
+
+  if (error) {
+    return { success: false, error: mapTackleError(error.message) };
+  }
+
+  revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/leaderboard");
+
+  return { success: true, tackleId: data as string };
 }
 
 export async function placeTackleAction(

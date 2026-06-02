@@ -1,7 +1,19 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
+
+interface PopoverContextValue {
+  open: boolean;
+  onOpenChange?: (open: boolean) => void;
+  triggerRef: React.RefObject<HTMLButtonElement | null>;
+}
+
+const PopoverContext = React.createContext<PopoverContextValue>({
+  open: false,
+  triggerRef: { current: null },
+});
 
 interface PopoverProps {
   open?: boolean;
@@ -10,21 +22,16 @@ interface PopoverProps {
 }
 
 function Popover({ open, onOpenChange, children }: PopoverProps) {
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+
   return (
-    <PopoverContext.Provider value={{ open: open ?? false, onOpenChange }}>
+    <PopoverContext.Provider
+      value={{ open: open ?? false, onOpenChange, triggerRef }}
+    >
       {children}
     </PopoverContext.Provider>
   );
 }
-
-interface PopoverContextValue {
-  open: boolean;
-  onOpenChange?: (open: boolean) => void;
-}
-
-const PopoverContext = React.createContext<PopoverContextValue>({
-  open: false,
-});
 
 function PopoverTrigger({
   children,
@@ -32,16 +39,20 @@ function PopoverTrigger({
   asChild,
   ...props
 }: React.ComponentProps<"button"> & { asChild?: boolean }) {
-  const { open, onOpenChange } = React.useContext(PopoverContext);
+  const { open, onOpenChange, triggerRef } = React.useContext(PopoverContext);
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children as React.ReactElement<{ onClick?: () => void }>, {
-      onClick: () => onOpenChange?.(!open),
-    });
+    return React.cloneElement(
+      children as React.ReactElement<{ onClick?: () => void }>,
+      {
+        onClick: () => onOpenChange?.(!open),
+      },
+    );
   }
 
   return (
     <button
+      ref={triggerRef}
       type="button"
       data-slot="popover-trigger"
       aria-expanded={open}
@@ -57,23 +68,78 @@ function PopoverTrigger({
 function PopoverContent({
   className,
   align = "center",
+  side = "bottom",
   children,
   ...props
-}: React.ComponentProps<"div"> & { align?: "start" | "center" | "end" }) {
-  const { open, onOpenChange } = React.useContext(PopoverContext);
-  const ref = React.useRef<HTMLDivElement>(null);
+}: React.ComponentProps<"div"> & {
+  align?: "start" | "center" | "end";
+  side?: "top" | "bottom";
+}) {
+  const { open, onOpenChange, triggerRef } = React.useContext(PopoverContext);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = React.useState(false);
+  const [style, setStyle] = React.useState<React.CSSProperties>({});
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const updatePosition = React.useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const gap = 8;
+    const width = contentRef.current?.offsetWidth ?? 288;
+
+    let left = rect.left;
+    if (align === "center") {
+      left = rect.left + rect.width / 2 - width / 2;
+    } else if (align === "end") {
+      left = rect.right - width;
+    }
+
+    const maxLeft = Math.max(8, Math.min(left, window.innerWidth - width - 8));
+
+    if (side === "top") {
+      setStyle({
+        position: "fixed",
+        left: maxLeft,
+        top: rect.top - gap,
+        transform: "translateY(-100%)",
+        zIndex: 50,
+        width,
+      });
+    } else {
+      setStyle({
+        position: "fixed",
+        left: maxLeft,
+        top: rect.bottom + gap,
+        zIndex: 50,
+        width,
+      });
+    }
+  }, [align, side, triggerRef]);
+
+  React.useLayoutEffect(() => {
+    if (!open) return;
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open, updatePosition]);
 
   React.useEffect(() => {
     if (!open) return;
 
     function onPointerDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        const trigger = ref.current.parentElement?.querySelector(
-          '[data-slot="popover-trigger"]',
-        );
-        if (trigger?.contains(e.target as Node)) return;
-        onOpenChange?.(false);
-      }
+      const target = e.target as Node;
+      if (contentRef.current?.contains(target)) return;
+      if (triggerRef.current?.contains(target)) return;
+      onOpenChange?.(false);
     }
 
     function onEscape(e: KeyboardEvent) {
@@ -86,25 +152,24 @@ function PopoverContent({
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("keydown", onEscape);
     };
-  }, [open, onOpenChange]);
+  }, [open, onOpenChange, triggerRef]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
-      ref={ref}
+      ref={contentRef}
       data-slot="popover-content"
+      style={style}
       className={cn(
-        "absolute z-50 mt-2 w-72 rounded-xl border border-border/80 bg-popover p-3 text-popover-foreground shadow-lg shadow-primary/10 animate-in fade-in-0 zoom-in-95",
-        align === "start" && "left-0",
-        align === "center" && "left-1/2 -translate-x-1/2",
-        align === "end" && "right-0",
+        "rounded-xl border border-border/80 bg-popover p-3 text-popover-foreground shadow-lg shadow-primary/10 animate-in fade-in-0 zoom-in-95",
         className,
       )}
       {...props}
     >
       {children}
-    </div>
+    </div>,
+    document.body,
   );
 }
 
