@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Shield } from "lucide-react";
 import { AppNavLinks } from "@/components/layout/app-nav-links";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { UserMenu } from "@/components/layout/user-menu";
 import { appNav } from "@/components/layout/app-nav";
@@ -12,6 +14,8 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ profile }: AppHeaderProps) {
+  const isAdmin = profile?.role === "admin";
+
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl">
       <div className="flex h-14 items-center justify-between px-4 md:px-6">
@@ -35,7 +39,21 @@ export function AppHeader({ profile }: AppHeaderProps) {
           </nav>
         </div>
 
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex min-w-0 items-center gap-1 md:hidden">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "icon-sm" }),
+                "shrink-0 border-lime-400/40 bg-lime-400/10 text-lime-400 hover:bg-lime-400/20 hover:text-lime-300",
+              )}
+              title="Administration"
+              aria-label="Administration"
+            >
+              <Shield className="size-4" aria-hidden />
+            </Link>
+          )}
+          <MobileNav items={appNav} showAdmin={isAdmin} />
           {profile ? (
             <UserMenu profile={profile} />
           ) : (

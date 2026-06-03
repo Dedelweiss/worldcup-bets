@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Shield } from "lucide-react";
 import { NavFunBadge } from "@/components/layout/nav-fun-badge";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "@/components/layout/app-nav";
@@ -85,18 +86,18 @@ export function AppNavLinks({
       })}
       {showAdmin &&
         (variant === "mobile" ? (
-          <li>
+          <li className="mt-2 border-t border-border pt-2">
             <Link
               href="/admin"
               onClick={onNavigate}
               className={cn(
                 linkClass,
-                pathname.startsWith("/admin") &&
-                  "bg-primary/15 text-primary",
-                !pathname.startsWith("/admin") && "text-primary hover:bg-primary/10",
+                "flex items-center gap-2 border border-lime-400/30 bg-lime-400/10 font-semibold text-lime-400 hover:bg-lime-400/15",
+                pathname.startsWith("/admin") && "ring-1 ring-lime-400/40",
               )}
             >
-              Admin
+              <Shield className="size-4 shrink-0" aria-hidden />
+              Administration
             </Link>
           </li>
         ) : variant === "sidebar" ? (

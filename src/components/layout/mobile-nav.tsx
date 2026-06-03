@@ -36,7 +36,7 @@ export function MobileNav({ items, showAdmin }: MobileNavProps) {
     open && mounted
       ? createPortal(
           <div
-            className="fixed inset-0 z-[200] sm:hidden"
+            className="fixed inset-0 z-[200] md:hidden"
             role="dialog"
             aria-modal="true"
             aria-label="Menu de navigation"
@@ -89,7 +89,7 @@ export function MobileNav({ items, showAdmin }: MobileNavProps) {
       : null;
 
   return (
-    <div className="sm:hidden">
+    <div className="md:hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
