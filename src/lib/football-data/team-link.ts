@@ -9,29 +9,15 @@ const EXPECTED_TLA_ALIASES: Record<string, string[]> = {
   USA: ["USA", "US"],
 };
 
-/** Mots-clés (nom API normalisé) par code seed — évite les confusions (ex. Japon / Suède). */
-const OUR_CODE_NAME_KEYWORDS: Record<string, string[]> = {
-  JP: ["japon", "japan"],
-  SE: ["suede", "suède", "sweden", "sverige"],
-  NL: ["netherlands", "paysbas", "holland", "nederland"],
-  TN: ["tunisia", "tunisie"],
-  MX: ["mexico", "mexique"],
-  US: ["unitedstates", "usa", "etatsunis"],
-  "GB-ENG": ["england", "angleterre"],
-};
-
-export function normalizeTeamLabel(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-}
+import {
+  TEAM_CODE_API_KEYWORDS,
+  normalizeTeamLabel,
+} from "@/lib/tournament/team-api-names";
 
 function nameKeywordsForOurCode(code: string | null | undefined): string[] {
   if (!code) return [];
   const key = code.trim().toUpperCase();
-  return OUR_CODE_NAME_KEYWORDS[key] ?? [];
+  return TEAM_CODE_API_KEYWORDS[key] ?? [];
 }
 
 export function apiTlaMatchesOurCode(

@@ -167,6 +167,7 @@ export interface LeaderboardEntry {
   id: string;
   display_name: string | null;
   username: string | null;
+  avatar_url?: string | null;
   /** Points totaux (RPC renvoie encore la colonne `balance`). */
   balance: number;
   classic_won: number;

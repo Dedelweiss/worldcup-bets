@@ -9,6 +9,7 @@ function mapRow(row: Record<string, unknown>): LeaderboardEntry {
     id: row.id as string,
     display_name: row.display_name as string | null,
     username: row.username as string | null,
+    avatar_url: (row.avatar_url as string | null) ?? null,
     balance: Number(row.balance ?? row.points ?? 0),
     classic_won: Number(row.classic_won ?? 0),
     classic_lost: Number(row.classic_lost ?? 0),
@@ -78,6 +79,30 @@ async function getLeaderboardFallback(options: {
     warning:
       "Filtres avancés indisponibles. Exécutez supabase/migrations/012_private_leagues_leaderboard.sql dans Supabase.",
   };
+}
+
+async function attachPlayerAvatars(
+  players: LeaderboardEntry[],
+): Promise<LeaderboardEntry[]> {
+  if (players.length === 0) return players;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, avatar_url")
+    .in(
+      "id",
+      players.map((p) => p.id),
+    );
+
+  const byId = new Map(
+    (data ?? []).map((p) => [p.id, p.avatar_url as string | null]),
+  );
+
+  return players.map((p) => ({
+    ...p,
+    avatar_url: p.avatar_url ?? byId.get(p.id) ?? null,
+  }));
 }
 
 async function attachPlayerBadges(
@@ -184,13 +209,15 @@ export async function getLeaderboard(options?: {
           players = players.filter((p) => ids.has(p.id));
         }
         const labeled = await attachLeagueLabels(sortPlayers(players, sort));
-        return { players: await attachPlayerBadges(labeled) };
+        const withAvatars = await attachPlayerAvatars(labeled);
+        return { players: await attachPlayerBadges(withAvatars) };
       }
       const fallback = await getLeaderboardFallback({ leagueId, sort });
       const labeled = await attachLeagueLabels(fallback.players);
+      const withAvatars = await attachPlayerAvatars(labeled);
       return {
         ...fallback,
-        players: await attachPlayerBadges(labeled),
+        players: await attachPlayerBadges(withAvatars),
       };
     }
     console.error("get_leaderboard_filtered", error);
@@ -199,7 +226,8 @@ export async function getLeaderboard(options?: {
 
   const players = (data ?? []).map((row: Record<string, unknown>) => mapRow(row));
   const labeled = await attachLeagueLabels(players);
-  return { players: await attachPlayerBadges(labeled) };
+  const withAvatars = await attachPlayerAvatars(labeled);
+  return { players: await attachPlayerBadges(withAvatars) };
 }
 
 export async function getLeaderboardTop3(): Promise<LeaderboardEntry[]> {

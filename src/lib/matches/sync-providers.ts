@@ -14,6 +14,8 @@ export interface SyncMatchProvidersResult {
   footballData?: SyncFootballDataResult;
   oddsApi?: SyncOddsApiResult;
   error?: string;
+  /** Sync partielle (ex. live OK, cotes en quota dépassé). */
+  warning?: string;
 }
 
 /**
@@ -22,14 +24,19 @@ export interface SyncMatchProvidersResult {
  */
 export async function syncMatchProviders(options?: {
   force?: boolean;
+  /** false par défaut : cotes uniquement via le bouton admin */
+  includeOdds?: boolean;
 }): Promise<SyncMatchProvidersResult> {
   const hasFd = hasFootballDataConfig();
   const hasOdds = hasOddsApiConfig();
+  const includeOdds = options?.includeOdds === true;
 
-  if (!hasFd && !hasOdds) {
+  if (!hasFd && (!hasOdds || !includeOdds)) {
     return {
       ok: false,
-      error: "FOOTBALL_DATA_API_KEY ou ODDS_API_KEY requise",
+      error: includeOdds
+        ? "FOOTBALL_DATA_API_KEY ou ODDS_API_KEY requise"
+        : "FOOTBALL_DATA_API_KEY manquante",
     };
   }
 
@@ -37,10 +44,15 @@ export async function syncMatchProviders(options?: {
   let oddsApi: SyncOddsApiResult | undefined;
 
   if (hasFd) {
-    footballData = await syncFootballDataWc2026({
-      force: options?.force,
-      skipOdds: hasOdds,
-    });
+    try {
+      footballData = await syncFootballDataWc2026({
+        force: options?.force,
+        skipOdds: true,
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Sync football-data échouée";
+      return { ok: false, error: message };
+    }
     if (!footballData.ok) {
       return {
         ok: false,
@@ -51,9 +63,31 @@ export async function syncMatchProviders(options?: {
     }
   }
 
-  if (hasOdds) {
-    oddsApi = await syncOddsApiWc2026({ force: options?.force });
+  if (includeOdds && hasOdds) {
+    try {
+      oddsApi = await syncOddsApiWc2026({ force: true });
+    } catch (e) {
+      const { formatOddsApiError } = await import("@/lib/odds-api/errors");
+      const msg = formatOddsApiError(e);
+      if (footballData?.ok) {
+        return {
+          ok: true,
+          footballData,
+          warning: `Scores OK, cotes non synchronisées : ${msg}`,
+        };
+      }
+      return { ok: false, footballData, error: msg };
+    }
     if (!oddsApi.ok) {
+      const partialLiveOk = Boolean(footballData?.ok);
+      if (partialLiveOk) {
+        return {
+          ok: true,
+          footballData,
+          oddsApi,
+          warning: `Scores mis à jour, mais les cotes n'ont pas pu être synchronisées : ${oddsApi.error}`,
+        };
+      }
       return {
         ok: false,
         footballData,

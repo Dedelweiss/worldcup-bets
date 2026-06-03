@@ -1,25 +1,8 @@
+import { teamNamesMatchForOdds } from "@/lib/tournament/team-api-names";
 import type { OddsApiEvent } from "@/lib/odds-api/types";
 
-const KICKOFF_MATCH_WINDOW_MS = 3 * 60 * 60 * 1000;
-
-export function normalizeEventTeamName(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-}
-
-export function teamNamesMatch(apiName: string, dbName: string): boolean {
-  const a = normalizeEventTeamName(apiName);
-  const b = normalizeEventTeamName(dbName);
-  if (!a || !b) return false;
-  if (a === b) return true;
-  if (a.length >= 4 && b.length >= 4) {
-    return a.includes(b) || b.includes(a);
-  }
-  return false;
-}
+/** Fenêtre élargie : décalages horaires / sources API. */
+const KICKOFF_MATCH_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export interface LocalMatchForOddsLink {
   id: number;
@@ -30,6 +13,8 @@ export interface LocalMatchForOddsLink {
   odds_api_event_id: number | null;
   home_name: string;
   away_name: string;
+  home_code: string | null;
+  away_code: string | null;
 }
 
 export function isWorldCupEvent(
@@ -60,11 +45,11 @@ export function findOddsEventForLocalMatch(
     if (delta > KICKOFF_MATCH_WINDOW_MS) continue;
 
     const direct =
-      teamNamesMatch(event.home, local.home_name) &&
-      teamNamesMatch(event.away, local.away_name);
+      teamNamesMatchForOdds(event.home, local.home_name, local.home_code) &&
+      teamNamesMatchForOdds(event.away, local.away_name, local.away_code);
     const swapped =
-      teamNamesMatch(event.home, local.away_name) &&
-      teamNamesMatch(event.away, local.home_name);
+      teamNamesMatchForOdds(event.home, local.away_name, local.away_code) &&
+      teamNamesMatchForOdds(event.away, local.home_name, local.home_code);
 
     if (!direct && !swapped) continue;
 

@@ -1,3 +1,4 @@
+import { throwOddsApiHttpError } from "@/lib/odds-api/errors";
 import {
   ODDS_API_DEFAULT_BOOKMAKERS,
 } from "@/lib/odds-api/rate-limit";
@@ -53,7 +54,7 @@ async function oddsApiFetch<T>(path: string, params?: Record<string, string>): P
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`odds-api.io ${res.status}: ${body.slice(0, 200)}`);
+    throwOddsApiHttpError(res.status, body);
   }
 
   return res.json() as Promise<T>;
@@ -131,6 +132,20 @@ export async function fetchOddsApiLiveEvents(): Promise<OddsApiEvent[]> {
     if (e.id) byId.set(e.id, e);
   }
   return [...byId.values()];
+}
+
+export async function fetchOddsApiEventSearch(
+  query: string,
+): Promise<OddsApiEvent[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  const data = await oddsApiFetch<OddsApiEvent[] | { events?: OddsApiEvent[] }>(
+    "/events/search",
+    { query: q },
+  );
+  if (Array.isArray(data)) return data;
+  return data.events ?? [];
 }
 
 export async function fetchOddsApiOddsMulti(

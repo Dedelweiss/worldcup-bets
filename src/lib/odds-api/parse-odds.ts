@@ -17,8 +17,19 @@ export function parseOddsApiMatchResult(
   const draws: number[] = [];
   const aways: number[] = [];
 
+  const ML_MARKET_NAMES = new Set([
+    "ml",
+    "1x2",
+    "match result",
+    "full time result",
+    "moneyline",
+    "3way",
+  ]);
+
   for (const markets of Object.values(bookmakers)) {
-    const ml = markets.find((m) => m.name === "ML");
+    const ml = markets.find((m) =>
+      ML_MARKET_NAMES.has((m.name ?? "").trim().toLowerCase()),
+    );
     const row = ml?.odds?.[0];
     if (!row) continue;
 

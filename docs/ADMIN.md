@@ -83,9 +83,9 @@ Migrations **057**, **058**, **060** (`odds_api_event_id`).
 
 **Affichage** : badge **Cotes API** si `odds_synced_at` renseigné.
 
-**Budget** : sync auto ≈ toutes les 5 min (football-data + odds-api en parallèle logique) ; odds-api utilise `/odds/multi` (10 matchs = 1 requête).
+**Budget** : navigation / dashboard / mes paris → football-data uniquement (≈ 1 req / 5 min). **Cotes odds-api** → bouton admin « Sync live + cotes API » uniquement (quota 100 req/h sur l’offre gratuite).
 
-Scores, minute et statut : football-data. Cotes : odds-api. **Clôture des paris** : toujours manuelle (admin).
+Scores, minute et statut : football-data (auto). Cotes : odds-api (manuel). **Clôture des paris** : toujours manuelle (admin).
 
 Après **047**, le pronostiqueur **L'IA** (`ia_prono`) parie automatiquement un score exact quand le match passe en direct (via `sync_live_matches` + `SUPABASE_SERVICE_ROLE_KEY`). Clé LLM optionnelle (`GROQ_API_KEY` / `GEMINI_API_KEY`) ; sinon heuristique basée sur les cotes.
 

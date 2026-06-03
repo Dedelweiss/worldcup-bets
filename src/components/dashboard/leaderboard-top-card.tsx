@@ -3,6 +3,7 @@ import { Medal, Trophy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { formatPoints } from "@/lib/format";
+import { PlayerLeaderboardAvatar } from "@/components/leaderboard/player-leaderboard-avatar";
 import { getPlayerLabel } from "@/lib/profile/player-label";
 import { cn } from "@/lib/utils";
 import type { LeaderboardEntry } from "@/types/database";
@@ -45,12 +46,10 @@ export function LeaderboardTopCard({ players, isDemo }: LeaderboardTopCardProps)
                   className={cn("size-4 shrink-0", rankStyles[i] ?? "text-zinc-500")}
                   aria-hidden
                 />
+                <PlayerLeaderboardAvatar player={player} size="sm" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">
-                    {getPlayerLabel({
-                      display_name: player.display_name,
-                      username: player.username,
-                    })}
+                    {getPlayerLabel(player)}
                     {player.is_ai && (
                       <span className="ml-1.5 text-[10px] font-normal text-violet-400">
                         IA

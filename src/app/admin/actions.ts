@@ -740,7 +740,7 @@ export async function syncFootballDataAdminAction(): Promise<
   const { syncMatchProviders } = await import(
     "@/lib/matches/sync-providers"
   );
-  const stats = await syncMatchProviders({ force: true });
+  const stats = await syncMatchProviders({ force: true, includeOdds: true });
 
   if (!stats.ok) {
     return {
@@ -784,7 +784,10 @@ export async function prepareWorldCupAction(options: {
     const { syncMatchProviders } = await import(
       "@/lib/matches/sync-providers"
     );
-    syncStats = await syncMatchProviders({ force: true });
+    syncStats = await syncMatchProviders({
+      force: true,
+      includeOdds: true,
+    });
   }
 
   revalidatePath("/admin");

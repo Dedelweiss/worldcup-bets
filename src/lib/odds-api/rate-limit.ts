@@ -1,4 +1,4 @@
-/** Plan odds-api.io : 5 000 requêtes / heure — privilégier /odds/multi (10 events = 1 req). */
+/** Plans odds-api.io : de 100 à 5 000 req/h — privilégier /odds/multi (10 matchs = 1 req). */
 export const ODDS_API_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
 export const ODDS_API_MULTI_BATCH_SIZE = 10;

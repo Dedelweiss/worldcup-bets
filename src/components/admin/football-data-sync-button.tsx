@@ -11,11 +11,13 @@ export function FootballDataSyncButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSync() {
     setLoading(true);
     setMessage(null);
+    setWarning(null);
     setError(null);
 
     const result = await syncFootballDataAdminAction();
@@ -37,6 +39,9 @@ export function FootballDataSyncButton() {
         );
       }
       setMessage(parts.join(" · ") || "Sync terminée");
+      if (result.stats.warning) {
+        setWarning(result.stats.warning);
+      }
       router.refresh();
     }
 
@@ -54,10 +59,15 @@ export function FootballDataSyncButton() {
         className="gap-1.5"
       >
         <RefreshCw className={cn("size-3.5", loading && "animate-spin")} />
-        Sync API matchs
+        Sync live + cotes API
       </Button>
       {message && (
         <p className="text-xs text-muted-foreground">{message}</p>
+      )}
+      {warning && (
+        <p className="text-xs text-amber-600 dark:text-amber-400" role="status">
+          {warning}
+        </p>
       )}
       {error && (
         <p className="text-xs text-destructive" role="alert">

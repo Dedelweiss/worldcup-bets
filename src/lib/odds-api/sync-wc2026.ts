@@ -1,15 +1,18 @@
 import {
+  fetchOddsApiEventSearch,
   fetchOddsApiEvents,
   fetchOddsApiLiveEvents,
   fetchOddsApiOddsMulti,
   hasOddsApiConfig,
   resolveWcLeagueSlug,
 } from "@/lib/odds-api/client";
+import { TEAM_CODE_API_KEYWORDS } from "@/lib/tournament/team-api-names";
 import {
   findOddsEventForLocalMatch,
   isWorldCupEvent,
   type LocalMatchForOddsLink,
 } from "@/lib/odds-api/event-link";
+import { formatOddsApiError } from "@/lib/odds-api/errors";
 import { parseOddsApiMatchResult } from "@/lib/odds-api/parse-odds";
 import { ODDS_API_MULTI_BATCH_SIZE } from "@/lib/odds-api/rate-limit";
 import type { OddsApiEvent } from "@/lib/odds-api/types";
@@ -50,18 +53,55 @@ async function loadOddsApiEvents(
     }
   }
 
-  if (options?.force || byId.size < 10) {
-    const broad = await fetchOddsApiEvents({
-      sport: "football",
-      limit: 200,
-    });
-    apiCalls += 1;
-    for (const e of broad) {
-      if (isWorldCupEvent(e, leagueSlug)) byId.set(e.id, e);
+  const broad = await fetchOddsApiEvents({
+    sport: "football",
+    limit: 300,
+  });
+  apiCalls += 1;
+  for (const e of broad) {
+    if (isWorldCupEvent(e, leagueSlug)) {
+      byId.set(e.id, e);
+      continue;
+    }
+    if (!leagueSlug && matchLooksLikeWcFixture(e)) {
+      byId.set(e.id, e);
     }
   }
 
   return { events: [...byId.values()], apiCalls };
+}
+
+function matchLooksLikeWcFixture(event: OddsApiEvent): boolean {
+  const home = (event.home ?? "").toLowerCase();
+  const away = (event.away ?? "").toLowerCase();
+  const known = (name: string) =>
+    Object.values(TEAM_CODE_API_KEYWORDS).some((keywords) =>
+      keywords.some((kw) => name.includes(kw)),
+    );
+  return known(home) && known(away);
+}
+
+async function searchEventsForMatch(
+  local: LocalMatchForOddsLink,
+): Promise<OddsApiEvent[]> {
+  const queries = [
+    `${local.home_name} ${local.away_name}`,
+    [local.home_code, local.away_code]
+      .filter(Boolean)
+      .map((c) => TEAM_CODE_API_KEYWORDS[c!]?.[0])
+      .filter(Boolean)
+      .join(" "),
+  ].filter((q) => q && q.trim().length > 3);
+
+  const found: OddsApiEvent[] = [];
+  for (const q of queries) {
+    try {
+      found.push(...(await fetchOddsApiEventSearch(q)));
+    } catch {
+      // ignore failed search
+    }
+  }
+  return found;
 }
 
 export async function syncOddsApiWc2026(options?: {
@@ -113,16 +153,24 @@ export async function syncOddsApiWc2026(options?: {
         status,
         settled_at,
         odds_api_event_id,
-        home_team:teams!matches_home_team_id_fkey(name),
-        away_team:teams!matches_away_team_id_fkey(name)
+        home_team:teams!matches_home_team_id_fkey(name, code),
+        away_team:teams!matches_away_team_id_fkey(name, code)
       `,
       )
       .eq("season", 2026);
 
     const locals: (LocalMatchForOddsLink & { settled_at: string | null })[] =
       (rows ?? []).map((r) => {
-        const home = r.home_team as { name: string } | { name: string }[] | null;
-        const away = r.away_team as { name: string } | { name: string }[] | null;
+        const home = r.home_team as
+          | { name: string; code: string | null }
+          | { name: string; code: string | null }[]
+          | null;
+        const away = r.away_team as
+          | { name: string; code: string | null }
+          | { name: string; code: string | null }[]
+          | null;
+        const h = Array.isArray(home) ? home[0] : home;
+        const a = Array.isArray(away) ? away[0] : away;
         return {
           id: r.id,
           home_team_id: r.home_team_id,
@@ -131,12 +179,10 @@ export async function syncOddsApiWc2026(options?: {
           status: r.status,
           settled_at: r.settled_at,
           odds_api_event_id: r.odds_api_event_id,
-          home_name: Array.isArray(home)
-            ? (home[0]?.name ?? "")
-            : (home?.name ?? ""),
-          away_name: Array.isArray(away)
-            ? (away[0]?.name ?? "")
-            : (away?.name ?? ""),
+          home_name: h?.name ?? "",
+          away_name: a?.name ?? "",
+          home_code: h?.code ?? null,
+          away_code: a?.code ?? null,
         };
       });
 
@@ -152,7 +198,17 @@ export async function syncOddsApiWc2026(options?: {
         continue;
       }
 
-      const link = findOddsEventForLocalMatch(local, events);
+      let link = findOddsEventForLocalMatch(local, events);
+
+      if (!link) {
+        const searched = await searchEventsForMatch(local);
+        apiCalls += 2;
+        for (const e of searched) {
+          eventsById.set(e.id, e);
+        }
+        link = findOddsEventForLocalMatch(local, searched);
+      }
+
       if (!link) continue;
 
       eventId = link.event.id;
@@ -231,8 +287,8 @@ export async function syncOddsApiWc2026(options?: {
       leagueSlug,
     };
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Sync odds-api failed";
-    console.error("syncOddsApiWc2026:", message);
-    return { ...empty, error: message };
+    const userMessage = formatOddsApiError(e);
+    console.error("syncOddsApiWc2026:", userMessage);
+    return { ...empty, error: userMessage };
   }
 }
