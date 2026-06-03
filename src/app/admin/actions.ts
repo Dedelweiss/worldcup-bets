@@ -280,12 +280,23 @@ export async function updateMatchAction(formData: FormData): Promise<ActionResul
     return { success: false, error: msg };
   }
 
+  await triggerAiBetIfLive(matchId, status);
+
   revalidatePath(`/admin/matches/${matchId}`);
   revalidatePath("/admin");
   revalidatePath("/dashboard");
   revalidatePath("/matches");
   revalidatePath(`/matches/${matchId}`);
   return { success: true, matchId };
+}
+
+async function triggerAiBetIfLive(
+  _matchId: number,
+  status: MatchStatus | null,
+): Promise<void> {
+  if (status !== "live") return;
+  const { ensureAiBetsForLiveMatches } = await import("@/lib/ai/ensure-ai-bets");
+  await ensureAiBetsForLiveMatches();
 }
 
 export async function correctMatchResultAction(
@@ -338,6 +349,8 @@ export async function correctMatchResultAction(
       : error.message;
     return { success: false, error: msg };
   }
+
+  await triggerAiBetIfLive(matchId, status);
 
   revalidatePath(`/admin/matches/${matchId}`);
   revalidatePath("/admin");

@@ -6,34 +6,24 @@ export interface AiChatContext {
   status: string;
   homeScore: number | null;
   awayScore: number | null;
+  /** Score exact parié par l'IA sur ce match (obligatoire pour rester cohérent). */
+  aiBetHome: number | null;
+  aiBetAway: number | null;
   recentMessages: { author: string; message: string; is_ai?: boolean }[];
 }
 
-const CHAT_LLM_OPTIONS = { temperature: 1.05, maxTokens: 120 };
-
-const KICKOFF_FALLBACKS = [
-  "C'est parti les gars. J'ai mis mon prono, vous avez mis de la merde — on verra qui se fait humilier.",
-  "Coup d'envoi. Le mur des chambrages est ouvert, préparez-vous à passer pour des clowns.",
-  "Allez, le match démarre. Moi j'ai visé juste, vous vous êtes plantés en beauté comme d'hab.",
-  "Go. Mon score exact est locké, le vôtre sent le pari fait au bar après trois pintes.",
-];
-
-const AMBIENT_FALLBACKS = [
-  "Vous parlez fort pour des mecs qui ont sûrement tout foiré au pari.",
-  "J'ai lu vos messages : niveau Ligue 2 des chambrages, j'adore.",
-  "Continuez à vous envoyer des trucs nuls, je me marre derrière mon écran.",
-  "Quelqu'un a dit un truc intelligent ? Non ? Bon bah je reste pour vous insulter gentiment.",
-  "Franchement vos pronos puent autant que vos blagues, c'est cohérent.",
-  "Le match avance, mes points aussi. Vous, vous galérez comme d'hab.",
-];
+const CHAT_LLM_OPTIONS = { temperature: 0.85, maxTokens: 120 };
 
 const CHAT_PERSONA = `Tu es L'IA (pseudo ia_prono), le pote relou du pool de paris entre potes.
 Tu écris sur le mur des chambrages pendant le match.
-Ton : ultra familier, trash, vulgaire mais drôle — comme des mates qui se chambrrent au bar devant le match.
-Utilise le tutoiement, l'argot, des gros mots légers (merde, connerie, nul à chier, se faire avoir, galère, etc.).
-Chambre les pronos foireux, les messages ridicules, le score — avec humour, jamais méchant ni discriminatoire.
-Pas de slurs, pas de haine, pas de sexisme. Pas de guillemets autour du message. Une seule phrase ou deux max.
-Français uniquement.`;
+Ton : ultra familier, trash, vulgaire mais drôle — comme des mates qui se chambrrent au bar.
+Utilise le tutoiement, l'argot, des gros mots légers. Jamais méchant ni discriminatoire.
+Pas de guillemets autour du message. Une seule phrase ou deux max. Français uniquement.`;
+
+function formatAiBetLine(ctx: AiChatContext): string | null {
+  if (ctx.aiBetHome == null || ctx.aiBetAway == null) return null;
+  return `TON pronostic officiel (score exact enregistré) : ${ctx.aiBetHome}-${ctx.aiBetAway}. Tu DOIS t'y tenir : ne cite aucun autre score comme étant le tien.`;
+}
 
 function pickFallback(pool: string[], seed: string): string {
   let hash = 0;
@@ -41,6 +31,51 @@ function pickFallback(pool: string[], seed: string): string {
     hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
   }
   return pool[hash % pool.length]!;
+}
+
+function kickoffFallback(ctx: AiChatContext): string {
+  const h = ctx.aiBetHome;
+  const a = ctx.aiBetAway;
+  if (h != null && a != null) {
+    const pool = [
+      `C'est parti. J'ai locké ${h}-${a}, préparez-vous à pleurer.`,
+      `Go. Mon prono c'est ${h}-${a}, le vôtre sent la lose.`,
+      `Match lancé : moi j'ai mis ${h}-${a}, vous allez vous faire humilier.`,
+      `${h}-${a} chez moi. Chambrerie ouverte, bonne chance les losers.`,
+    ];
+    return pickFallback(pool, `${ctx.matchLabel}-kickoff-${h}-${a}`);
+  }
+  return pickFallback(
+    ["C'est parti. Mon prono est locké, le vôtre pue."],
+    `${ctx.matchLabel}-kickoff`,
+  );
+}
+
+function ambientFallback(ctx: AiChatContext): string {
+  const h = ctx.aiBetHome;
+  const a = ctx.aiBetAway;
+  const live =
+    ctx.homeScore != null && ctx.awayScore != null
+      ? ` (${ctx.homeScore}-${ctx.awayScore} en ce moment)`
+      : "";
+
+  if (h != null && a != null) {
+    const pool = [
+      `J'ai mis ${h}-${a}${live}, vous parlez fort pour des mecs qui ont foiré leur prono.`,
+      `Mon ${h}-${a} tient la route${live}. Continuez à vous envoyer des conneries.`,
+      `Avec mon ${h}-${a} je suis tranquille${live}. Vos messages, niveau Ligue 2.`,
+      `${h}-${a} de mon côté${live} — vous chambrer, moi je vais encaisser les points.`,
+    ];
+    return pickFallback(pool, `${ctx.matchLabel}-ambient-${h}-${a}-${live}`);
+  }
+
+  return pickFallback(
+    [
+      "Vous parlez fort pour des mecs qui ont sûrement tout foiré au pari.",
+      "Continuez, je me marre pendant que mon prono fait le taf.",
+    ],
+    `${ctx.matchLabel}-ambient`,
+  );
 }
 
 function formatRecentLines(
@@ -57,23 +92,28 @@ function formatRecentLines(
 function buildChatPrompt(ctx: AiChatContext): { system: string; user: string } {
   const scoreLine =
     ctx.homeScore != null && ctx.awayScore != null
-      ? `Score actuel : ${ctx.homeScore}-${ctx.awayScore}.`
-      : "Score pas encore renseigné.";
+      ? `Score actuel du match : ${ctx.homeScore}-${ctx.awayScore}.`
+      : "Score du match pas encore renseigné.";
+
+  const betLine = formatAiBetLine(ctx);
+  const betBlock = betLine ? `\n${betLine}` : "";
 
   if (ctx.trigger === "kickoff") {
     return {
       system: `${CHAT_PERSONA}
-Écris UN message court (max 180 caractères) pour lancer la chambrerie au coup d'envoi.
-Moque les pronos des autres, annonce que le tien est solide, provoque-les.`,
-      user: `Match : ${ctx.matchLabel}\n${scoreLine}\nStatut : ${ctx.status}`,
+Écris UN message court (max 180 caractères) au coup d'envoi.
+Annonce clairement TON score exact (celui indiqué ci-dessous), chambrre les autres.
+INTERDIT d'inventer un autre score que ton prono officiel.`,
+      user: `Match : ${ctx.matchLabel}\n${scoreLine}${betBlock}\nStatut : ${ctx.status}`,
     };
   }
 
   return {
     system: `${CHAT_PERSONA}
 Réponds aux messages récents avec UNE punchline courte (max 160 caractères).
-Rebondis sur ce qu'ils disent, charrie-les, sois piquant. Ne répète pas mot pour mot.`,
-    user: `Match : ${ctx.matchLabel}\n${scoreLine}\n\nMessages récents :\n${formatRecentLines(ctx.recentMessages)}`,
+Tu peux comparer le score live à TON prono officiel ci-dessous, chambrer les gens — mais ne change jamais ton prono.
+INTERDIT de citer un score différent de ton prono enregistré.`,
+    user: `Match : ${ctx.matchLabel}\n${scoreLine}${betBlock}\n\nMessages récents :\n${formatRecentLines(ctx.recentMessages)}`,
   };
 }
 
@@ -82,8 +122,8 @@ export async function generateAiChatMessage(ctx: AiChatContext): Promise<string>
     Boolean(process.env.GROQ_API_KEY?.trim()) ||
     Boolean(process.env.GEMINI_API_KEY?.trim());
 
-  const pool = ctx.trigger === "kickoff" ? KICKOFF_FALLBACKS : AMBIENT_FALLBACKS;
-  const fallback = pickFallback(pool, `${ctx.matchLabel}-${ctx.trigger}`);
+  const fallback =
+    ctx.trigger === "kickoff" ? kickoffFallback(ctx) : ambientFallback(ctx);
 
   if (!hasLlmKey) return fallback;
 

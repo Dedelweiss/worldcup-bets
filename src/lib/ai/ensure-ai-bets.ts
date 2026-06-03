@@ -13,7 +13,12 @@ interface MatchNeedingAiBet {
 /** Place les paris score exact IA pour les matchs venant de passer en direct. */
 export async function ensureAiBetsForLiveMatches(): Promise<void> {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!serviceRoleKey) return;
+  if (!serviceRoleKey) {
+    console.warn(
+      "ensureAiBetsForLiveMatches: SUPABASE_SERVICE_ROLE_KEY manquante — l'IA ne peut pas parier.",
+    );
+    return;
+  }
 
   let supabase;
   try {

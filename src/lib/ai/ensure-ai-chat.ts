@@ -16,6 +16,8 @@ interface EvaluateAiChatResult {
   status?: string;
   home_score?: number | null;
   away_score?: number | null;
+  ai_bet_home?: number | null;
+  ai_bet_away?: number | null;
   recent_messages?: {
     author: string;
     message: string;
@@ -38,6 +40,8 @@ function toContext(
     status: evalResult.status ?? "live",
     homeScore: evalResult.home_score ?? null,
     awayScore: evalResult.away_score ?? null,
+    aiBetHome: evalResult.ai_bet_home ?? null,
+    aiBetAway: evalResult.ai_bet_away ?? null,
     recentMessages: evalResult.recent_messages ?? [],
   };
 }

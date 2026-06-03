@@ -16,29 +16,39 @@ export async function syncLiveMatches(options?: {
   if (!hasSupabaseConfig) return;
 
   const now = Date.now();
-  if (!options?.force && now - lastSyncAt < SYNC_INTERVAL_MS) {
-    return;
-  }
+  const skipRpcSync =
+    !options?.force && now - lastSyncAt < SYNC_INTERVAL_MS;
 
   if (syncInFlight) {
     await syncInFlight;
+    if (skipRpcSync) {
+      await runAiLiveSideEffects();
+    }
     return;
   }
 
   syncInFlight = (async () => {
     try {
-      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-      const supabase = serviceRoleKey
-        ? createAdminClient()
-        : await createClient();
-      await supabase.rpc("sync_live_matches");
-      await ensureAiBetsForLiveMatches();
-      await ensureAiKickoffChat();
-      lastSyncAt = Date.now();
+      if (!skipRpcSync) {
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+        const supabase = serviceRoleKey
+          ? createAdminClient()
+          : await createClient();
+        await supabase.rpc("sync_live_matches");
+      }
+      await runAiLiveSideEffects();
+      if (!skipRpcSync) {
+        lastSyncAt = Date.now();
+      }
     } finally {
       syncInFlight = null;
     }
   })();
 
   await syncInFlight;
+}
+
+async function runAiLiveSideEffects(): Promise<void> {
+  await ensureAiBetsForLiveMatches();
+  await ensureAiKickoffChat();
 }
