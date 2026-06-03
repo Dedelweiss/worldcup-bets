@@ -14,6 +14,7 @@ import {
   mapFootballDataStatus,
   parseFootballDataOdds,
   parseFootballDataScore,
+  shouldApplyFootballDataStatus,
 } from "@/lib/football-data/parse-match";
 import {
   collectSidesFromMatches,
@@ -428,9 +429,7 @@ export async function syncFootballDataWc2026(options?: {
 
       if (mappedStatus) {
         const suppress = Boolean(local.suppress_auto_live);
-        if (mappedStatus === "live" || mappedStatus === "finished") {
-          patch.status = mappedStatus;
-        } else if (!suppress || mappedStatus !== "scheduled") {
+        if (shouldApplyFootballDataStatus(local.status, mappedStatus, suppress)) {
           patch.status = mappedStatus;
         }
       }
@@ -441,6 +440,7 @@ export async function syncFootballDataWc2026(options?: {
         patch.away_score = mapped.away_score;
       } else if (
         mappedStatus === "scheduled" &&
+        shouldApplyFootballDataStatus(local.status, "scheduled", Boolean(local.suppress_auto_live)) &&
         local.status !== "live" &&
         local.status !== "finished"
       ) {
@@ -453,7 +453,17 @@ export async function syncFootballDataWc2026(options?: {
       if (isLiveApi && fd.minute != null) {
         patch.live_minute = fd.minute;
         patch.live_injury_time = fd.injuryTime ?? null;
-      } else {
+      } else if (mappedStatus === "finished") {
+        patch.live_minute = null;
+        patch.live_injury_time = null;
+      } else if (
+        mappedStatus === "scheduled" &&
+        shouldApplyFootballDataStatus(
+          local.status,
+          "scheduled",
+          Boolean(local.suppress_auto_live),
+        )
+      ) {
         patch.live_minute = null;
         patch.live_injury_time = null;
       }

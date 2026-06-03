@@ -35,10 +35,10 @@ export async function syncLiveMatches(options?: {
         const supabase = serviceRoleKey
           ? createAdminClient()
           : await createClient();
+        // football-data d'abord, puis RPC : le passage kickoff → live ne doit pas être écrasé.
+        await syncFootballDataMatches();
         await supabase.rpc("sync_live_matches");
         lastSyncAt = Date.now();
-        // football-data : 1 req max / 5 min (plan gratuit 10 req/min)
-        await syncFootballDataMatches();
       }
       await runAiLiveSideEffects();
     } finally {

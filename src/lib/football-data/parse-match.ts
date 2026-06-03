@@ -22,6 +22,32 @@ export function mapFootballDataStatus(apiStatus: string): MatchStatus | null {
   }
 }
 
+/** Évite de rétrograder live/finished quand l'API football-data est en retard (TIMED/SCHEDULED). */
+export function shouldApplyFootballDataStatus(
+  localStatus: MatchStatus,
+  mappedStatus: MatchStatus,
+  suppressAutoLive: boolean,
+): boolean {
+  if (mappedStatus === localStatus) return false;
+
+  if (mappedStatus === "postponed" || mappedStatus === "cancelled") {
+    return true;
+  }
+
+  if (mappedStatus === "live" || mappedStatus === "finished") {
+    return true;
+  }
+
+  if (mappedStatus === "scheduled") {
+    if (localStatus === "live" || localStatus === "finished") {
+      return false;
+    }
+    return localStatus === "scheduled" || suppressAutoLive;
+  }
+
+  return false;
+}
+
 export function parseFootballDataScore(
   match: FootballDataMatch,
 ): { home: number; away: number } | null {
