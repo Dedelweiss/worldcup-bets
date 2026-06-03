@@ -46,6 +46,7 @@ export async function callGroq(
   system: string,
   user: string,
   apiKey: string,
+  options?: { temperature?: number; maxTokens?: number },
 ): Promise<string> {
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -59,8 +60,8 @@ export async function callGroq(
         { role: "system", content: system },
         { role: "user", content: user },
       ],
-      temperature: 0.9,
-      max_tokens: 280,
+      temperature: options?.temperature ?? 0.9,
+      max_tokens: options?.maxTokens ?? 280,
     }),
   });
 
@@ -81,6 +82,7 @@ export async function callGemini(
   system: string,
   user: string,
   apiKey: string,
+  options?: { temperature?: number; maxTokens?: number },
 ): Promise<string> {
   const url =
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
@@ -92,8 +94,8 @@ export async function callGemini(
       systemInstruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text: user }] }],
       generationConfig: {
-        temperature: 0.9,
-        maxOutputTokens: 280,
+        temperature: options?.temperature ?? 0.9,
+        maxOutputTokens: options?.maxTokens ?? 280,
       },
     }),
   });
@@ -114,20 +116,21 @@ export async function callGemini(
 export async function generateMatchSummaryText(
   system: string,
   user: string,
+  options?: { temperature?: number; maxTokens?: number },
 ): Promise<string> {
   const groqKey = process.env.GROQ_API_KEY?.trim();
   const geminiKey = process.env.GEMINI_API_KEY?.trim();
 
   if (groqKey) {
     try {
-      return await callGroq(system, user, groqKey);
+      return await callGroq(system, user, groqKey, options);
     } catch (err) {
       if (!geminiKey) throw err;
     }
   }
 
   if (geminiKey) {
-    return callGemini(system, user, geminiKey);
+    return callGemini(system, user, geminiKey, options);
   }
 
   throw new Error(

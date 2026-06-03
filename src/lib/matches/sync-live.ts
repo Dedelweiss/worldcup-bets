@@ -1,4 +1,5 @@
 import { ensureAiBetsForLiveMatches } from "@/lib/ai/ensure-ai-bets";
+import { ensureAiKickoffChat } from "@/lib/ai/ensure-ai-chat";
 import { hasSupabaseConfig } from "@/lib/auth-server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -32,6 +33,7 @@ export async function syncLiveMatches(options?: {
         : await createClient();
       await supabase.rpc("sync_live_matches");
       await ensureAiBetsForLiveMatches();
+      await ensureAiKickoffChat();
       lastSyncAt = Date.now();
     } finally {
       syncInFlight = null;

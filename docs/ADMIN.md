@@ -59,8 +59,12 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 51. `050_admin_participation.sql` (admins visibles dans « Qui a parié ? » comme les joueurs)
 52. `051_reveal_live_before_kickoff.sql` (révélation si admin passe en direct avant le coup d'envoi)
 53. `052_reveal_fix_live.sql` (**fix** révélation en direct — à exécuter si erreur au survol/clic)
+54. `053_ai_match_chat.sql` (L'IA poste parfois sur le mur des chambrages — max 3/match, 15 min d'écart)
+55. `054_match_comments_rls_chat_open.sql` (**fix** messages du chat invisibles au reload si match en direct avant le coup d'envoi)
 
 Après **047**, le pronostiqueur **L'IA** (`ia_prono`) parie automatiquement un score exact quand le match passe en direct (via `sync_live_matches` + `SUPABASE_SERVICE_ROLE_KEY`). Clé LLM optionnelle (`GROQ_API_KEY` / `GEMINI_API_KEY`) ; sinon heuristique basée sur les cotes.
+
+Après **053**, **L'IA** peut aussi poster sur le mur des chambrages (max 3 messages/match, 15 min entre deux messages). Premier message au coup d'envoi ; réactions occasionnelles si la discussion est active (~35 % de skip aléatoire pour limiter les tokens).
 
 Après **033**, pour recalculer les flammes sur des matchs déjà clôturés :
 

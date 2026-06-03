@@ -4,7 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Send } from "lucide-react";
-import { postMatchCommentAction } from "@/app/(app)/matches/actions";
+import { postMatchCommentAction, maybeTriggerAiChatAction } from "@/app/(app)/matches/actions";
+import { AiPlayerBadge } from "@/components/leaderboard/ai-player-badge";
+import { AI_CHAT_AMBIENT_DELAY_MS } from "@/lib/ai/chat-limits";
+import { isAiPlayer } from "@/lib/ai/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +42,17 @@ export function MatchChat({
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const seenIdsRef = useRef(new Set(initialComments.map((c) => c.id)));
+  const lastAiTriggerRef = useRef(0);
+  const humanCountRef = useRef(
+    initialComments.filter((c) => !isAiPlayer(c.user_id)).length,
+  );
+
+  const maybeAskAiToChimeIn = useCallback(() => {
+    const now = Date.now();
+    if (now - lastAiTriggerRef.current < AI_CHAT_AMBIENT_DELAY_MS) return;
+    lastAiTriggerRef.current = now;
+    void maybeTriggerAiChatAction(matchId);
+  }, [matchId]);
 
   const scrollToBottom = useCallback(() => {
     const el = scrollRef.current;
@@ -50,6 +64,22 @@ export function MatchChat({
   useEffect(() => {
     scrollToBottom();
   }, [comments, scrollToBottom]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      maybeAskAiToChimeIn();
+    }, AI_CHAT_AMBIENT_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [maybeAskAiToChimeIn]);
+
+  useEffect(() => {
+    const humanCount = comments.filter((c) => !isAiPlayer(c.user_id)).length;
+    if (humanCount <= humanCountRef.current) return;
+    humanCountRef.current = humanCount;
+    if (humanCount >= 2) {
+      maybeAskAiToChimeIn();
+    }
+  }, [comments, maybeAskAiToChimeIn]);
 
   const appendComment = useCallback((row: MatchCommentRow) => {
     if (seenIdsRef.current.has(row.id)) return;
@@ -158,7 +188,7 @@ export function MatchChat({
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Mur des chambrages</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Discutez en direct avec les autres joueurs pendant le match.
+          Discutez en direct
         </p>
       </CardHeader>
       <CardContent className="flex min-h-0 flex-1 flex-col gap-0 p-0">
@@ -173,6 +203,7 @@ export function MatchChat({
           ) : (
             comments.map((comment) => {
               const isOwn = comment.user_id === currentUserId;
+              const isAi = isAiPlayer(comment.user_id);
               const label = getPlayerLabel(comment);
               const initials = getPlayerInitials(comment);
 
@@ -184,7 +215,13 @@ export function MatchChat({
                     isOwn ? "flex-row-reverse" : "flex-row",
                   )}
                 >
-                  <Avatar size="sm" className="mt-0.5 shrink-0">
+                  <Avatar
+                    size="sm"
+                    className={cn(
+                      "mt-0.5 shrink-0",
+                      isAi && "ring-1 ring-violet-500/50",
+                    )}
+                  >
                     {comment.avatar_url ? (
                       <AvatarImage src={comment.avatar_url} alt="" />
                     ) : null}
@@ -198,8 +235,9 @@ export function MatchChat({
                       isOwn ? "items-end" : "items-start",
                     )}
                   >
-                    <span className="px-1 text-[10px] text-muted-foreground">
+                    <span className="flex flex-wrap items-center gap-1 px-1 text-[10px] text-muted-foreground">
                       {isOwn ? "Vous" : label}
+                      {isAi && <AiPlayerBadge className="scale-90" />}
                       {" · "}
                       {formatMessageTime(comment.created_at)}
                     </span>
@@ -208,7 +246,9 @@ export function MatchChat({
                         "rounded-2xl px-3 py-2 text-sm leading-snug wrap-break-word",
                         isOwn
                           ? "rounded-br-md bg-primary text-primary-foreground"
-                          : "rounded-bl-md bg-muted text-foreground",
+                          : isAi
+                            ? "rounded-bl-md border border-violet-500/25 bg-violet-500/10 text-foreground"
+                            : "rounded-bl-md bg-muted text-foreground",
                       )}
                     >
                       {comment.message}

@@ -306,8 +306,6 @@ export async function postMatchCommentAction(
     avatar_url?: string | null;
   } | null;
 
-  revalidatePath(`/matches/${matchId}`);
-
   return {
     success: true,
     comment: {
@@ -373,4 +371,11 @@ export async function revealPlayerBetAction(
   }
 
   return { success: true, bet };
+}
+
+/** Déclenche (si conditions OK) un message IA occasionnel sur le mur. */
+export async function maybeTriggerAiChatAction(matchId: number): Promise<void> {
+  await requireAuth();
+  const { tryAiAmbientChat } = await import("@/lib/ai/ensure-ai-chat");
+  await tryAiAmbientChat(matchId);
 }
