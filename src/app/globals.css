@@ -115,6 +115,8 @@
   }
   html {
     @apply font-sans;
+    /* Listes natives <select> en thème sombre même si l’OS est en clair */
+    color-scheme: dark;
   }
   body {
     @apply min-h-full bg-zinc-950 text-foreground antialiased;
@@ -160,5 +162,15 @@
   [aria-disabled="true"],
   [data-disabled] {
     cursor: not-allowed;
+  }
+
+  select {
+    color: var(--foreground);
+  }
+
+  select option,
+  select optgroup {
+    background-color: rgb(24 24 27);
+    color: #fafafa;
   }
 }
