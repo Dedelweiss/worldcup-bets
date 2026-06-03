@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Lock, Target, Zap } from "lucide-react";
 import {
@@ -9,6 +9,7 @@ import {
   placeExactScoreBetAction,
 } from "@/app/(app)/matches/actions";
 import { useClassicBettingOpen } from "@/hooks/use-match-betting-open";
+import { parseMatchResultPick } from "@/lib/bets/match-pick-url";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ScorePicker } from "@/components/bets/score-picker";
@@ -68,14 +69,29 @@ export function BetSlip({
   tackleState,
 }: BetSlipProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const bettingOpen = useClassicBettingOpen(match);
+
+  const pickFromUrl = useMemo(
+    () => parseMatchResultPick(searchParams.get("pick")),
+    [searchParams],
+  );
 
   const [mode, setMode] = useState<BetMode>(() =>
     pending.hasMatchResult ? "1n2" : pending.hasExactScore ? "exact" : "1n2",
   );
-  const [selection, setSelection] = useState<MatchResultSelection | null>(
-    () => pending.matchResult?.selection ?? null,
-  );
+  const [selection, setSelection] = useState<MatchResultSelection | null>(() => {
+    if (pending.matchResult?.selection) return pending.matchResult.selection;
+    if (
+      pickFromUrl &&
+      bettingOpen &&
+      !pending.hasMatchResult &&
+      !pending.hasExactScore
+    ) {
+      return pickFromUrl;
+    }
+    return null;
+  });
   const [homeScore, setHomeScore] = useState(() =>
     pending.exactScore != null ? String(pending.exactScore.home) : "",
   );
@@ -89,6 +105,28 @@ export function BetSlip({
   const [error, setError] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
   const [classicBetConfirmed, setClassicBetConfirmed] = useState(false);
+
+  useEffect(() => {
+    if (
+      !pickFromUrl ||
+      !bettingOpen ||
+      pending.hasMatchResult ||
+      pending.hasExactScore
+    ) {
+      return;
+    }
+
+    setMode("1n2");
+    setSelection(pickFromUrl);
+    setSavedNotice(null);
+    setError(null);
+
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById("mon-pronostic")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [pickFromUrl, bettingOpen, pending.hasMatchResult]);
 
   const canUseBoost = boostsAvailable > 0;
   const isGolden = match.is_golden ?? false;

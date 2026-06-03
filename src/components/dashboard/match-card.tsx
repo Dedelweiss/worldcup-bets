@@ -12,6 +12,7 @@ import {
   MATCH_RESULT_COPY,
   MATCH_RESULT_OUTCOME,
 } from "@/lib/bets/match-result-copy";
+import { buildMatchPickHref } from "@/lib/bets/match-pick-url";
 import { formatOdd } from "@/lib/format";
 import { MatchKickoffMeta } from "@/components/matches/match-kickoff-meta";
 import { MatchCardStatusBadges } from "@/components/dashboard/match-card-status-badges";
@@ -123,22 +124,30 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
             <div className="space-y-2">
               <MatchOddsSourceBadge match={match} className="text-[10px]" />
               <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: MATCH_RESULT_OUTCOME.home, odd: match.odd_home },
-                { label: MATCH_RESULT_OUTCOME.draw, odd: match.odd_draw },
-                { label: MATCH_RESULT_OUTCOME.away, odd: match.odd_away },
-              ].map((outcome) => (
-                <div
-                  key={outcome.label}
-                  className="flex flex-col items-center rounded-lg border border-border bg-muted/20 py-2"
+              {(
+                [
+                  { key: "home" as const, label: MATCH_RESULT_OUTCOME.home, odd: match.odd_home },
+                  { key: "draw" as const, label: MATCH_RESULT_OUTCOME.draw, odd: match.odd_draw },
+                  { key: "away" as const, label: MATCH_RESULT_OUTCOME.away, odd: match.odd_away },
+                ] as const
+              ).map((outcome) => (
+                <Link
+                  key={outcome.key}
+                  href={buildMatchPickHref(match.id, outcome.key)}
+                  className={cn(
+                    "flex cursor-pointer flex-col items-center rounded-lg border border-border bg-muted/20 py-2 transition-colors",
+                    "hover:border-lime-400/45 hover:bg-lime-400/10 hover:ring-1 hover:ring-lime-400/25",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50",
+                  )}
+                  title={`Parier ${outcome.label.toLowerCase()} sur ce match`}
                 >
                   <span className="text-[10px] font-medium text-muted-foreground">
                     {outcome.label}
                   </span>
                   <span className="text-sm font-bold tabular-nums text-primary">
-                    {formatOdd(outcome.odd)}
+                    {formatOdd(outcome.odd!)}
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
             </div>
