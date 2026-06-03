@@ -55,6 +55,10 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 47. `046_security_hardening.sql` (RLS durci : profils, paris, tacles, sync live)
 48. `047_ai_player_bets.sql` (**joueur IA** : pari score exact au coup d'envoi, compte au classement)
 49. `048_gazette_regenerate.sql` (Gazette régénérable par l'admin ; effacée si match repasse en à venir)
+50. `049_player_bet_reveal.sql` (révélation des pronos au survol/clic, un joueur à la fois)
+51. `050_admin_participation.sql` (admins visibles dans « Qui a parié ? » comme les joueurs)
+52. `051_reveal_live_before_kickoff.sql` (révélation si admin passe en direct avant le coup d'envoi)
+53. `052_reveal_fix_live.sql` (**fix** révélation en direct — à exécuter si erreur au survol/clic)
 
 Après **047**, le pronostiqueur **L'IA** (`ia_prono`) parie automatiquement un score exact quand le match passe en direct (via `sync_live_matches` + `SUPABASE_SERVICE_ROLE_KEY`). Clé LLM optionnelle (`GROQ_API_KEY` / `GEMINI_API_KEY`) ; sinon heuristique basée sur les cotes.
 

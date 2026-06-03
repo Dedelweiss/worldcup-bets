@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth-server";
 import type { MatchCommentRow } from "@/lib/match-comments";
+import { parseRevealedPlayerBet, type RevealedPlayerBet } from "@/lib/bets/reveal-player-bet";
 import { canPlaceBetOnMatch, getMatchById } from "@/lib/matches";
 import { createClient } from "@/lib/supabase/server";
 import { MATCH_RESULT_COPY } from "@/lib/bets/match-result-copy";
@@ -320,4 +321,56 @@ export async function postMatchCommentAction(
       avatar_url: prof?.avatar_url ?? profile.avatar_url,
     },
   };
+}
+
+export type RevealPlayerBetResult =
+  | { success: true; bet: RevealedPlayerBet }
+  | { success: false; error: string };
+
+export async function revealPlayerBetAction(
+  matchId: number,
+  targetUserId: string,
+): Promise<RevealPlayerBetResult> {
+  await requireAuth();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_player_match_bet_for_reveal", {
+    p_match_id: matchId,
+    p_target_user_id: targetUserId,
+  });
+
+  if (error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes("could not find the function")) {
+      return {
+        success: false,
+        error:
+          "Exécutez supabase/migrations/049_player_bet_reveal.sql dans Supabase.",
+      };
+    }
+    if (msg.includes("not started")) {
+      return {
+        success: false,
+        error:
+          "Pronostics indisponibles — exécutez supabase/migrations/052_reveal_fix_live.sql dans Supabase.",
+      };
+    }
+    if (msg.includes("revealable only")) {
+      return {
+        success: false,
+        error: "Révélation possible uniquement pendant ou après le match.",
+      };
+    }
+    if (msg.includes("no classic bet")) {
+      return { success: false, error: "Ce joueur n'a pas de pari classique." };
+    }
+    return { success: false, error: error.message };
+  }
+
+  const bet = parseRevealedPlayerBet(data);
+  if (!bet) {
+    return { success: false, error: "Réponse invalide." };
+  }
+
+  return { success: true, bet };
 }

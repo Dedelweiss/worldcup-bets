@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Clock } from "lucide-react";
+import { AiPlayerBadge } from "@/components/leaderboard/ai-player-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -9,7 +10,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { MatchParticipationPlayer } from "@/lib/bets/match-participation";
-import { AiPlayerBadge } from "@/components/leaderboard/ai-player-badge";
 import {
   getPlayerInitials,
   getPlayerLabel,
@@ -19,9 +19,7 @@ import { cn } from "@/lib/utils";
 interface MatchParticipationProps {
   bettors: MatchParticipationPlayer[];
   pending: MatchParticipationPlayer[];
-  totalPlayers: number;
   currentUserId: string;
-  kickoffStarted: boolean;
 }
 
 function betDetailLabel(player: MatchParticipationPlayer): string {
@@ -145,23 +143,20 @@ function ParticipationRow({
   );
 }
 
+/** Avant le coup d'envoi : qui a parié (sans révéler les pronos). */
 export function MatchParticipation({
   bettors,
   pending,
-  totalPlayers,
   currentUserId,
-  kickoffStarted,
 }: MatchParticipationProps) {
-  if (totalPlayers === 0) return null;
+  if (bettors.length === 0 && pending.length === 0) return null;
 
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Qui a parié ?</CardTitle>
         <p className="text-xs text-muted-foreground">
-          {kickoffStarted
-            ? "Paris classiques (résultat ou score exact) — pronostics visibles ci-dessus après le coup d'envoi."
-            : "Survolez un avatar pour voir le joueur. Les pronostics restent secrets jusqu'au coup d'envoi."}
+          Les pronostics restent secrets jusqu&apos;au coup d&apos;envoi.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">

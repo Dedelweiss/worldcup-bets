@@ -2,17 +2,17 @@ import { notFound } from "next/navigation";
 import { BetSlip } from "@/components/bets/bet-slip";
 import { FunBetSlip } from "@/components/bets/fun-bet-slip";
 import { MarkFunBetsSeen } from "@/components/fun-bets/mark-fun-bets-seen";
-import { MatchChat } from "@/components/matches/match-chat";
-import { MatchHeader } from "@/components/matches/match-header";
-import { MatchLiveBets } from "@/components/matches/match-live-bets";
-import { MatchGazette } from "@/components/matches/match-gazette";
-import { MatchParticipation } from "@/components/matches/match-participation";
-import { MatchScoreboard } from "@/components/matches/match-scoreboard";
 import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
+import { MatchChat } from "@/components/matches/match-chat";
+import { MatchGazette } from "@/components/matches/match-gazette";
+import { MatchHeader } from "@/components/matches/match-header";
+import { MatchParticipation } from "@/components/matches/match-participation";
+import { MatchPlayerPronos } from "@/components/matches/match-player-pronos";
+import { MatchScoreboard } from "@/components/matches/match-scoreboard";
 import { requireAuth } from "@/lib/auth-server";
+import { canRevealPlayerBets } from "@/lib/bets/can-reveal-player-bets";
 import { getMatchBettingParticipation } from "@/lib/bets/match-participation";
 import { getMatchTackleState } from "@/lib/bets/match-tackle";
-import { getMatchRevealedBets } from "@/lib/bets/match-live-bets";
 import { getMatchUserFunBets } from "@/lib/bets/match-user-fun-bets";
 import { getMatchUserPendingBets } from "@/lib/bets/match-user-bets";
 import { hasKickoffStarted } from "@/lib/format";
@@ -49,15 +49,15 @@ export default async function MatchBetPage({
   if (!match) notFound();
 
   const kickoffStarted = hasKickoffStarted(match.kickoff_at);
+  const canReveal = canRevealPlayerBets(match);
 
   const adminEditHref =
     profile.role === "admin" ? `/admin/matches/${matchId}` : undefined;
 
-  const [funMarkets, revealedBets, comments, pendingBets, funBetsByMarket, participation, tackleState] =
+  const [funMarkets, comments, pendingBets, funBetsByMarket, participation, tackleState] =
     await Promise.all([
       getFunMarketsByMatch(matchId),
-      kickoffStarted ? getMatchRevealedBets(matchId) : Promise.resolve([]),
-      kickoffStarted ? getMatchComments(matchId) : Promise.resolve([]),
+      kickoffStarted || canReveal ? getMatchComments(matchId) : Promise.resolve([]),
       getMatchUserPendingBets(matchId, profile.id),
       getMatchUserFunBets(matchId, profile.id),
       getMatchBettingParticipation(matchId),
@@ -110,15 +110,15 @@ export default async function MatchBetPage({
         </section>
       )}
 
-      <section id="participation" className="scroll-mt-20">
-        <MatchParticipation
-          bettors={participation.bettors}
-          pending={participation.pending}
-          totalPlayers={participation.totalPlayers}
-          currentUserId={profile.id}
-          kickoffStarted={kickoffStarted}
-        />
-      </section>
+      {!canReveal && (
+        <section id="participation" className="scroll-mt-20">
+          <MatchParticipation
+            bettors={participation.bettors}
+            pending={participation.pending}
+            currentUserId={profile.id}
+          />
+        </section>
+      )}
 
       {match.ai_summary && (
         <section id="gazette" className="scroll-mt-20">
@@ -126,26 +126,27 @@ export default async function MatchBetPage({
         </section>
       )}
 
-      {kickoffStarted && (
-        <>
-          {revealedBets.length > 0 && (
-            <section id="paris-joueurs" className="scroll-mt-20">
-              <MatchLiveBets
-                bets={revealedBets}
-                currentUserId={profile.id}
-                isGoldenMatch={match.is_golden ?? false}
-              />
-            </section>
-          )}
+      {canReveal && (
+        <section id="pronostics-joueurs" className="scroll-mt-20">
+          <MatchPlayerPronos
+            matchId={matchId}
+            bettors={participation.bettors}
+            pending={participation.pending}
+            currentUserId={profile.id}
+            isGoldenMatch={match.is_golden ?? false}
+            currentUserPendingBets={pendingBets}
+          />
+        </section>
+      )}
 
-          <section id="chambrages" className="scroll-mt-20">
-            <MatchChat
-              matchId={matchId}
-              currentUserId={profile.id}
-              initialComments={comments}
-            />
-          </section>
-        </>
+      {(kickoffStarted || canReveal) && (
+        <section id="chambrages" className="scroll-mt-20">
+          <MatchChat
+            matchId={matchId}
+            currentUserId={profile.id}
+            initialComments={comments}
+          />
+        </section>
       )}
     </div>
   );

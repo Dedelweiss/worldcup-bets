@@ -27,6 +27,7 @@ export async function getMatchBettingParticipation(
   });
 
   if (error || !data) {
+    console.error("get_match_betting_participation", error);
     return { bettors: [], pending: [], totalPlayers: 0 };
   }
 

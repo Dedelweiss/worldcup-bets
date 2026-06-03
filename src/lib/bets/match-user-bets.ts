@@ -13,6 +13,7 @@ export interface MatchUserBetExactScore {
   home: number;
   away: number;
   odd_at_placement: number;
+  potential_payout: number;
 }
 
 export interface MatchUserPendingBets {
@@ -74,6 +75,7 @@ export async function getMatchUserPendingBets(
           home: parsed.home,
           away: parsed.away,
           odd_at_placement: Number(row.odd_at_placement),
+          potential_payout: Number(row.potential_payout),
         };
       }
     }
