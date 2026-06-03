@@ -1,3 +1,6 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Radio, Star } from "lucide-react";
 import { BetCancelButton } from "@/components/bets/bet-cancel-button";
@@ -302,22 +305,26 @@ function renderBetItem(bet: BetRow) {
   return <div key={bet.id}>{card}</div>;
 }
 
-interface BetListProps {
-  bets: BetRow[];
+type BetsTab = "pending" | "settled";
+
+function EmptyTabMessage({ tab }: { tab: BetsTab }) {
+  return (
+    <p className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
+      {tab === "pending" ? (
+        <>
+          Aucun pari en cours.{" "}
+          <Link href="/dashboard" className="text-primary hover:underline">
+            Parier sur un match
+          </Link>
+        </>
+      ) : (
+        "Aucun pari terminé pour le moment."
+      )}
+    </p>
+  );
 }
 
-export function BetList({ bets }: BetListProps) {
-  if (bets.length === 0) {
-    return (
-      <p className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
-        Aucun pari pour le moment.{" "}
-        <Link href="/dashboard" className="text-primary hover:underline">
-          Parier sur un match
-        </Link>
-      </p>
-    );
-  }
-
+function BetListContent({ bets }: { bets: BetRow[] }) {
   const liveBets = bets.filter((b) => b.match?.status === "live");
   const otherBets = bets.filter((b) => b.match?.status !== "live");
 
@@ -339,11 +346,100 @@ export function BetList({ bets }: BetListProps) {
         <section className="space-y-3">
           {liveBets.length > 0 && (
             <h2 className="font-heading text-sm font-semibold text-muted-foreground">
-              Autres paris
+              {bets.some((b) => b.status === "pending")
+                ? "À venir ou programmés"
+                : "Historique"}
             </h2>
           )}
           {otherBets.map(renderBetItem)}
         </section>
+      )}
+    </div>
+  );
+}
+
+interface BetListProps {
+  bets: BetRow[];
+}
+
+export function BetList({ bets }: BetListProps) {
+  const [tab, setTab] = useState<BetsTab>("pending");
+
+  const pendingBets = useMemo(
+    () => bets.filter((b) => b.status === "pending"),
+    [bets],
+  );
+  const settledBets = useMemo(
+    () => bets.filter((b) => b.status === "won" || b.status === "lost"),
+    [bets],
+  );
+
+  const counts = useMemo(
+    () => ({
+      pending: pendingBets.length,
+      settled: settledBets.length,
+    }),
+    [pendingBets.length, settledBets.length],
+  );
+
+  if (bets.length === 0) {
+    return (
+      <p className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
+        Aucun pari pour le moment.{" "}
+        <Link href="/dashboard" className="text-primary hover:underline">
+          Parier sur un match
+        </Link>
+      </p>
+    );
+  }
+
+  const visibleBets = tab === "pending" ? pendingBets : settledBets;
+
+  return (
+    <div className="space-y-4">
+      <div
+        className="flex gap-2 rounded-xl border border-white/10 bg-zinc-900/40 p-1 backdrop-blur-md"
+        role="tablist"
+        aria-label="Filtrer mes paris"
+      >
+        {(
+          [
+            ["pending", "En cours", counts.pending],
+            ["settled", "Terminés", counts.settled],
+          ] as const
+        ).map(([id, label, count]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            onClick={() => setTab(id)}
+            className={cn(
+              "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              tab === id
+                ? "bg-lime-400/15 text-lime-300 ring-1 ring-lime-400/30"
+                : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+            )}
+          >
+            <span>{label}</span>
+            <span
+              className={cn(
+                "rounded-full px-1.5 py-0.5 text-[10px] tabular-nums",
+                tab === id
+                  ? "bg-lime-400/20 text-lime-300"
+                  : "bg-white/10 text-muted-foreground",
+              )}
+            >
+              {count}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {visibleBets.length === 0 ? (
+        <EmptyTabMessage tab={tab} />
+      ) : (
+        <BetListContent bets={visibleBets} />
       )}
     </div>
   );

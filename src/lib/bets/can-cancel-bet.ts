@@ -1,8 +1,20 @@
 import { hasKickoffStarted } from "@/lib/format";
 import type { BetRow } from "@/types/database";
 
+const SETTLED_STATUSES = new Set<BetRow["status"]>([
+  "won",
+  "lost",
+  "void",
+  "cancelled",
+]);
+
+export function isBetSettled(status: BetRow["status"]): boolean {
+  return SETTLED_STATUSES.has(status);
+}
+
 /** Pari annulable par le joueur depuis « Mes paris » (miroir de cancel_pending_bet). */
 export function canCancelPendingBet(bet: BetRow): boolean {
+  if (isBetSettled(bet.status)) return false;
   if (bet.status !== "pending") return false;
 
   const match = bet.match;

@@ -10,7 +10,9 @@ export default async function BetsPage() {
   const bets = await getUserBets(profile.id);
 
   const pending = bets.filter((b) => b.status === "pending").length;
-  const won = bets.filter((b) => b.status === "won").length;
+  const settled = bets.filter(
+    (b) => b.status === "won" || b.status === "lost",
+  ).length;
   const liveNow = bets.filter(
     (b) => b.status === "pending" && b.match?.status === "live",
   ).length;
@@ -21,7 +23,7 @@ export default async function BetsPage() {
       <div>
         <h1 className="font-heading text-2xl font-bold">Mes paris</h1>
         <p className="text-sm text-muted-foreground">
-          {pending} en cours
+          Filtre par onglet · {pending} en cours
           {liveNow > 0 && (
             <>
               {" "}
@@ -32,7 +34,7 @@ export default async function BetsPage() {
             </>
           )}
           {" "}
-          · {won} gagné{won !== 1 ? "s" : ""}
+          · {settled} terminé{settled !== 1 ? "s" : ""} (gagnés ou perdus)
         </p>
       </div>
       <BetList bets={bets} />

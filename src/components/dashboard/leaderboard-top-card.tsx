@@ -126,36 +126,62 @@ function PodiumSlot({
   );
 }
 
+function GapInsightValue({ gap, direction }: { gap: number; direction: "ahead" | "behind" }) {
+  if (gap <= 0) {
+    return <p className="text-sm font-semibold">À égalité</p>;
+  }
+
+  const suffix = direction === "ahead" ? "d'avance" : "de retard";
+
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+      <span className="font-heading text-base font-bold tabular-nums leading-none">
+        {formatPoints(gap)} pt{gap > 1 ? "s" : ""}
+      </span>
+      <span className="text-xs font-medium text-muted-foreground">{suffix}</span>
+    </div>
+  );
+}
+
 function InsightRow({
   icon: Icon,
   label,
+  subtitle,
   value,
   highlight,
 }: {
   icon: LucideIcon;
   label: string;
-  value: string;
+  subtitle?: string;
+  value: React.ReactNode;
   highlight?: boolean;
 }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2",
+        "flex items-start gap-2.5 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2.5",
         highlight && "border-lime-400/25 bg-lime-400/5",
       )}
     >
       <Icon
         className={cn(
-          "size-4 shrink-0",
+          "mt-0.5 size-4 shrink-0",
           highlight ? "text-lime-400" : "text-muted-foreground",
         )}
         aria-hidden
       />
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-          {label}
-        </p>
-        <p className="truncate text-sm font-semibold tabular-nums">{value}</p>
+      <div className="min-w-0 flex-1 space-y-1">
+        <div>
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            {label}
+          </p>
+          {subtitle ? (
+            <p className="truncate text-xs font-medium text-foreground/90">
+              {subtitle}
+            </p>
+          ) : null}
+        </div>
+        <div className="text-sm font-semibold leading-snug">{value}</div>
       </div>
     </div>
   );
@@ -228,23 +254,26 @@ export function LeaderboardTopCard({
               <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 En un coup d&apos;œil
               </p>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2">
                 {userRank != null && totalPlayers > 0 && (
                   <InsightRow
                     icon={Target}
                     label="Ta place"
-                    value={`#${userRank} sur ${totalPlayers}`}
+                    value={
+                      <span className="tabular-nums">
+                        #{userRank} sur {totalPlayers}
+                      </span>
+                    }
                     highlight={userRank <= 3}
                   />
                 )}
                 {above && (
                   <InsightRow
                     icon={ArrowUp}
-                    label={`Devant toi · ${getPlayerLabel(above.player)}`}
+                    label="Devant toi"
+                    subtitle={getPlayerLabel(above.player)}
                     value={
-                      above.gap > 0
-                        ? `${formatPoints(above.gap)} pt${above.gap > 1 ? "s" : ""} de retard`
-                        : "À égalité"
+                      <GapInsightValue gap={above.gap} direction="behind" />
                     }
                     highlight={above.gap === 0}
                   />
@@ -252,11 +281,10 @@ export function LeaderboardTopCard({
                 {below && (
                   <InsightRow
                     icon={ArrowDown}
-                    label={`Derrière toi · ${getPlayerLabel(below.player)}`}
+                    label="Derrière toi"
+                    subtitle={getPlayerLabel(below.player)}
                     value={
-                      below.gap > 0
-                        ? `${formatPoints(below.gap)} pt${below.gap > 1 ? "s" : ""} d'avance`
-                        : "À égalité"
+                      <GapInsightValue gap={below.gap} direction="ahead" />
                     }
                     highlight={below.gap === 0}
                   />
@@ -265,23 +293,34 @@ export function LeaderboardTopCard({
                   <InsightRow
                     icon={Crown}
                     label="Tu mènes le classement"
-                    value={`${formatPoints(leader.balance)} pts`}
+                    value={
+                      <span className="font-heading text-base font-bold tabular-nums">
+                        {formatPoints(leader.balance)} pts
+                      </span>
+                    }
                     highlight
                   />
                 )}
                 <InsightRow
                   icon={Users}
                   label="Victoires (top 3)"
-                  value={`${top3Wins} paris · ${top3Classic} classiques`}
+                  value={
+                    <span className="text-sm font-medium text-foreground/90">
+                      {top3Wins} paris · {top3Classic} classiques
+                    </span>
+                  }
                 />
                 {onFireCount > 0 && (
                   <InsightRow
                     icon={Zap}
                     label="En feu"
                     value={
-                      bestStreak >= ON_FIRE_STREAK_REQUIRED
-                        ? `${onFireCount} joueur${onFireCount > 1 ? "s" : ""} · série ${bestStreak}`
-                        : `${onFireCount} joueur${onFireCount > 1 ? "s" : ""}`
+                      <span className="text-sm font-medium text-foreground/90">
+                        {onFireCount} joueur{onFireCount > 1 ? "s" : ""}
+                        {bestStreak >= ON_FIRE_STREAK_REQUIRED
+                          ? ` · série ${bestStreak}`
+                          : ""}
+                      </span>
                     }
                   />
                 )}
@@ -289,7 +328,11 @@ export function LeaderboardTopCard({
                   <InsightRow
                     icon={Target}
                     label="Tes paris en cours"
-                    value={`${pendingBets} en attente`}
+                    value={
+                      <span className="tabular-nums">
+                        {pendingBets} en attente
+                      </span>
+                    }
                   />
                 )}
               </div>
