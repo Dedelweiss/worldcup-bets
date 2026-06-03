@@ -8,6 +8,7 @@ export interface MatchParticipationPlayer {
   has_bet: boolean;
   has_match_result: boolean;
   has_exact_score: boolean;
+  is_ai?: boolean;
 }
 
 export interface MatchBettingParticipation {
@@ -37,6 +38,7 @@ export async function getMatchBettingParticipation(
     has_bet: Boolean(r.has_bet),
     has_match_result: Boolean(r.has_match_result),
     has_exact_score: Boolean(r.has_exact_score),
+    is_ai: Boolean(r.is_ai),
   }));
 
   const bettors = rows.filter((r) => r.has_bet);

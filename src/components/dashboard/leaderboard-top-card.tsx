@@ -51,6 +51,11 @@ export function LeaderboardTopCard({ players, isDemo }: LeaderboardTopCardProps)
                       display_name: player.display_name,
                       username: player.username,
                     })}
+                    {player.is_ai && (
+                      <span className="ml-1.5 text-[10px] font-normal text-violet-400">
+                        IA
+                      </span>
+                    )}
                   </p>
                   <p className="font-heading text-lg font-bold tabular-nums text-lime-400">
                     {formatPoints(player.balance)}

@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { AiPlayerBadge } from "@/components/leaderboard/ai-player-badge";
 import {
   formatExactScoreSelection,
   parseExactScoreSelection,
@@ -8,6 +9,7 @@ import { formatOdd, formatPoints } from "@/lib/format";
 import type { BetStatus } from "@/types/database";
 import { betDisplayPayout } from "@/lib/points";
 import { getPlayerLabel } from "@/lib/profile/player-label";
+import { isAiPlayer } from "@/lib/ai/constants";
 import type { MatchLiveBetRow } from "@/lib/bets/match-live-bets";
 
 const SELECTION_LABEL: Record<string, string> = {
@@ -94,6 +96,7 @@ export function MatchLiveBets({
               <div className="min-w-0 flex-1">
                 <p className="flex flex-wrap items-center gap-1.5 font-medium">
                   {playerName(bet)}
+                  {isAiPlayer(bet.user_id) && <AiPlayerBadge />}
                   {isYou && (
                     <span className="text-xs font-normal text-primary">
                       (vous)

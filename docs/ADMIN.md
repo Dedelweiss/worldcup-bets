@@ -45,6 +45,17 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 37. `036_admin_profile_edit.sql` (admin : modifier pseudo et équipe favorite de tout joueur)
 38. `037_fix_admin_reset_where.sql` (reset admin : `UPDATE profiles` avec `WHERE id IS NOT NULL`)
 39. `038_admin_reset_clear_badges.sql` (reset admin : efface aussi `user_badges`)
+40. `039_update_classic_bet_before_kickoff.sql` (modifier son pronostic classique avant le coup d'envoi)
+41. `040_admin_match_correction.sql` (correction résultat / re-clôture admin)
+42. `041_fix_scheduled_status_sync.sql` (`suppress_auto_live`, sync live verrouillé)
+43. `042_admin_clear_match_scores.sql` (effacer scores admin)
+44. `043_cancel_pending_bet.sql` (annulation pari en attente par le joueur)
+45. `044_tackles_and_ai_summary.sql` (Tacle Glissé PvP + Gazette du Match IA)
+46. `045_tackle_cancel_update.sql` (annuler / retargeter un tacle avant coup d'envoi)
+47. `046_security_hardening.sql` (RLS durci : profils, paris, tacles, sync live)
+48. `047_ai_player_bets.sql` (**joueur IA** : pari score exact au coup d'envoi, compte au classement)
+
+Après **047**, le pronostiqueur **L'IA** (`ia_prono`) parie automatiquement un score exact quand le match passe en direct (via `sync_live_matches` + `SUPABASE_SERVICE_ROLE_KEY`). Clé LLM optionnelle (`GROQ_API_KEY` / `GEMINI_API_KEY`) ; sinon heuristique basée sur les cotes.
 
 Après **033**, pour recalculer les flammes sur des matchs déjà clôturés :
 

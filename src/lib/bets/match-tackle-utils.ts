@@ -32,7 +32,7 @@ export function tackleEligibleRivals(
   currentUserId: string,
 ): MatchParticipationPlayer[] {
   return bettors.filter(
-    (p) => p.user_id !== currentUserId && p.has_bet,
+    (p) => p.user_id !== currentUserId && p.has_bet && !p.is_ai,
   );
 }
 

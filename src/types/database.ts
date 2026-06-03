@@ -73,6 +73,8 @@ export interface Profile {
   on_fire?: boolean;
   favorite_team_id?: number | null;
   role?: UserRole;
+  /** Joueur système (pronostiqueur IA). */
+  is_ai?: boolean;
 }
 
 export interface Team {
@@ -175,6 +177,8 @@ export interface LeaderboardEntry {
   heat_streak?: number;
   leagues?: LeaderboardLeagueTag[];
   badges?: LeaderboardPlayerBadge[];
+  /** Joueur système (pronostiqueur IA). */
+  is_ai?: boolean;
 }
 
 export interface BetRow {

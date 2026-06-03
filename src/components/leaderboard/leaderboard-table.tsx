@@ -1,4 +1,5 @@
 import { OnFireFlame } from "@/components/leaderboard/on-fire-flame";
+import { AiPlayerBadge } from "@/components/leaderboard/ai-player-badge";
 import { PlayerBadges } from "@/components/leaderboard/player-badges";
 import { ON_FIRE_STREAK_REQUIRED } from "@/lib/on-fire";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +76,7 @@ export function LeaderboardTable({
                   <p className="font-semibold leading-tight">
                     {getPlayerLabel(player)}
                   </p>
+                  {player.is_ai && <AiPlayerBadge />}
                   {showOnFire && playerIsOnFire(player) && <OnFireFlame />}
                   <PlayerBadges badges={player.badges ?? []} />
                 </div>
@@ -195,6 +197,7 @@ export function LeaderboardTable({
                       <span className="font-medium">
                         {getPlayerLabel(player)}
                       </span>
+                      {player.is_ai && <AiPlayerBadge />}
                       {showOnFire && playerIsOnFire(player) && <OnFireFlame />}
                       <PlayerBadges badges={player.badges ?? []} />
                     </div>

@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { MatchParticipationPlayer } from "@/lib/bets/match-participation";
+import { AiPlayerBadge } from "@/components/leaderboard/ai-player-badge";
 import {
   getPlayerInitials,
   getPlayerLabel,
@@ -79,11 +80,20 @@ function ParticipationAvatar({
       <TooltipContent side="top">
         <p className="font-medium">
           {label}
+          {player.is_ai && (
+            <span className="ml-1.5 inline-flex align-middle">
+              <AiPlayerBadge />
+            </span>
+          )}
           {isCurrentUser && (
             <span className="ml-1 font-normal text-background/70">(vous)</span>
           )}
         </p>
-        <p className="mt-0.5 text-xs text-background/80">{detail}</p>
+        <p className="mt-0.5 text-xs text-background/80">
+          {player.is_ai && !player.has_bet
+            ? "Pronostic au coup d'envoi"
+            : detail}
+        </p>
       </TooltipContent>
     </Tooltip>
   );

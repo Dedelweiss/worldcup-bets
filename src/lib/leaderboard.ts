@@ -18,6 +18,7 @@ function mapRow(row: Record<string, unknown>): LeaderboardEntry {
     total_lost: Number(row.total_lost ?? 0),
     on_fire: Boolean(row.on_fire),
     heat_streak: Number(row.heat_streak ?? 0),
+    is_ai: Boolean(row.is_ai),
   };
 }
 
