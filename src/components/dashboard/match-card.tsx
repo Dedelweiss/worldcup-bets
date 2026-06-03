@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { TeamFlag } from "@/components/shared/team-flag";
@@ -13,7 +12,8 @@ import {
   MATCH_RESULT_COPY,
   MATCH_RESULT_OUTCOME,
 } from "@/lib/bets/match-result-copy";
-import { formatKickoff, formatKickoffRelative, formatOdd } from "@/lib/format";
+import { formatOdd } from "@/lib/format";
+import { MatchKickoffMeta } from "@/components/matches/match-kickoff-meta";
 import { MatchCardStatusBadges } from "@/components/dashboard/match-card-status-badges";
 import { goldenMatchCardClass } from "@/lib/golden-match";
 import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
@@ -79,11 +79,11 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
       <CardContent className="p-0">
         <div
           className={cn(
-            "flex items-center justify-between border-b border-border/60 px-4 py-2",
+            "flex flex-col gap-2 border-b border-border/60 px-4 py-2.5 sm:flex-row sm:items-start sm:justify-between",
             isLive ? "bg-primary/15" : "bg-muted/30",
           )}
         >
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             {isGolden && <GoldenMatchBadge compact />}
             <MatchCardStatusBadges matchId={match.id} status={betStatus} />
             <Badge
@@ -93,13 +93,7 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
               {isLive ? "EN DIRECT" : match.round ?? "Coupe du Monde"}
             </Badge>
           </div>
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="size-3" />
-            {formatKickoff(match.kickoff_at)}
-            <span className="hidden sm:inline">
-              · {formatKickoffRelative(match.kickoff_at)}
-            </span>
-          </span>
+          <MatchKickoffMeta kickoffAt={match.kickoff_at} align="end" />
         </div>
 
         <div className="space-y-3 px-4 py-4">

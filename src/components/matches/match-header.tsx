@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { ArrowLeft, Clock, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
+import { MatchKickoffMeta } from "@/components/matches/match-kickoff-meta";
 import { cn } from "@/lib/utils";
-import { formatKickoff, formatKickoffRelative } from "@/lib/format";
 import { formatLiveClock } from "@/lib/football-data/parse-match";
 import { goldenMatchHeaderClass } from "@/lib/golden-match";
 import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
@@ -78,11 +78,14 @@ export function MatchHeader({ match, adminEditHref }: MatchHeaderProps) {
         </p>
       )}
 
-      <p className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
-        <Clock className="size-3.5 shrink-0" />
-        {formatKickoff(match.kickoff_at)} · {formatKickoffRelative(match.kickoff_at)}
-        {match.venue ? ` · ${match.venue}` : ""}
-      </p>
+      <MatchKickoffMeta
+        kickoffAt={match.kickoff_at}
+        align="start"
+        className="rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 sm:inline-flex"
+      />
+      {match.venue ? (
+        <p className="text-xs text-muted-foreground">{match.venue}</p>
+      ) : null}
 
       {match.bet_scope_note && match.stage && match.stage !== "group" && (
         <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100/90">
