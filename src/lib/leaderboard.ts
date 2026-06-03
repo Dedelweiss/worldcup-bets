@@ -1,4 +1,5 @@
 import type { PlayerBadge } from "@/lib/badges";
+import { resolveAvatarUrl } from "@/lib/profile/avatars";
 import { createClient } from "@/lib/supabase/server";
 import type { LeaderboardEntry, LeaderboardSort } from "@/types/database";
 
@@ -89,14 +90,23 @@ async function attachPlayerAvatars(
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
-    .select("id, avatar_url")
+    .select("id, avatar_id, avatar_url")
     .in(
       "id",
       players.map((p) => p.id),
     );
 
   const byId = new Map(
-    (data ?? []).map((p) => [p.id, p.avatar_url as string | null]),
+    (data ?? []).map((p) => [
+      p.id,
+      resolveAvatarUrl(
+        {
+          avatar_id: p.avatar_id as string | null,
+          avatar_url: p.avatar_url as string | null,
+        },
+        p.id as string,
+      ),
+    ]),
   );
 
   return players.map((p) => ({

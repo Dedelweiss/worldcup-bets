@@ -3,22 +3,25 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { SignupAvatarPicker } from "@/components/profile/signup-avatar-picker";
 import { createClient } from "@/lib/supabase/client";
-import { getAuthRedirectUrl } from "@/lib/auth";
-import { OAuthButton } from "@/components/auth/oauth-button";
+import {
+  normalizeUsername,
+  usernameToAuthEmail,
+  validateUsernameInput,
+} from "@/lib/auth/username";
+import { DEFAULT_AVATAR_ID } from "@/lib/profile/avatars";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 
 export function SignupForm() {
   const router = useRouter();
-  const [displayName, setDisplayName] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [avatarId, setAvatarId] = useState(DEFAULT_AVATAR_ID);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -26,93 +29,79 @@ export function SignupForm() {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const pseudo = displayName.trim().toLowerCase().replace(/\s+/g, "_");
+    const pseudo = normalizeUsername(username);
+    const validationError = validateUsernameInput(pseudo);
+    if (validationError) {
+      setError(validationError);
+      setLoading(false);
+      return;
+    }
 
+    if (password.length < 6) {
+      setError("Le mot de passe doit contenir au moins 6 caractères.");
+      setLoading(false);
+      return;
+    }
+
+    const supabase = createClient();
     const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
+      email: usernameToAuthEmail(pseudo),
       password,
       options: {
-        emailRedirectTo: getAuthRedirectUrl("/auth/callback"),
         data: {
-          full_name: displayName.trim() || undefined,
-          username: pseudo || undefined,
+          username: pseudo,
+          avatar_id: avatarId,
         },
       },
     });
 
     if (signUpError) {
-      setError(signUpError.message);
+      const msg = signUpError.message.toLowerCase();
+      if (msg.includes("already registered") || msg.includes("already exists")) {
+        setError("Ce pseudo est déjà pris.");
+      } else {
+        setError(signUpError.message);
+      }
       setLoading(false);
       return;
     }
 
     if (data.session) {
-      if (pseudo.length >= 3) {
-        await supabase.rpc("update_username", { p_username: pseudo });
-      }
       router.push("/profile");
       router.refresh();
       return;
     }
 
-    setSuccess(true);
-    setLoading(false);
-  }
-
-  if (success) {
-    return (
-      <div className="space-y-4 text-center">
-        <p className="text-sm text-muted-foreground">
-          Un email de confirmation vous a été envoyé. Cliquez sur le lien pour
-          activer votre compte et choisir votre pseudo.
-        </p>
-        <Link
-          href="/login"
-          className={cn(buttonVariants({ variant: "outline" }), "inline-flex w-full justify-center")}
-        >
-          Retour à la connexion
-        </Link>
-      </div>
+    setError(
+      "Compte créé mais session inactive. Désactivez la confirmation email dans Supabase (Authentication → Email).",
     );
+    setLoading(false);
   }
 
   return (
     <div className="space-y-6">
-      <OAuthButton />
-      <div className="relative">
-        <Separator />
-        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-          ou
-        </span>
-      </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="displayName">Pseudo</Label>
+          <Label htmlFor="username">Pseudo</Label>
           <Input
-            id="displayName"
+            id="username"
             type="text"
-            autoComplete="nickname"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
+            autoComplete="username"
+            required
+            value={username}
+            onChange={(e) => setUsername(e.target.value.toLowerCase())}
             placeholder="mon_pseudo"
             minLength={3}
             maxLength={20}
-            pattern="[a-zA-Z0-9_]+"
+            pattern="[a-z0-9_]+"
+            className="font-mono"
           />
+          <p className="text-xs text-muted-foreground">
+            Lettres minuscules, chiffres et _ (3–20 caractères). C&apos;est votre
+            identifiant de connexion.
+          </p>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="vous@exemple.com"
-          />
-        </div>
+        <SignupAvatarPicker value={avatarId} onChange={setAvatarId} />
         <div className="space-y-2">
           <Label htmlFor="password">Mot de passe</Label>
           <Input
@@ -140,6 +129,9 @@ export function SignupForm() {
         <Link href="/login" className="font-medium text-primary hover:underline">
           Se connecter
         </Link>
+      </p>
+      <p className="text-center text-xs text-muted-foreground">
+        Aucun email personnel requis — connexion par pseudo uniquement.
       </p>
     </div>
   );

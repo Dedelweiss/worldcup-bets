@@ -62,6 +62,7 @@ export interface Profile {
   id: string;
   username: string | null;
   display_name: string | null;
+  avatar_id?: string | null;
   avatar_url: string | null;
   /** Total de points (ex-colonne balance). */
   points: number;

@@ -67,6 +67,8 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 59. `058_admin_prepare_world_cup.sql` (préparer la CDM après tests)
 60. `059_fix_wc2026_group_f_calendar.sql` (calendrier poule F : Japon vs Suède)
 61. `060_odds_api_sync.sql` (cotes via odds-api.io, colonne `odds_api_event_id`)
+62. `061_username_auth_avatars.sql` (connexion pseudo + mot de passe, avatars prédéfinis)
+63. `062_profile_avatar_storage.sql` (upload photo de profil compressée, bucket Storage)
 
 ### APIs matchs CDM 2026
 

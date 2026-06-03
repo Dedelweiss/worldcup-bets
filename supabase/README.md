@@ -18,29 +18,20 @@ Dans **SQL Editor** → **New query**, coller et exécuter dans l’ordre :
 1. `migrations/001_initial_schema.sql`
 2. `seed.sql` (matchs de démo)
 
-## 3. Authentification Email
+## 3. Authentification (pseudo + mot de passe)
 
-**Authentication → Providers → Email** : activé par défaut.
+L’app utilise **Email** côté Supabase Auth avec un email technique masqué (`pseudo@accounts.wc2026.internal`). Les joueurs ne saisissent que **pseudo + mot de passe**.
 
-Pour le dev sans confirmation email :
+1. **Authentication → Providers → Email** : activé
+2. Désactiver **Confirm email** (recommandé entre amis)
+3. **Google OAuth** : laisser désactivé (pas de collecte email / photo Google)
 
-- **Authentication → Providers → Email** → désactiver **Confirm email**
+Exécuter aussi :
 
-## 4. Google OAuth
+- `migrations/061_username_auth_avatars.sql` (avatars prédéfinis + trigger inscription)
+- `migrations/062_profile_avatar_storage.sql` (bucket Storage photo de profil, max ~200 Ko)
 
-1. [Google Cloud Console](https://console.cloud.google.com/) → Credentials → OAuth 2.0 Client ID
-2. **Authorized redirect URIs** :
-   ```
-   https://<PROJECT_REF>.supabase.co/auth/v1/callback
-   ```
-3. Supabase → **Authentication → Providers → Google** : coller Client ID + Secret
-4. **Authentication → URL Configuration** → **Redirect URLs** :
-   ```
-   http://localhost:3000/auth/callback
-   https://votre-domaine.vercel.app/auth/callback
-   ```
-
-## 5. Vérification
+## 4. Vérification
 
 ```bash
 npm run dev

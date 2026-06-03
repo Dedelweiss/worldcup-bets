@@ -4,31 +4,46 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { OAuthButton } from "@/components/auth/oauth-button";
+import {
+  isLegacyEmailLogin,
+  normalizeUsername,
+  usernameToAuthEmail,
+  validateUsernameInput,
+} from "@/lib/auth/username";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/dashboard";
-  const authError = searchParams.get("error");
 
-  const [email, setEmail] = useState("");
+  const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(
-    authError === "auth_callback_failed"
-      ? "La connexion Google a échoué. Réessayez."
-      : null,
-  );
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    const trimmed = login.trim();
+    let email: string;
+
+    if (isLegacyEmailLogin(trimmed)) {
+      email = trimmed.toLowerCase();
+    } else {
+      const pseudo = normalizeUsername(trimmed);
+      const validationError = validateUsernameInput(pseudo);
+      if (validationError) {
+        setError(validationError);
+        setLoading(false);
+        return;
+      }
+      email = usernameToAuthEmail(pseudo);
+    }
 
     const supabase = createClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -39,7 +54,7 @@ export function LoginForm() {
     if (signInError) {
       setError(
         signInError.message === "Invalid login credentials"
-          ? "Email ou mot de passe incorrect."
+          ? "Pseudo ou mot de passe incorrect."
           : signInError.message,
       );
       setLoading(false);
@@ -52,25 +67,22 @@ export function LoginForm() {
 
   return (
     <div className="space-y-6">
-      <OAuthButton />
-      <div className="relative">
-        <Separator />
-        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-          ou
-        </span>
-      </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="login">Pseudo</Label>
           <Input
-            id="email"
-            type="email"
-            autoComplete="email"
+            id="login"
+            type="text"
+            autoComplete="username"
             required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="vous@exemple.com"
+            value={login}
+            onChange={(e) => setLogin(e.target.value)}
+            placeholder="mon_pseudo"
+            className="font-mono"
           />
+          <p className="text-xs text-muted-foreground">
+            Compte ancien avec email ? Saisissez votre email à la place du pseudo.
+          </p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Mot de passe</Label>

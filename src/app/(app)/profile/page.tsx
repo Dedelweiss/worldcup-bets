@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PointsEvolutionChart } from "@/components/profile/points-evolution-chart";
+import { AvatarPicker } from "@/components/profile/avatar-picker";
 import { UsernameForm } from "@/components/profile/username-form";
 import { hasSupabaseConfig, requireAuth } from "@/lib/auth-server";
 import {
@@ -34,6 +35,11 @@ export default async function ProfilePage() {
       </div>
 
       <PointsEvolutionChart points={history} currentPoints={profile.points} />
+
+      <AvatarPicker
+        currentAvatarId={profile.avatar_id ?? null}
+        currentAvatarUrl={profile.avatar_url}
+      />
 
       <UsernameForm currentUsername={profile.username} />
     </div>
