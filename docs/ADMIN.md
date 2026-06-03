@@ -54,6 +54,7 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 46. `045_tackle_cancel_update.sql` (annuler / retargeter un tacle avant coup d'envoi)
 47. `046_security_hardening.sql` (RLS durci : profils, paris, tacles, sync live)
 48. `047_ai_player_bets.sql` (**joueur IA** : pari score exact au coup d'envoi, compte au classement)
+49. `048_gazette_regenerate.sql` (Gazette régénérable par l'admin ; effacée si match repasse en à venir)
 
 Après **047**, le pronostiqueur **L'IA** (`ia_prono`) parie automatiquement un score exact quand le match passe en direct (via `sync_live_matches` + `SUPABASE_SERVICE_ROLE_KEY`). Clé LLM optionnelle (`GROQ_API_KEY` / `GEMINI_API_KEY`) ; sinon heuristique basée sur les cotes.
 

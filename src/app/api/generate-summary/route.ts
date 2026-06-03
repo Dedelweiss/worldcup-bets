@@ -9,9 +9,11 @@ export async function POST(request: Request) {
   }
 
   let matchId: number;
+  let overwrite = false;
   try {
-    const body = (await request.json()) as { matchId?: number };
+    const body = (await request.json()) as { matchId?: number; overwrite?: boolean };
     matchId = Number(body.matchId);
+    overwrite = Boolean(body.overwrite);
     if (!Number.isFinite(matchId) || matchId <= 0) {
       return NextResponse.json({ error: "Invalid matchId" }, { status: 400 });
     }
@@ -19,7 +21,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const result = await generateAndSaveMatchSummary(matchId);
+  const result = await generateAndSaveMatchSummary(matchId, { overwrite });
 
   if (!result.success) {
     const status = result.error.includes("déjà") ? 409 : 500;

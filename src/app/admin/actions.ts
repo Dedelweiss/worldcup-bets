@@ -703,10 +703,11 @@ export async function setWorldCupWinnerAction(
 
 export async function generateGazetteAction(
   matchId: number,
+  overwrite = false,
 ): Promise<ActionResult & { summary?: string }> {
   await requireAdmin();
 
-  const result = await generateAndSaveMatchSummary(matchId);
+  const result = await generateAndSaveMatchSummary(matchId, { overwrite });
   if (!result.success) {
     return { success: false, error: result.error };
   }

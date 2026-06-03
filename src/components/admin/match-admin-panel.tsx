@@ -198,9 +198,18 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
     setLoading(null);
   }
 
-  async function handleGenerateGazette() {
-    if (match.ai_summary) {
+  async function handleGenerateGazette(overwrite = false) {
+    if (match.ai_summary && !overwrite) {
       setError("La Gazette a déjà été générée pour ce match.");
+      return;
+    }
+
+    if (
+      overwrite &&
+      !confirm(
+        "Remplacer la Gazette existante ? Le nouveau texte sera basé sur les pronostics actuels.",
+      )
+    ) {
       return;
     }
 
@@ -208,11 +217,15 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
     setError(null);
     setMessage(null);
 
-    const result = await generateGazetteAction(match.id);
+    const result = await generateGazetteAction(match.id, overwrite);
     if (!result.success) {
       setError(result.error);
     } else {
-      setMessage("Gazette du Match générée et enregistrée.");
+      setMessage(
+        overwrite
+          ? "Gazette du Match régénérée."
+          : "Gazette du Match générée et enregistrée.",
+      );
       router.refresh();
     }
     setLoading(null);
@@ -433,26 +446,28 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
             Génère un résumé sarcastique des pronostics du groupe via Groq/Gemini.
-            Une seule génération par match (gratuit).
+            Régénérable après un retour du match en « à venir » ou manuellement.
           </p>
           {match.ai_summary ? (
             <blockquote className="rounded-lg border border-lime-400/25 bg-lime-400/5 p-3 text-sm italic text-foreground/90">
               {match.ai_summary}
             </blockquote>
           ) : null}
-          <Button
-            type="button"
-            variant="outline"
-            className="border-lime-400/40 text-lime-300 hover:bg-lime-400/10"
-            disabled={Boolean(match.ai_summary) || loading === "gazette"}
-            onClick={handleGenerateGazette}
-          >
-            {loading === "gazette"
-              ? "Génération…"
-              : match.ai_summary
-                ? "Gazette déjà générée"
-                : "Générer la Gazette"}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-lime-400/40 text-lime-300 hover:bg-lime-400/10"
+              disabled={loading === "gazette"}
+              onClick={() => handleGenerateGazette(Boolean(match.ai_summary))}
+            >
+              {loading === "gazette"
+                ? "Génération…"
+                : match.ai_summary
+                  ? "Régénérer la Gazette"
+                  : "Générer la Gazette"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

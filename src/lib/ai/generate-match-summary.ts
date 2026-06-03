@@ -13,13 +13,15 @@ export type GenerateSummaryResult =
 
 export async function generateAndSaveMatchSummary(
   matchId: number,
+  options?: { overwrite?: boolean },
 ): Promise<GenerateSummaryResult> {
+  const overwrite = options?.overwrite ?? false;
   const match = await getMatchById(matchId, { skipLiveSync: true });
   if (!match) {
     return { success: false, error: "Match introuvable." };
   }
 
-  if (match.ai_summary) {
+  if (match.ai_summary && !overwrite) {
     return {
       success: false,
       error: "La Gazette a déjà été générée pour ce match.",
@@ -54,6 +56,7 @@ export async function generateAndSaveMatchSummary(
   const { error: saveError } = await supabase.rpc("save_match_ai_summary", {
     p_match_id: matchId,
     p_summary: summary,
+    p_overwrite: overwrite,
   });
 
   if (saveError) {
