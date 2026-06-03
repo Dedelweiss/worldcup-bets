@@ -3,6 +3,7 @@ import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
 import { DashboardBento } from "@/components/dashboard/dashboard-bento";
 import { getUserMatchBetStatuses } from "@/lib/bets/user-match-status-query";
 import { getDashboardData } from "@/lib/dashboard";
+import { getGlobalLiveChatInitial } from "@/lib/global-live-chat.server";
 import { DEMO_LEADERBOARD_TOP } from "@/lib/leaderboard-demo";
 import {
   getLeaderboard,
@@ -64,6 +65,10 @@ export default async function DashboardPage() {
         )
       : {};
 
+  const globalLiveChat = isDemo
+    ? { messages: [], liveMatchIds: [] }
+    : await getGlobalLiveChatInitial(30);
+
   return (
     <div className="space-y-8">
       {!isDemo && <LiveStatusPoller />}
@@ -110,6 +115,7 @@ export default async function DashboardPage() {
         betStatuses={betStatuses}
         topPlayers={topPlayers}
         rankNeighbors={rankNeighbors}
+        globalLiveChat={globalLiveChat}
       />
     </div>
   );

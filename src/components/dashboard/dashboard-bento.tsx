@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { GlobalLiveChat } from "@/components/chat/global-live-chat";
 import { DashboardSummary } from "@/components/dashboard/dashboard-summary";
 import { ExpertiseRadarCard } from "@/components/dashboard/expertise-radar-card";
 import { LeaderboardTopCard } from "@/components/dashboard/leaderboard-top-card";
 import { MatchCard } from "@/components/dashboard/match-card";
 import { MotionReveal } from "@/components/ui/motion-reveal";
 import { buttonVariants } from "@/components/ui/button";
+import type { GlobalLiveChatInitial } from "@/lib/global-live-chat";
 import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
 import type { ProfileFavoriteTeam } from "@/lib/profile/favorite-team";
 import type { DashboardStats } from "@/lib/dashboard-stats";
@@ -31,6 +33,7 @@ interface DashboardBentoProps {
   betStatuses: Record<number, UserMatchBetStatus>;
   topPlayers: LeaderboardEntry[];
   rankNeighbors: LeaderboardRankNeighbors;
+  globalLiveChat: GlobalLiveChatInitial;
 }
 
 export function DashboardBento({
@@ -44,6 +47,7 @@ export function DashboardBento({
   betStatuses,
   topPlayers,
   rankNeighbors,
+  globalLiveChat,
 }: DashboardBentoProps) {
   const [featured, ...rest] = upcomingMatches;
 
@@ -126,6 +130,12 @@ export function DashboardBento({
           pendingBets={stats.pendingBets}
           rankNeighbors={rankNeighbors}
         />
+        {!isDemo && (
+          <GlobalLiveChat
+            initialMessages={globalLiveChat.messages}
+            initialLiveMatchIds={globalLiveChat.liveMatchIds}
+          />
+        )}
         <ExpertiseRadarCard />
       </MotionReveal>
     </div>
