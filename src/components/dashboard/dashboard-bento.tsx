@@ -11,6 +11,7 @@ import type { ProfileFavoriteTeam } from "@/lib/profile/favorite-team";
 import type { DashboardStats } from "@/lib/dashboard-stats";
 import type { TournamentConfig } from "@/lib/tournament/config";
 import { cn } from "@/lib/utils";
+import type { LeaderboardRankNeighbors } from "@/lib/leaderboard";
 import type {
   LeaderboardEntry,
   MatchWithTeams,
@@ -28,6 +29,7 @@ interface DashboardBentoProps {
   upcomingMatches: MatchWithTeams[];
   betStatuses: Record<number, UserMatchBetStatus>;
   topPlayers: LeaderboardEntry[];
+  rankNeighbors: LeaderboardRankNeighbors;
 }
 
 export function DashboardBento({
@@ -40,6 +42,7 @@ export function DashboardBento({
   upcomingMatches,
   betStatuses,
   topPlayers,
+  rankNeighbors,
 }: DashboardBentoProps) {
   const [featured, ...rest] = upcomingMatches;
 
@@ -114,7 +117,14 @@ export function DashboardBento({
       </MotionReveal>
 
       <MotionReveal index={2} className="md:col-span-4">
-        <LeaderboardTopCard players={topPlayers} isDemo={isDemo} />
+        <LeaderboardTopCard
+          players={topPlayers}
+          isDemo={isDemo}
+          userRank={stats.rank}
+          totalPlayers={stats.totalPlayers}
+          pendingBets={stats.pendingBets}
+          rankNeighbors={rankNeighbors}
+        />
       </MotionReveal>
     </div>
   );

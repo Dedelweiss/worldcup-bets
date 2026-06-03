@@ -4,7 +4,10 @@ import { DashboardBento } from "@/components/dashboard/dashboard-bento";
 import { getUserMatchBetStatuses } from "@/lib/bets/user-match-status-query";
 import { getDashboardData } from "@/lib/dashboard";
 import { DEMO_LEADERBOARD_TOP } from "@/lib/leaderboard-demo";
-import { getLeaderboardTop3 } from "@/lib/leaderboard";
+import {
+  getLeaderboard,
+  getLeaderboardRankNeighbors,
+} from "@/lib/leaderboard";
 import { getProfileFavoriteTeam } from "@/lib/profile/favorite-team";
 import { getAllTournamentTeams } from "@/lib/tournament/queries";
 import { getTournamentConfig } from "@/lib/tournament/config";
@@ -21,24 +24,37 @@ export const metadata = {
 export default async function DashboardPage() {
   const { profile, upcomingMatches, stats, isDemo } = await getDashboardData();
 
-  const [favoriteTeam, tournamentConfig, tournamentTeams, topPlayers] = isDemo
-    ? [
-        null,
-        {
-          favoriteTeamBonusPoints: 100,
-          worldCupWinnerTeamId: null,
-          worldCupWinnerTeam: null,
-          favoriteBonusSettled: false,
-        },
-        [] as Awaited<ReturnType<typeof getAllTournamentTeams>>,
-        DEMO_LEADERBOARD_TOP,
-      ]
-    : await Promise.all([
-        getProfileFavoriteTeam(profile.id),
-        getTournamentConfig(),
-        getAllTournamentTeams(),
-        getLeaderboardTop3(),
-      ]);
+  const [favoriteTeam, tournamentConfig, tournamentTeams, topPlayers, rankNeighbors] =
+    isDemo
+      ? [
+          null,
+          {
+            favoriteTeamBonusPoints: 100,
+            worldCupWinnerTeamId: null,
+            worldCupWinnerTeam: null,
+            favoriteBonusSettled: false,
+          },
+          [] as Awaited<ReturnType<typeof getAllTournamentTeams>>,
+          DEMO_LEADERBOARD_TOP,
+          getLeaderboardRankNeighbors(DEMO_LEADERBOARD_TOP, profile.id),
+        ]
+      : await (async () => {
+          const [favoriteTeam, tournamentConfig, tournamentTeams, leaderboard] =
+            await Promise.all([
+              getProfileFavoriteTeam(profile.id),
+              getTournamentConfig(),
+              getAllTournamentTeams(),
+              getLeaderboard({ sort: "points" }),
+            ]);
+          const players = leaderboard.players;
+          return [
+            favoriteTeam,
+            tournamentConfig,
+            tournamentTeams,
+            players.slice(0, 3),
+            getLeaderboardRankNeighbors(players, profile.id),
+          ] as const;
+        })();
 
   const betStatuses =
     !isDemo && upcomingMatches.length > 0
@@ -93,6 +109,7 @@ export default async function DashboardPage() {
         upcomingMatches={upcomingMatches}
         betStatuses={betStatuses}
         topPlayers={topPlayers}
+        rankNeighbors={rankNeighbors}
       />
     </div>
   );

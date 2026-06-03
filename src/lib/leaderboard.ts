@@ -235,6 +235,50 @@ export async function getLeaderboardTop3(): Promise<LeaderboardEntry[]> {
   return players.slice(0, 3);
 }
 
+export interface LeaderboardRankNeighbor {
+  player: LeaderboardEntry;
+  /** Écart de points (toujours ≥ 0). */
+  gap: number;
+}
+
+export interface LeaderboardRankNeighbors {
+  /** Joueur classé juste devant (meilleur). */
+  above: LeaderboardRankNeighbor | null;
+  /** Joueur classé juste derrière. */
+  below: LeaderboardRankNeighbor | null;
+}
+
+/** Écarts avec le joueur au-dessus et en dessous au classement points. */
+export function getLeaderboardRankNeighbors(
+  players: LeaderboardEntry[],
+  userId: string,
+): LeaderboardRankNeighbors {
+  const index = players.findIndex((p) => p.id === userId);
+  if (index === -1) {
+    return { above: null, below: null };
+  }
+
+  const me = players[index]!;
+  const abovePlayer = index > 0 ? players[index - 1]! : null;
+  const belowPlayer =
+    index < players.length - 1 ? players[index + 1]! : null;
+
+  return {
+    above: abovePlayer
+      ? {
+          player: abovePlayer,
+          gap: Math.max(0, abovePlayer.balance - me.balance),
+        }
+      : null,
+    below: belowPlayer
+      ? {
+          player: belowPlayer,
+          gap: Math.max(0, me.balance - belowPlayer.balance),
+        }
+      : null,
+  };
+}
+
 export function parseLeaderboardSort(value: string | undefined): LeaderboardSort {
   if (value === "classic_won" || value === "fun_won") return value;
   if (value === "points" || value === "balance") return "points";
