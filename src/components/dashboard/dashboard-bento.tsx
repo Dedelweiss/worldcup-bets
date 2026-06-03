@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { DashboardSummary } from "@/components/dashboard/dashboard-summary";
+import { ExpertiseRadarCard } from "@/components/dashboard/expertise-radar-card";
 import { LeaderboardTopCard } from "@/components/dashboard/leaderboard-top-card";
 import { MatchCard } from "@/components/dashboard/match-card";
 import { MotionReveal } from "@/components/ui/motion-reveal";
@@ -116,7 +117,7 @@ export function DashboardBento({
         </section>
       </MotionReveal>
 
-      <MotionReveal index={2} className="md:col-span-4">
+      <MotionReveal index={2} className="space-y-4 md:col-span-4">
         <LeaderboardTopCard
           players={topPlayers}
           isDemo={isDemo}
@@ -125,6 +126,7 @@ export function DashboardBento({
           pendingBets={stats.pendingBets}
           rankNeighbors={rankNeighbors}
         />
+        <ExpertiseRadarCard />
       </MotionReveal>
     </div>
   );
