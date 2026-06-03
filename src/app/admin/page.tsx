@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AdminMatchesFilters } from "@/components/admin/admin-matches-filters";
 import { AdminMatchesList } from "@/components/admin/admin-matches-list";
+import { FootballDataSyncButton } from "@/components/admin/football-data-sync-button";
+import { PrepareWorldCupPanel } from "@/components/admin/prepare-world-cup-panel";
 import { getAdminMatches } from "@/lib/admin/matches";
 import { parseAdminMatchSort, sortAdminMatches } from "@/lib/admin/match-sort";
 import { buttonVariants } from "@/components/ui/button";
@@ -29,7 +31,8 @@ export default async function AdminPage({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Gestion des matchs</h1>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <FootballDataSyncButton />
           <Link
             href="/admin/teams"
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
@@ -44,6 +47,8 @@ export default async function AdminPage({
           </Link>
         </div>
       </div>
+
+      <PrepareWorldCupPanel />
 
       <Suspense
         fallback={

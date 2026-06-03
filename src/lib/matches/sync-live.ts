@@ -1,6 +1,7 @@
 import { ensureAiBetsForLiveMatches } from "@/lib/ai/ensure-ai-bets";
 import { ensureAiKickoffChat } from "@/lib/ai/ensure-ai-chat";
 import { hasSupabaseConfig } from "@/lib/auth-server";
+import { syncFootballDataMatches } from "@/lib/matches/sync-football-data";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -35,11 +36,11 @@ export async function syncLiveMatches(options?: {
           ? createAdminClient()
           : await createClient();
         await supabase.rpc("sync_live_matches");
+        lastSyncAt = Date.now();
+        // football-data : 1 req max / 5 min (plan gratuit 10 req/min)
+        await syncFootballDataMatches();
       }
       await runAiLiveSideEffects();
-      if (!skipRpcSync) {
-        lastSyncAt = Date.now();
-      }
     } finally {
       syncInFlight = null;
     }

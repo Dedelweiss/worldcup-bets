@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { LiveMatchAnimation } from "@/components/matches/live-match-animation";
 import { MatchScoreInline } from "@/components/matches/match-score-inline";
+import { formatLiveClock } from "@/lib/football-data/parse-match";
 import { cn } from "@/lib/utils";
 import type { MatchStatus, MatchWithTeams } from "@/types/database";
 
@@ -21,6 +22,9 @@ export function MatchScoreboard({ match }: MatchScoreboardProps) {
   const isLive = match.status === "live";
   const isFinished = match.status === "finished";
   const hasScore = match.home_score !== null && match.away_score !== null;
+  const liveClock = isLive
+    ? formatLiveClock(match.live_minute, match.live_injury_time)
+    : null;
 
   const scoreLabel = isFinished
     ? "Score final"
@@ -44,7 +48,12 @@ export function MatchScoreboard({ match }: MatchScoreboardProps) {
               {scoreLabel}
             </Badge>
           )}
-          {isLive && !hasScore && (
+          {isLive && liveClock && (
+            <Badge variant="default" className="animate-pulse text-xs">
+              {liveClock}
+            </Badge>
+          )}
+          {isLive && !liveClock && !hasScore && (
             <Badge variant="default" className="animate-pulse text-xs">
               En direct
             </Badge>
@@ -74,7 +83,9 @@ export function MatchScoreboard({ match }: MatchScoreboardProps) {
 
         {isLive && hasScore && (
           <p className="text-center text-sm font-medium text-primary">
-            Match en cours — le score est mis à jour par l&apos;admin
+            {liveClock
+              ? `En direct · ${liveClock}`
+              : "Match en cours"}
           </p>
         )}
       </CardContent>

@@ -74,11 +74,12 @@ begin
         (2026028, 5::smallint, 'E', 4::smallint, 2::smallint, 2::smallint, '2026-06-21 00:00:00+00'::timestamptz, 'Kansas City Stadium'),
         (2026029, 5::smallint, 'E', 2::smallint, 3::smallint, 3::smallint, '2026-06-25 20:00:00+00'::timestamptz, 'Philadelphia Stadium'),
         (2026030, 5::smallint, 'E', 4::smallint, 1::smallint, 3::smallint, '2026-06-25 20:00:00+00'::timestamptz, 'New York New Jersey Stadium'),
-        (2026031, 6::smallint, 'F', 1::smallint, 3::smallint, 1::smallint, '2026-06-14 20:00:00+00'::timestamptz, 'Dallas Stadium'),
+        -- Groupe F : pos 1=NL, 2=JP, 3=SE, 4=TN (ne pas confondre 2 et 3)
+        (2026031, 6::smallint, 'F', 1::smallint, 2::smallint, 1::smallint, '2026-06-14 20:00:00+00'::timestamptz, 'Dallas Stadium'),
         (2026032, 6::smallint, 'F', 3::smallint, 4::smallint, 1::smallint, '2026-06-15 02:00:00+00'::timestamptz, 'Estadio Monterrey'),
         (2026033, 6::smallint, 'F', 1::smallint, 3::smallint, 2::smallint, '2026-06-20 17:00:00+00'::timestamptz, 'Houston Stadium'),
-        (2026034, 6::smallint, 'F', 4::smallint, 3::smallint, 2::smallint, '2026-06-20 04:00:00+00'::timestamptz, 'Estadio Monterrey'),
-        (2026035, 6::smallint, 'F', 3::smallint, 3::smallint, 3::smallint, '2026-06-25 23:00:00+00'::timestamptz, 'Dallas Stadium'),
+        (2026034, 6::smallint, 'F', 4::smallint, 2::smallint, 2::smallint, '2026-06-20 04:00:00+00'::timestamptz, 'Estadio Monterrey'),
+        (2026035, 6::smallint, 'F', 2::smallint, 3::smallint, 3::smallint, '2026-06-25 23:00:00+00'::timestamptz, 'Dallas Stadium'),
         (2026036, 6::smallint, 'F', 4::smallint, 1::smallint, 3::smallint, '2026-06-25 23:00:00+00'::timestamptz, 'Kansas City Stadium'),
         (2026037, 7::smallint, 'G', 1::smallint, 2::smallint, 1::smallint, '2026-06-15 19:00:00+00'::timestamptz, 'Seattle Stadium'),
         (2026038, 7::smallint, 'G', 3::smallint, 4::smallint, 1::smallint, '2026-06-16 01:00:00+00'::timestamptz, 'Los Angeles Stadium'),
@@ -180,9 +181,18 @@ begin
       venue = excluded.venue,
       home_team_id = excluded.home_team_id,
       away_team_id = excluded.away_team_id,
-      odd_home = excluded.odd_home,
-      odd_draw = excluded.odd_draw,
-      odd_away = excluded.odd_away,
+      odd_home = case
+        when public.matches.odds_synced_at is not null then public.matches.odd_home
+        else excluded.odd_home
+      end,
+      odd_draw = case
+        when public.matches.odds_synced_at is not null then public.matches.odd_draw
+        else excluded.odd_draw
+      end,
+      odd_away = case
+        when public.matches.odds_synced_at is not null then public.matches.odd_away
+        else excluded.odd_away
+      end,
       stage = excluded.stage,
       tournament_group_id = excluded.tournament_group_id,
       home_score = null,

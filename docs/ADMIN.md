@@ -63,10 +63,33 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 55. `054_match_comments_rls_chat_open.sql` (**fix** messages du chat invisibles au reload si match en direct avant le coup d'envoi)
 56. `055_ai_bet_on_admin_live.sql` (**fix** pari IA quand l'admin passe le match en direct avant le coup d'envoi)
 57. `056_ai_chat_bet_context.sql` (messages IA alignés sur le score exact parié)
+58. `057_football_data_sync.sql` (IDs football-data.org + minute de jeu live)
+59. `058_admin_prepare_world_cup.sql` (préparer la CDM après tests)
+60. `059_fix_wc2026_group_f_calendar.sql` (calendrier poule F : Japon vs Suède)
+61. `060_odds_api_sync.sql` (cotes via odds-api.io, colonne `odds_api_event_id`)
+
+### APIs matchs CDM 2026
+
+| Fournisseur | Variable | Rôle |
+|-------------|----------|------|
+| [football-data.org](https://www.football-data.org/client/register) | `FOOTBALL_DATA_API_KEY` | Scores, minute, statut, liaison `football_data_id` |
+| [odds-api.io](https://odds-api.io) | `ODDS_API_KEY` | Cotes 1N2 (ML), liaison `odds_api_event_id` — [doc live events](https://docs.odds-api.io/quickstart#get-live-events) |
+
+Migrations **057**, **058**, **060** (`odds_api_event_id`).
+
+1. Configurer les clés dans `.env.local` / Vercel.
+2. Optionnel : `ODDS_API_BOOKMAKERS=Bet365,Unibet`, `ODDS_API_WC_LEAGUE_SLUG` si la ligue CDM n’est pas auto-détectée.
+3. **Préparer la CDM 2026** (admin) après tests, puis **Sync API matchs** (`/admin`).
+
+**Affichage** : badge **Cotes API** si `odds_synced_at` renseigné.
+
+**Budget** : sync auto ≈ toutes les 5 min (football-data + odds-api en parallèle logique) ; odds-api utilise `/odds/multi` (10 matchs = 1 requête).
+
+Scores, minute et statut : football-data. Cotes : odds-api. **Clôture des paris** : toujours manuelle (admin).
 
 Après **047**, le pronostiqueur **L'IA** (`ia_prono`) parie automatiquement un score exact quand le match passe en direct (via `sync_live_matches` + `SUPABASE_SERVICE_ROLE_KEY`). Clé LLM optionnelle (`GROQ_API_KEY` / `GEMINI_API_KEY`) ; sinon heuristique basée sur les cotes.
 
-Après **053**, **L'IA** peut aussi poster sur le mur des chambrages (max 3 messages/match, 15 min entre deux messages). Premier message au coup d'envoi ; réactions occasionnelles si la discussion est active (~35 % de skip aléatoire pour limiter les tokens).
+Après **053**, **L'IA** peut aussi poster sur le mur des chambrages (max 3 messages/match, 15 min entre deux messages).
 
 Après **033**, pour recalculer les flammes sur des matchs déjà clôturés :
 

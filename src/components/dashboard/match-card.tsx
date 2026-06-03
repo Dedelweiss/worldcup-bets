@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LiveMatchAnimation } from "@/components/matches/live-match-animation";
 import { MatchScoreInline } from "@/components/matches/match-score-inline";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
+import { MatchOddsSourceBadge } from "@/components/matches/match-odds-source-badge";
 import {
   MATCH_RESULT_COPY,
   MATCH_RESULT_OUTCOME,
@@ -125,7 +126,9 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
           )}
 
           {!hasScore && !isLive && match.odd_home && match.odd_draw && match.odd_away && (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-2">
+              <MatchOddsSourceBadge match={match} className="text-[10px]" />
+              <div className="grid grid-cols-3 gap-2">
               {[
                 { label: MATCH_RESULT_OUTCOME.home, odd: match.odd_home },
                 { label: MATCH_RESULT_OUTCOME.draw, odd: match.odd_draw },
@@ -143,6 +146,7 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
                   </span>
                 </div>
               ))}
+            </div>
             </div>
           )}
 

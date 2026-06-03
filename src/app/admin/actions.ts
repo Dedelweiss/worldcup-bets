@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { parseRpcUuid } from "@/lib/leagues/parse-uuid";
 import { DEFAULT_KNOCKOUT_BET_NOTE } from "@/lib/tournament/constants";
 import type { MatchStage, MatchStatus } from "@/types/database";
+import type { SyncMatchProvidersResult } from "@/lib/matches/sync-providers";
 import type {
   GroupMatchFormValues,
   KnockoutMatchFormValues,
@@ -729,4 +730,73 @@ export async function generateGazetteAction(
   revalidatePath(`/matches/${matchId}`);
 
   return { success: true, matchId, summary: result.summary };
+}
+
+export async function syncFootballDataAdminAction(): Promise<
+  ActionResult & { stats?: SyncMatchProvidersResult }
+> {
+  await requireAdmin();
+
+  const { syncMatchProviders } = await import(
+    "@/lib/matches/sync-providers"
+  );
+  const stats = await syncMatchProviders({ force: true });
+
+  if (!stats.ok) {
+    return {
+      success: false,
+      error: stats.error ?? "Synchronisation API matchs échouée.",
+    };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
+  revalidatePath("/matches");
+
+  return { success: true, stats };
+}
+
+export async function prepareWorldCupAction(options: {
+  startingBalance: number;
+  syncOddsAfter?: boolean;
+}): Promise<
+  ActionResult & {
+    summary?: Record<string, unknown>;
+    syncStats?: SyncMatchProvidersResult;
+  }
+> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("admin_prepare_world_cup", {
+    p_starting_balance: options.startingBalance,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Exécutez supabase/migrations/058_admin_prepare_world_cup.sql dans Supabase."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  let syncStats: SyncMatchProvidersResult | undefined;
+  if (options.syncOddsAfter !== false) {
+    const { syncMatchProviders } = await import(
+      "@/lib/matches/sync-providers"
+    );
+    syncStats = await syncMatchProviders({ force: true });
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/users");
+  revalidatePath("/dashboard");
+  revalidatePath("/matches");
+  revalidatePath("/leaderboard");
+  revalidatePath("/bets");
+
+  return {
+    success: true,
+    summary: data as Record<string, unknown>,
+    syncStats,
+  };
 }

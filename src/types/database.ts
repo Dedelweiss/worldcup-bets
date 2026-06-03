@@ -96,6 +96,10 @@ export interface MatchWithTeams {
   bet_scope_note?: string | null;
   home_score: number | null;
   away_score: number | null;
+  live_minute?: number | null;
+  live_injury_time?: number | null;
+  odds_synced_at?: string | null;
+  odds_api_event_id?: number | null;
   odd_home: number | null;
   odd_draw: number | null;
   odd_away: number | null;

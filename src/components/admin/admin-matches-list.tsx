@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { formatKickoff, formatOdd } from "@/lib/format";
+import { hasApiSyncedOdds } from "@/lib/football-data/odds-display";
 import { goldenMatchCardClass } from "@/lib/golden-match";
 import { cn } from "@/lib/utils";
 import type { MatchStatus, MatchWithTeams } from "@/types/database";
@@ -32,7 +33,8 @@ function statusVariant(
 
 function formatOddsLine(match: MatchWithTeams): string {
   if (match.odd_home && match.odd_draw && match.odd_away) {
-    return `${formatOdd(match.odd_home)} · ${formatOdd(match.odd_draw)} · ${formatOdd(match.odd_away)}`;
+    const line = `${formatOdd(match.odd_home)} · ${formatOdd(match.odd_draw)} · ${formatOdd(match.odd_away)}`;
+    return hasApiSyncedOdds(match) ? `${line} (API)` : `${line} (défaut)`;
   }
   return "—";
 }

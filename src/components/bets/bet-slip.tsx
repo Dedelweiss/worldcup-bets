@@ -31,6 +31,7 @@ import {
 } from "@/lib/bets/match-result-copy";
 import type { MatchUserPendingBets } from "@/lib/bets/match-user-bets";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
+import { MatchOddsSourceBadge } from "@/components/matches/match-odds-source-badge";
 import { TacklePicker } from "@/components/bets/tackle-picker";
 import { goldenMatchCardClass, goldenMatchPoints } from "@/lib/golden-match";
 import { betDisplayPayout, pointsFromOdd, pointsIfWin } from "@/lib/points";
@@ -421,11 +422,14 @@ export function BetSlip({
                   )}
 
                   <div className="space-y-2">
-                    <Label>
-                      {pending.hasMatchResult
-                        ? MATCH_RESULT_COPY.yourPronostic
-                        : "Qui gagne selon vous ?"}
-                    </Label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Label>
+                        {pending.hasMatchResult
+                          ? MATCH_RESULT_COPY.yourPronostic
+                          : "Qui gagne selon vous ?"}
+                      </Label>
+                      <MatchOddsSourceBadge match={match} className="text-[10px]" />
+                    </div>
                     <div className="grid grid-cols-3 gap-2">
                       {outcomes.map((outcome) => {
                         const base = pointsFromOdd(outcome.odd!);

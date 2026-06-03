@@ -5,6 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { cn } from "@/lib/utils";
 import { formatKickoff, formatKickoffRelative } from "@/lib/format";
+import { formatLiveClock } from "@/lib/football-data/parse-match";
 import { goldenMatchHeaderClass } from "@/lib/golden-match";
 import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
 import type { MatchStatus, MatchWithTeams } from "@/types/database";
@@ -26,6 +27,9 @@ interface MatchHeaderProps {
 export function MatchHeader({ match, adminEditHref }: MatchHeaderProps) {
   const isLive = match.status === "live";
   const isGolden = match.is_golden ?? false;
+  const liveClock = isLive
+    ? formatLiveClock(match.live_minute, match.live_injury_time)
+    : null;
 
   return (
     <div className={cn("space-y-3", goldenMatchHeaderClass(isGolden))}>
@@ -60,7 +64,7 @@ export function MatchHeader({ match, adminEditHref }: MatchHeaderProps) {
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {isGolden && <GoldenMatchBadge compact />}
           <Badge variant={isLive ? "default" : "secondary"}>
-            {STATUS_LABEL[match.status]}
+            {isLive && liveClock ? liveClock : STATUS_LABEL[match.status]}
           </Badge>
           {match.round && (
             <span className="text-sm text-muted-foreground">{match.round}</span>
