@@ -1,4 +1,4 @@
--- Contexte chat IA : inclure le score exact parié pour rester cohérent avec le prono.
+-- Chat IA : assouplir les règles et autoriser le kickoff dès que le mur est ouvert.
 
 create or replace function public.evaluate_ai_chat(p_match_id integer, p_trigger text)
 returns jsonb
@@ -17,8 +17,9 @@ declare
   v_at text;
   v_ai_bet_home int;
   v_ai_bet_away int;
-  v_max_messages constant int := 3;
-  v_min_interval interval := interval '15 minutes';
+  v_max_messages constant int := 8;
+  v_min_interval interval := interval '3 minutes';
+  v_chat_open boolean;
 begin
   select * into v_match from public.matches where id = p_match_id;
   if not found then
@@ -29,7 +30,11 @@ begin
     return jsonb_build_object('eligible', false, 'reason', 'chat_closed');
   end if;
 
-  if v_match.status not in ('live', 'finished') and v_match.kickoff_at > now() then
+  v_chat_open :=
+    v_match.status in ('live', 'finished')
+    or v_match.kickoff_at <= now();
+
+  if not v_chat_open then
     return jsonb_build_object('eligible', false, 'reason', 'chat_not_open');
   end if;
 
@@ -58,23 +63,18 @@ begin
     if v_ai_count > 0 then
       return jsonb_build_object('eligible', false, 'reason', 'kickoff_already_sent', 'ai_count', v_ai_count);
     end if;
-    if v_ai_bet_home is null or v_ai_bet_away is null then
-      return jsonb_build_object('eligible', false, 'reason', 'no_ai_bet');
-    end if;
   elsif p_trigger = 'ambient' then
-    if v_match.status not in ('live', 'finished') then
-      return jsonb_build_object('eligible', false, 'reason', 'not_live');
-    end if;
     if v_last_ai_at is not null and v_last_ai_at > now() - v_min_interval then
       return jsonb_build_object('eligible', false, 'reason', 'too_soon', 'ai_count', v_ai_count);
     end if;
+
     select count(*) into v_human_since
     from public.match_comments c
     where c.match_id = p_match_id
       and c.user_id <> v_ai_id
       and c.created_at > coalesce(v_last_ai_at, '1970-01-01'::timestamptz);
 
-    if v_human_since < 2 then
+    if v_human_since < 1 then
       return jsonb_build_object('eligible', false, 'reason', 'not_enough_human_chat', 'human_since', v_human_since);
     end if;
   else
@@ -115,6 +115,28 @@ begin
     'recent_messages', v_recent
   );
 end;
+$$;
+
+create or replace function public.get_matches_needing_ai_kickoff_chat()
+returns table (match_id integer)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select m.id as match_id
+  from public.matches m
+  where m.status not in ('postponed', 'cancelled')
+    and (
+      m.status in ('live', 'finished')
+      or m.kickoff_at <= now()
+    )
+    and not exists (
+      select 1
+      from public.match_comments c
+      where c.match_id = m.id
+        and c.user_id = public.ai_player_id()
+    );
 $$;
 
 notify pgrst, 'reload schema';

@@ -70,6 +70,8 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 62. `061_username_auth_avatars.sql` (connexion pseudo + mot de passe, avatars prédéfinis)
 63. `062_profile_avatar_storage.sql` (upload photo de profil compressée, bucket Storage)
 64. `063_leaderboard_avatar_url.sql` (avatars visibles dans le classement / RPC)
+65. `064_ai_chat_relax_rules.sql` (mur des chambrages : règles IA assouplies)
+66. `065_fix_ai_chat_bet_placed_at.sql` (fix evaluate_ai_chat : placed_at sur bets)
 
 ### APIs matchs CDM 2026
 

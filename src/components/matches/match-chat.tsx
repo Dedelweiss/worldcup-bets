@@ -76,7 +76,7 @@ export function MatchChat({
     const humanCount = comments.filter((c) => !isAiPlayer(c.user_id)).length;
     if (humanCount <= humanCountRef.current) return;
     humanCountRef.current = humanCount;
-    if (humanCount >= 2) {
+    if (humanCount >= 1) {
       maybeAskAiToChimeIn();
     }
   }, [comments, maybeAskAiToChimeIn]);
@@ -181,6 +181,8 @@ export function MatchChat({
     if (result.comment) {
       appendComment(result.comment);
     }
+
+    maybeAskAiToChimeIn();
   }
 
   return (

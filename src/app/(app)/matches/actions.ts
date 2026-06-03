@@ -373,9 +373,9 @@ export async function revealPlayerBetAction(
   return { success: true, bet };
 }
 
-/** Déclenche (si conditions OK) un message IA occasionnel sur le mur. */
+/** Déclenche (si conditions OK) un message IA sur le mur (kickoff ou réaction). */
 export async function maybeTriggerAiChatAction(matchId: number): Promise<void> {
   await requireAuth();
-  const { tryAiAmbientChat } = await import("@/lib/ai/ensure-ai-chat");
-  await tryAiAmbientChat(matchId);
+  const { ensureAiChatForMatch } = await import("@/lib/ai/ensure-ai-chat");
+  await ensureAiChatForMatch(matchId);
 }

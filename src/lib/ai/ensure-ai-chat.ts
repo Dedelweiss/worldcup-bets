@@ -2,6 +2,7 @@ import {
   AI_CHAT_AMBIENT_RANDOM_SKIP,
   type AiChatTrigger,
 } from "@/lib/ai/chat-limits";
+import { ensureAiBetForMatch } from "@/lib/ai/ensure-ai-bets";
 import {
   generateAiChatMessage,
   type AiChatContext,
@@ -46,27 +47,31 @@ function toContext(
   };
 }
 
+function getAdminSupabase(): ReturnType<typeof createAdminClient> | null {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!serviceRoleKey) return null;
+
+  try {
+    return createAdminClient();
+  } catch {
+    return null;
+  }
+}
+
 async function tryPostAiChat(
   matchId: number,
   trigger: AiChatTrigger,
   options?: { skipRandom?: boolean },
-): Promise<void> {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!serviceRoleKey) return;
+): Promise<boolean> {
+  const supabase = getAdminSupabase();
+  if (!supabase) return false;
 
   if (
     trigger === "ambient" &&
     !options?.skipRandom &&
     Math.random() < AI_CHAT_AMBIENT_RANDOM_SKIP
   ) {
-    return;
-  }
-
-  let supabase;
-  try {
-    supabase = createAdminClient();
-  } catch {
-    return;
+    return false;
   }
 
   const { data, error } = await supabase.rpc("evaluate_ai_chat", {
@@ -75,12 +80,19 @@ async function tryPostAiChat(
   });
 
   if (error) {
-    console.error(`evaluate_ai_chat ${matchId}:`, error.message);
-    return;
+    console.error(`evaluate_ai_chat ${matchId} (${trigger}):`, error.message);
+    return false;
   }
 
   const evaluation = parseEvaluation(data);
-  if (!evaluation?.eligible) return;
+  if (!evaluation?.eligible) {
+    if (process.env.NODE_ENV !== "production" && evaluation?.reason) {
+      console.info(
+        `ai_chat skip match ${matchId} (${trigger}): ${evaluation.reason}`,
+      );
+    }
+    return false;
+  }
 
   const message = await generateAiChatMessage(toContext(evaluation, trigger));
 
@@ -91,30 +103,41 @@ async function tryPostAiChat(
 
   if (postError) {
     console.error(`post_ai_match_comment ${matchId}:`, postError.message);
+    return false;
   }
+
+  return true;
 }
 
 /** Premier message IA au passage en direct (sync live). */
 export async function ensureAiKickoffChat(): Promise<void> {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!serviceRoleKey) return;
-
-  let supabase;
-  try {
-    supabase = createAdminClient();
-  } catch {
-    return;
-  }
+  const supabase = getAdminSupabase();
+  if (!supabase) return;
 
   const { data, error } = await supabase.rpc("get_matches_needing_ai_kickoff_chat");
   if (error || !data?.length) return;
 
   for (const row of data as { match_id: number }[]) {
+    await ensureAiBetForMatch(row.match_id);
     await tryPostAiChat(row.match_id, "kickoff", { skipRandom: true });
+  }
+}
+
+/** Kickoff puis réaction ambiante pour un match (page mur des chambrages). */
+export async function ensureAiChatForMatch(matchId: number): Promise<void> {
+  if (!getAdminSupabase()) return;
+
+  await ensureAiBetForMatch(matchId);
+  const kickoffPosted = await tryPostAiChat(matchId, "kickoff", {
+    skipRandom: true,
+  });
+  if (!kickoffPosted) {
+    await tryPostAiChat(matchId, "ambient");
   }
 }
 
 /** Réaction occasionnelle si le mur est actif (appel client throttlé). */
 export async function tryAiAmbientChat(matchId: number): Promise<void> {
+  await ensureAiBetForMatch(matchId);
   await tryPostAiChat(matchId, "ambient");
 }
