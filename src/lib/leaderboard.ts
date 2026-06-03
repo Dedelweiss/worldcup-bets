@@ -48,7 +48,7 @@ async function getLeaderboardFallback(options: {
 
   let query = supabase
     .from("profiles")
-    .select("id, display_name, username, points, on_fire, heat_streak");
+    .select("id, display_name, username, avatar_id, avatar_url, points, on_fire, heat_streak");
 
   if (options.leagueId) {
     const { data: members } = await supabase
@@ -66,6 +66,13 @@ async function getLeaderboardFallback(options: {
   const players = (profiles ?? []).map((p) =>
     mapRow({
       ...p,
+      avatar_url: resolveAvatarUrl(
+        {
+          avatar_id: (p as { avatar_id?: string | null }).avatar_id ?? null,
+          avatar_url: (p as { avatar_url?: string | null }).avatar_url ?? null,
+        },
+        p.id as string,
+      ),
       classic_won: 0,
       classic_lost: 0,
       fun_won: 0,
@@ -88,13 +95,18 @@ async function attachPlayerAvatars(
   if (players.length === 0) return players;
 
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("id, avatar_id, avatar_url")
     .in(
       "id",
       players.map((p) => p.id),
     );
+
+  if (error) {
+    console.error("attachPlayerAvatars", error);
+    return players;
+  }
 
   const byId = new Map(
     (data ?? []).map((p) => [
@@ -109,10 +121,14 @@ async function attachPlayerAvatars(
     ]),
   );
 
-  return players.map((p) => ({
-    ...p,
-    avatar_url: p.avatar_url ?? byId.get(p.id) ?? null,
-  }));
+  return players.map((p) => {
+    const resolved = byId.get(p.id) ?? null;
+    const fromRpc = p.avatar_url?.trim() || null;
+    return {
+      ...p,
+      avatar_url: resolved ?? fromRpc ?? null,
+    };
+  });
 }
 
 async function attachPlayerBadges(

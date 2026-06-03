@@ -30,6 +30,7 @@ Exécuter aussi :
 
 - `migrations/061_username_auth_avatars.sql` (avatars prédéfinis + trigger inscription)
 - `migrations/062_profile_avatar_storage.sql` (bucket Storage photo de profil, max ~200 Ko)
+- `migrations/063_leaderboard_avatar_url.sql` (avatars dans le classement)
 
 ## 4. Vérification
 

@@ -69,6 +69,7 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 61. `060_odds_api_sync.sql` (cotes via odds-api.io, colonne `odds_api_event_id`)
 62. `061_username_auth_avatars.sql` (connexion pseudo + mot de passe, avatars prédéfinis)
 63. `062_profile_avatar_storage.sql` (upload photo de profil compressée, bucket Storage)
+64. `063_leaderboard_avatar_url.sql` (avatars visibles dans le classement / RPC)
 
 ### APIs matchs CDM 2026
 
