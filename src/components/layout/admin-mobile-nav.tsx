@@ -12,18 +12,14 @@ import {
 import { cn } from "@/lib/utils";
 
 const tabs = [
-  { href: "/admin", label: "Matchs", icon: LayoutGrid, exact: true },
+  { href: "/admin", label: "Matchs", icon: LayoutGrid },
   { href: "/admin/leagues", label: "Ligues", icon: Trophy },
   { href: "/admin/users", label: "Joueurs", icon: Users },
   { href: "/admin/matches/new", label: "Créer", icon: PlusCircle },
 ] as const;
 
-function isActive(
-  pathname: string,
-  href: string,
-  exact?: boolean,
-): boolean {
-  if (exact) return pathname === href;
+function isActive(pathname: string, href: string): boolean {
+  if (href === "/admin") return pathname === "/admin";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -36,8 +32,8 @@ export function AdminMobileNav() {
       aria-label="Navigation administration"
     >
       <ul className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-1">
-        {tabs.map(({ href, label, icon: Icon, exact }) => {
-          const active = isActive(pathname, href, exact);
+        {tabs.map(({ href, label, icon: Icon }) => {
+          const active = isActive(pathname, href);
           return (
             <li key={href} className="min-w-0 flex-1">
               <Link
