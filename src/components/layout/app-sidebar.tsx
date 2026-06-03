@@ -36,9 +36,9 @@ export function AppSidebar({ profile }: AppSidebarProps) {
         />
       </nav>
 
-      <div className="border-t border-white/10 p-3">
+      <div className="min-w-0 overflow-hidden border-t border-white/10 p-3">
         {profile ? (
-          <UserMenu profile={profile} />
+          <UserMenu profile={profile} compact />
         ) : (
           <Link
             href="/login"
