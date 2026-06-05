@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { LeagueInvitePanel } from "@/components/leagues/league-invite-panel";
 import { LeaderboardFilters } from "@/components/leaderboard/leaderboard-filters";
+import { LeaderboardFutCardProvider } from "@/components/leaderboard/leaderboard-fut-card-context";
 import { LeaderboardTable } from "@/components/leaderboard/leaderboard-table";
 import type { LeagueWithMeta } from "@/lib/leagues";
 import type {
@@ -77,11 +78,16 @@ export function LeaderboardExplorer({
         </p>
       )}
 
-      <LeaderboardTable
-        players={players}
-        highlightSort={sort}
-        showOnFire={scope === "general"}
-      />
+      <LeaderboardFutCardProvider>
+        <p className="text-xs text-muted-foreground">
+          Astuce : cliquez sur un joueur pour révéler sa carte pronostiqueur.
+        </p>
+        <LeaderboardTable
+          players={players}
+          highlightSort={sort}
+          showOnFire={scope === "general"}
+        />
+      </LeaderboardFutCardProvider>
     </div>
   );
 }

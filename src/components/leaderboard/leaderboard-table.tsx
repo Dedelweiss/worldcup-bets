@@ -1,5 +1,8 @@
+"use client";
+
 import { OnFireFlame } from "@/components/leaderboard/on-fire-flame";
 import { AiPlayerBadge } from "@/components/leaderboard/ai-player-badge";
+import { LeaderboardPlayerTrigger } from "@/components/leaderboard/leaderboard-player-trigger";
 import { PlayerBadges } from "@/components/leaderboard/player-badges";
 import { PlayerLeaderboardAvatar } from "@/components/leaderboard/player-leaderboard-avatar";
 import { ON_FIRE_STREAK_REQUIRED } from "@/lib/on-fire";
@@ -74,10 +77,12 @@ export function LeaderboardTable({
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <PlayerLeaderboardAvatar player={player} size="sm" />
-                  <p className="font-semibold leading-tight">
-                    {getPlayerLabel(player)}
-                  </p>
+                  <LeaderboardPlayerTrigger player={player} className="-ml-1 px-1 py-0.5">
+                    <PlayerLeaderboardAvatar player={player} size="sm" />
+                    <p className="font-semibold leading-tight underline-offset-2 group-hover:underline">
+                      {getPlayerLabel(player)}
+                    </p>
+                  </LeaderboardPlayerTrigger>
                   {player.is_ai && <AiPlayerBadge />}
                   {showOnFire && playerIsOnFire(player) && <OnFireFlame />}
                   <PlayerBadges badges={player.badges ?? []} />
@@ -196,10 +201,15 @@ export function LeaderboardTable({
                 <td className="px-3 py-3">
                   <div className="flex min-w-0 flex-col gap-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <PlayerLeaderboardAvatar player={player} size="sm" />
-                      <span className="font-medium">
-                        {getPlayerLabel(player)}
-                      </span>
+                      <LeaderboardPlayerTrigger
+                        player={player}
+                        className="-ml-1 px-1 py-0.5"
+                      >
+                        <PlayerLeaderboardAvatar player={player} size="sm" />
+                        <span className="font-medium underline-offset-2 group-hover:underline">
+                          {getPlayerLabel(player)}
+                        </span>
+                      </LeaderboardPlayerTrigger>
                       {player.is_ai && <AiPlayerBadge />}
                       {showOnFire && playerIsOnFire(player) && <OnFireFlame />}
                       <PlayerBadges badges={player.badges ?? []} />

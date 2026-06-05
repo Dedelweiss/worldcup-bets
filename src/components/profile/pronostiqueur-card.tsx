@@ -18,7 +18,7 @@ import type { FUTCardStats } from "@/lib/profile/calculate-fut-stats";
 import { cn } from "@/lib/utils";
 import type { Team } from "@/types/database";
 
-const FUT_CARD_CLIP =
+export const FUT_CARD_CLIP =
   "polygon(0% 6%, 6% 0%, 94% 0%, 100% 6%, 100% 94%, 94% 100%, 6% 100%, 0% 94%)";
 
 interface PronostiqueurCardProps {
@@ -28,6 +28,8 @@ interface PronostiqueurCardProps {
   futStats: FUTCardStats;
   className?: string;
   showShareButton?: boolean;
+  /** Dans une modale : pas d’animation d’entrée ni de hover. */
+  embedded?: boolean;
 }
 
 export function PronostiqueurCard({
@@ -37,6 +39,7 @@ export function PronostiqueurCard({
   futStats,
   className,
   showShareButton = true,
+  embedded = false,
 }: PronostiqueurCardProps) {
   const exportRef = useRef<HTMLDivElement>(null);
   const [imageFailed, setImageFailed] = useState(false);
@@ -74,10 +77,12 @@ export function PronostiqueurCard({
     <div className={cn("flex w-full max-w-[280px] flex-col items-center gap-3", className)}>
     <motion.article
       className="relative mx-auto w-full"
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: "easeOut" }}
-      whileHover={isExporting ? undefined : { scale: 1.02, y: -4 }}
+      initial={embedded ? false : { opacity: 0, y: 16 }}
+      animate={embedded ? undefined : { opacity: 1, y: 0 }}
+      transition={embedded ? undefined : { duration: 0.45, ease: "easeOut" }}
+      whileHover={
+        embedded || isExporting ? undefined : { scale: 1.02, y: -4 }
+      }
       aria-label={`Carte pronostiqueur ${getPlayerLabel({ username: playerName, display_name: playerName })} — OVR ${futStats.ovr}`}
     >
       <div
