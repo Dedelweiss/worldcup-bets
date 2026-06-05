@@ -74,9 +74,10 @@ export function PrepareWorldCupPanel() {
         <CardTitle className="text-base">Préparer la Coupe du monde</CardTitle>
         <p className="text-xs text-muted-foreground">
           Après vos tests : remet les matchs saison 2026 en « à venir », efface
-          scores, paris, chat et messages IA. Les cotes seed (2,50 / 3,20 / 2,80)
-          sont effacées — lancez « Sync API matchs » pour les cotes odds-api.io.
-          Pour restaurer le calendrier officiel, ré-exécutez{" "}
+          scores, paris, chat et messages IA, et remet tous les joueurs (y compris
+          le pronostiqueur IA) au solde choisi. Les cotes seed (2,50 / 3,20 /
+          2,80) sont effacées — lancez « Sync API matchs » pour les cotes
+          odds-api.io. Pour restaurer le calendrier officiel, ré-exécutez{" "}
           <code className="text-[10px]">seed_wc2026_group_matches.sql</code> dans
           Supabase.
         </p>
