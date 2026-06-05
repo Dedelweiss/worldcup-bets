@@ -15,6 +15,7 @@ import { getMatchBettingParticipation } from "@/lib/bets/match-participation";
 import { getMatchTackleState } from "@/lib/bets/match-tackle";
 import { getMatchUserFunBets } from "@/lib/bets/match-user-fun-bets";
 import { getMatchUserPendingBets } from "@/lib/bets/match-user-bets";
+import { getPreMatchInsights } from "@/lib/bets/pre-match-insights";
 import { hasKickoffStarted } from "@/lib/format";
 import { getFunMarketsByMatch } from "@/lib/fun-markets";
 import { getMatchComments } from "@/lib/match-comments";
@@ -54,7 +55,7 @@ export default async function MatchBetPage({
   const adminEditHref =
     profile.role === "admin" ? `/admin/matches/${matchId}` : undefined;
 
-  const [funMarkets, comments, pendingBets, funBetsByMarket, participation, tackleState] =
+  const [funMarkets, comments, pendingBets, funBetsByMarket, participation, tackleState, preMatchInsights] =
     await Promise.all([
       getFunMarketsByMatch(matchId),
       kickoffStarted || canReveal ? getMatchComments(matchId) : Promise.resolve([]),
@@ -62,6 +63,9 @@ export default async function MatchBetPage({
       getMatchUserFunBets(matchId, profile.id),
       getMatchBettingParticipation(matchId),
       getMatchTackleState(matchId, profile.id, match.stage),
+      !kickoffStarted && match.status === "scheduled"
+        ? getPreMatchInsights(match, profile.id)
+        : Promise.resolve(null),
     ]);
 
   const hasFunSection = funMarkets.length > 0;
@@ -86,6 +90,7 @@ export default async function MatchBetPage({
           currentUserId={profile.id}
           participation={participation.bettors}
           tackleState={tackleState}
+          preMatchInsights={preMatchInsights}
         />
       </section>
 

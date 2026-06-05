@@ -63,3 +63,14 @@ export function canPlaceBetOnMatch(match: MatchWithTeams): {
   }
   return { allowed: true };
 }
+
+/** Liste minimale des matchs pour les stats d'assiduité (FUT END). */
+export async function getAllMatchesForStats(): Promise<
+  Pick<MatchWithTeams, "id" | "status">[]
+> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("matches").select("id, status");
+
+  if (error || !data) return [];
+  return data as Pick<MatchWithTeams, "id" | "status">[];
+}

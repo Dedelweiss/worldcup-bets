@@ -33,10 +33,12 @@ import {
 import type { MatchUserPendingBets } from "@/lib/bets/match-user-bets";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { MatchOddsSourceBadge } from "@/components/matches/match-odds-source-badge";
+import { PreMatchAssistant } from "@/components/matches/pre-match-assistant";
 import { TacklePicker } from "@/components/bets/tackle-picker";
 import { goldenMatchCardClass, goldenMatchPoints } from "@/lib/golden-match";
 import { betDisplayPayout, pointsFromOdd, pointsIfWin } from "@/lib/points";
 import type { MatchParticipationPlayer } from "@/lib/bets/match-participation";
+import type { PreMatchInsights } from "@/lib/bets/pre-match-insights";
 import type { MatchTackleState } from "@/lib/bets/match-tackle-utils";
 import { tackleEligibleRivals } from "@/lib/bets/match-tackle-utils";
 import { cn } from "@/lib/utils";
@@ -52,6 +54,7 @@ interface BetSlipProps {
   currentUserId: string;
   participation?: MatchParticipationPlayer[];
   tackleState?: MatchTackleState;
+  preMatchInsights?: PreMatchInsights | null;
 }
 
 export function BetSlip({
@@ -67,6 +70,7 @@ export function BetSlip({
   currentUserId,
   participation = [],
   tackleState,
+  preMatchInsights,
 }: BetSlipProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -580,6 +584,13 @@ export function BetSlip({
                     </p>
                   )}
 
+                  {preMatchInsights && bettingOpen && (
+                    <PreMatchAssistant
+                      match={match}
+                      insights={preMatchInsights}
+                    />
+                  )}
+
                   {!canEditClassic && pending.hasMatchResult ? (
                     <Button type="button" className="w-full" disabled>
                       <Lock className="mr-2 size-4" aria-hidden />
@@ -739,6 +750,13 @@ export function BetSlip({
                     <p className="text-sm text-destructive" role="alert">
                       {error}
                     </p>
+                  )}
+
+                  {preMatchInsights && bettingOpen && (
+                    <PreMatchAssistant
+                      match={match}
+                      insights={preMatchInsights}
+                    />
                   )}
 
                   {!canEditClassic && pending.hasExactScore ? (
