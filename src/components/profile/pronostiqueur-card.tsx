@@ -14,6 +14,7 @@ import {
 import {
   captureFutCardImage,
   futCardExportFilename,
+  FutCardShareCancelledError,
   shareOrDownloadFutCard,
 } from "@/lib/profile/export-fut-card-image";
 import { getPlayerInitials, getPlayerLabel } from "@/lib/profile/player-label";
@@ -62,7 +63,11 @@ export function PronostiqueurCard({
       } else {
         toast.success("Image téléchargée — importez-la dans Instagram ou Stories.");
       }
-    } catch {
+    } catch (error) {
+      if (error instanceof FutCardShareCancelledError) return;
+      if (process.env.NODE_ENV === "development") {
+        console.error("[PronostiqueurCard] export failed:", error);
+      }
       toast.error("Impossible d'exporter la carte. Réessayez dans un instant.");
     } finally {
       setIsExporting(false);
@@ -100,7 +105,7 @@ export function PronostiqueurCard({
         />
 
         <div
-          className="relative overflow-hidden bg-zinc-950/95 backdrop-blur-xl"
+          className="relative overflow-hidden bg-zinc-950/95"
           style={{ clipPath: FUT_CARD_CLIP }}
         >
           <motion.div
@@ -153,12 +158,19 @@ export function PronostiqueurCard({
             </div>
 
             <div className="relative mx-auto my-4 flex flex-1 flex-col items-center justify-center">
-              <div className="absolute size-36 rounded-full bg-lime-400/10 blur-2xl" />
-              <div className="absolute size-24 rounded-full bg-fuchsia-500/10 blur-xl" />
+              <div
+                data-export-blur
+                className="absolute size-36 rounded-full bg-lime-400/10 blur-2xl"
+              />
+              <div
+                data-export-blur
+                className="absolute size-24 rounded-full bg-fuchsia-500/10 blur-xl"
+              />
 
               <div className="relative size-28 overflow-hidden rounded-full border-2 border-lime-400/60 bg-zinc-900 shadow-[0_0_24px_rgba(204,255,0,0.35),inset_0_0_20px_rgba(255,255,255,0.08)]">
                 {showAvatar ? (
                   <img
+                    data-export-avatar
                     src={avatarUrl!}
                     alt=""
                     className="size-full object-cover"
@@ -181,7 +193,7 @@ export function PronostiqueurCard({
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-x-2 gap-y-2.5 rounded-lg border border-white/10 bg-black/30 p-2.5 backdrop-blur-sm">
+            <div className="grid grid-cols-3 gap-x-2 gap-y-2.5 rounded-lg border border-white/10 bg-black/30 p-2.5">
               {futStats.stats.map((stat) => (
                 <div
                   key={stat.key}
