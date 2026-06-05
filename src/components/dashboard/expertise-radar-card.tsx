@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Activity } from "lucide-react";
 import {
   PolarAngleAxis,
@@ -17,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const NEON_LIME = "#ccff00";
+const CHART_HEIGHT = 240;
 
 interface ExpertiseRadarCardProps {
   data?: ExpertiseRadarAxis[];
@@ -27,6 +29,12 @@ export function ExpertiseRadarCard({
   data = MOCK_EXPERTISE_RADAR,
   className,
 }: ExpertiseRadarCardProps) {
+  const [chartReady, setChartReady] = useState(false);
+
+  useEffect(() => {
+    setChartReady(true);
+  }, []);
+
   return (
     <Card
       className={cn(
@@ -44,9 +52,13 @@ export function ExpertiseRadarCard({
         </p>
       </CardHeader>
       <CardContent className="pb-4">
-        <div className="h-[min(16rem,42vw)] min-h-[200px] w-full [&_.recharts-surface]:outline-none">
-          <ResponsiveContainer width="100%" height="100%">
-            <RadarChart
+        <div
+          className="w-full min-w-0 [&_.recharts-surface]:outline-none"
+          style={{ height: CHART_HEIGHT }}
+        >
+          {chartReady ? (
+            <ResponsiveContainer width="100%" height={CHART_HEIGHT} minWidth={0}>
+              <RadarChart
               cx="50%"
               cy="50%"
               outerRadius="72%"
@@ -80,7 +92,13 @@ export function ExpertiseRadarCard({
                 dot={{ r: 3, fill: NEON_LIME, strokeWidth: 0 }}
               />
             </RadarChart>
-          </ResponsiveContainer>
+            </ResponsiveContainer>
+          ) : (
+            <div
+              className="size-full animate-pulse rounded-xl bg-white/[0.04]"
+              aria-hidden
+            />
+          )}
         </div>
       </CardContent>
     </Card>
