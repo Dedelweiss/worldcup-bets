@@ -32,3 +32,16 @@ export async function getPendingBetsCount(matchId: number) {
 
   return count ?? 0;
 }
+
+/** Paris classiques (1N2 + score exact) encore en attente de règlement. */
+export async function getPendingClassicBetsCount(matchId: number) {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("bets")
+    .select("id", { count: "exact", head: true })
+    .eq("match_id", matchId)
+    .eq("status", "pending")
+    .in("bet_type", ["match_result", "exact_score"]);
+
+  return count ?? 0;
+}

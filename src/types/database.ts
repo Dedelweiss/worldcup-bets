@@ -106,6 +106,7 @@ export interface MatchWithTeams {
   odd_away: number | null;
   is_golden?: boolean;
   ai_summary?: string | null;
+  settled_at?: string | null;
   home_team: Team;
   away_team: Team;
 }

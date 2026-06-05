@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ExternalLink, Sparkles, Bot } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Bot,
+  CheckCircle2,
+  ExternalLink,
+  Sparkles,
+  Trophy,
+} from "lucide-react";
 import {
   correctMatchResultAction,
   deleteMatchAction,
@@ -13,6 +21,8 @@ import {
   settleMatchAction,
   updateMatchAction,
 } from "@/app/admin/actions";
+import { TeamFlag } from "@/components/shared/team-flag";
+import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -21,12 +31,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { formatKickoff } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { MatchStatus, MatchWithTeams } from "@/types/database";
 
-const STATUS_OPTIONS: { value: MatchStatus; label: string }[] = [
+const STATUS_LABEL: Record<MatchStatus, string> = {
+  scheduled: "À venir",
+  live: "En direct",
+  finished: "Terminé",
+  postponed: "Reporté",
+  cancelled: "Annulé",
+};
+
+/** Statuts modifiables manuellement — « Terminé » est posé par la clôture. */
+type EditableMatchStatus = "scheduled" | "live" | "postponed" | "cancelled";
+
+const EDITABLE_STATUS_OPTIONS: { value: EditableMatchStatus; label: string }[] = [
   { value: "scheduled", label: "À venir" },
   { value: "live", label: "En direct" },
-  { value: "finished", label: "Terminé" },
   { value: "postponed", label: "Reporté" },
   { value: "cancelled", label: "Annulé" },
 ];
@@ -34,6 +55,7 @@ const STATUS_OPTIONS: { value: MatchStatus; label: string }[] = [
 interface MatchAdminPanelProps {
   match: MatchWithTeams;
   pendingBetsCount: number;
+  pendingClassicBetsCount: number;
 }
 
 function optionalNumberField(value: number | null | undefined): string {
@@ -42,7 +64,7 @@ function optionalNumberField(value: number | null | undefined): string {
 
 function buildFormState(match: MatchWithTeams) {
   return {
-    status: match.status,
+    status: match.status === "finished" ? "live" : match.status,
     homeScore: optionalNumberField(match.home_score),
     awayScore: optionalNumberField(match.away_score),
     oddHome: optionalNumberField(match.odd_home),
@@ -52,7 +74,20 @@ function buildFormState(match: MatchWithTeams) {
   };
 }
 
-export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProps) {
+function statusBadgeVariant(
+  status: MatchStatus,
+): "default" | "secondary" | "outline" | "destructive" {
+  if (status === "live") return "default";
+  if (status === "finished") return "secondary";
+  if (status === "cancelled" || status === "postponed") return "outline";
+  return "secondary";
+}
+
+export function MatchAdminPanel({
+  match,
+  pendingBetsCount,
+  pendingClassicBetsCount,
+}: MatchAdminPanelProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -70,7 +105,12 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
     match.odd_draw,
     match.odd_away,
     match.is_golden,
+    match.settled_at,
   ]);
+
+  const isSettled = match.settled_at != null;
+  const paymentPending =
+    !isSettled && pendingClassicBetsCount > 0 && match.status === "finished";
 
   async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -80,6 +120,9 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
 
     const formData = new FormData(e.currentTarget);
     formData.set("isGolden", form.isGolden ? "true" : "false");
+    if (match.status === "finished" && !isSettled) {
+      formData.set("status", "live");
+    }
 
     const home = String(formData.get("homeScore") ?? "");
     const away = String(formData.get("awayScore") ?? "");
@@ -88,7 +131,7 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
       scoresSet &&
       (Number(home) !== match.home_score || Number(away) !== match.away_score);
     const useCorrection =
-      match.status === "finished" && scoresSet && scoresChanged;
+      isSettled && scoresSet && scoresChanged;
 
     const result = useCorrection
       ? await correctMatchResultAction(formData)
@@ -262,290 +305,457 @@ export function MatchAdminPanel({ match, pendingBetsCount }: MatchAdminPanelProp
     !Number.isNaN(Number(form.homeScore)) &&
     !Number.isNaN(Number(form.awayScore));
 
+  const dbScoresComplete =
+    match.home_score != null && match.away_score != null;
+
+  const formScoresMatchDb =
+    scoresComplete &&
+    Number(form.homeScore) === match.home_score &&
+    Number(form.awayScore) === match.away_score;
+
+  const hasUnsavedScores = scoresComplete && !formScoresMatchDb;
+
   const canSettle =
-    match.status !== "finished" && scoresComplete;
+    !isSettled &&
+    dbScoresComplete &&
+    pendingClassicBetsCount > 0 &&
+    formScoresMatchDb;
 
-  const canResettle = match.status === "finished" && scoresComplete;
+  const canResettle = isSettled && dbScoresComplete;
+  const canReopen = isSettled;
 
-  const canReopen = match.status === "finished";
+  const displayStatus = match.status;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold">
-            {match.home_team.name} vs {match.away_team.name}
-          </h1>
-          <Badge variant={match.status === "live" ? "default" : "secondary"}>
-            {STATUS_OPTIONS.find((s) => s.value === match.status)?.label ??
-              match.status}
-          </Badge>
-        </div>
-        <Link
-          href={`/matches/${match.id}`}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
-        >
-          <ExternalLink className="size-3.5" />
-          Vue joueur
-        </Link>
-      </div>
-      <p className="text-sm text-muted-foreground">
-        {formatKickoff(match.kickoff_at)}
-        {match.round ? ` · ${match.round}` : ""}
-        {match.venue ? ` · ${match.venue}` : ""}
-      </p>
+      <Link
+        href="/admin"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="size-3.5" aria-hidden />
+        Retour aux matchs
+      </Link>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Modifier le match</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleUpdate} className="space-y-4">
-            <input type="hidden" name="matchId" value={match.id} />
-
-            <div className="space-y-2">
-              <Label htmlFor="status">Statut</Label>
-              <Select
-                id="status"
-                name="status"
-                value={form.status}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    status: e.target.value as MatchStatus,
-                  }))
-                }
-                className="h-8 bg-background"
+      {/* Hero */}
+      <section
+        className={cn(
+          "overflow-hidden rounded-2xl border bg-gradient-to-b from-white/[0.06] to-transparent",
+          match.status === "live" && "border-lime-400/40 ring-1 ring-lime-400/20",
+          paymentPending && "border-amber-500/40 ring-1 ring-amber-500/20",
+          isSettled && "border-emerald-500/30",
+        )}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={statusBadgeVariant(displayStatus)}>
+              {STATUS_LABEL[displayStatus] ?? displayStatus}
+            </Badge>
+            {match.is_golden && <GoldenMatchBadge />}
+            {isSettled && (
+              <Badge
+                variant="outline"
+                className="border-emerald-500/40 text-emerald-400"
               >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                « À venir » retire le match du direct même si un score est saisi.
-                Pour corriger un match terminé, modifiez le score puis enregistrez
-                (recalcul automatique des points).
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="homeScore">Score {match.home_team.name}</Label>
-                <Input
-                  id="homeScore"
-                  name="homeScore"
-                  type="number"
-                  min={0}
-                  value={form.homeScore}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, homeScore: e.target.value }))
-                  }
-                  placeholder="—"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="awayScore">Score {match.away_team.name}</Label>
-                <Input
-                  id="awayScore"
-                  name="awayScore"
-                  type="number"
-                  min={0}
-                  value={form.awayScore}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, awayScore: e.target.value }))
-                  }
-                  placeholder="—"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-3">
-              <div className="space-y-0.5">
-                <Label
-                  htmlFor="isGolden"
-                  className="flex items-center gap-1.5 text-sm font-medium"
-                >
-                  <Sparkles className="size-3.5 text-amber-500" />
-                  Faire de ce match le Golden Match
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Un seul Golden Match à la fois. Les gains des joueurs sur ce
-                  match sont doublés à la clôture.
-                </p>
-              </div>
-              <Switch
-                id="isGolden"
-                checked={form.isGolden}
-                onCheckedChange={(checked) =>
-                  setForm((prev) => ({ ...prev, isGolden: checked }))
-                }
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="oddHome">Domicile</Label>
-                <Input
-                  id="oddHome"
-                  name="oddHome"
-                  type="number"
-                  step="0.01"
-                  min="1.01"
-                  value={form.oddHome}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, oddHome: e.target.value }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="oddDraw">Cote N</Label>
-                <Input
-                  id="oddDraw"
-                  name="oddDraw"
-                  type="number"
-                  step="0.01"
-                  min="1.01"
-                  value={form.oddDraw}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, oddDraw: e.target.value }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="oddAway">Extérieur</Label>
-                <Input
-                  id="oddAway"
-                  name="oddAway"
-                  type="number"
-                  step="0.01"
-                  min="1.01"
-                  value={form.oddAway}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, oddAway: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
-
-            <Button type="submit" disabled={loading === "update"}>
-              {loading === "update" ? "Enregistrement…" : "Enregistrer"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card className="border-lime-400/30">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Bot className="size-4 text-lime-400" />
-            Gazette du Match (IA)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Génère un résumé sarcastique des pronostics du groupe via Groq/Gemini.
-            Régénérable après un retour du match en « à venir » ou manuellement.
-          </p>
-          {match.ai_summary ? (
-            <blockquote className="rounded-lg border border-lime-400/25 bg-lime-400/5 p-3 text-sm italic text-foreground/90">
-              {match.ai_summary}
-            </blockquote>
-          ) : null}
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="border-lime-400/40 text-lime-300 hover:bg-lime-400/10"
-              disabled={loading === "gazette"}
-              onClick={() => handleGenerateGazette(Boolean(match.ai_summary))}
-            >
-              {loading === "gazette"
-                ? "Génération…"
-                : match.ai_summary
-                  ? "Régénérer la Gazette"
-                  : "Générer la Gazette"}
-            </Button>
+                <CheckCircle2 className="mr-1 size-3" aria-hidden />
+                Réglé
+              </Badge>
+            )}
+            {paymentPending && (
+              <Badge
+                variant="outline"
+                className="border-amber-500/40 text-amber-400"
+              >
+                <AlertTriangle className="mr-1 size-3" aria-hidden />
+                Paiement en attente
+              </Badge>
+            )}
           </div>
-        </CardContent>
-      </Card>
+          <Link
+            href={`/matches/${match.id}`}
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
+          >
+            <ExternalLink className="size-3.5" aria-hidden />
+            Vue joueur
+          </Link>
+        </div>
 
-      <Card className="border-primary/30">
-        <CardHeader>
-          <CardTitle className="text-base">Clôture & paiement</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            {pendingBetsCount} pari(s) en attente sur le résultat de ce match.
-            Saisissez le score final, enregistrez, puis clôturez pour créditer
-            les gagnants.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              disabled={!canSettle || loading === "settle"}
-              onClick={handleSettle}
-            >
-              {loading === "settle"
-                ? "Clôture en cours…"
-                : "Clôturer & payer les gagnants"}
-            </Button>
-            {canReopen && (
+        <div className="grid items-center gap-4 px-4 py-6 sm:grid-cols-[1fr_auto_1fr] sm:px-6 sm:py-8">
+          <div className="flex flex-col items-center gap-2 text-center sm:items-end sm:text-right">
+            <TeamFlag
+              name={match.home_team.name}
+              code={match.home_team.code}
+              logoUrl={match.home_team.logo_url}
+              teamId={match.home_team.id}
+              size={48}
+            />
+            <p className="font-semibold leading-tight">{match.home_team.name}</p>
+          </div>
+
+          <div className="flex flex-col items-center gap-1">
+            <p className="font-mono text-4xl font-bold tabular-nums tracking-tight sm:text-5xl">
+              {dbScoresComplete
+                ? `${match.home_score} – ${match.away_score}`
+                : "– : –"}
+            </p>
+            <p className="text-xs text-muted-foreground">Score enregistré</p>
+          </div>
+
+          <div className="flex flex-col items-center gap-2 text-center sm:items-start sm:text-left">
+            <TeamFlag
+              name={match.away_team.name}
+              code={match.away_team.code}
+              logoUrl={match.away_team.logo_url}
+              teamId={match.away_team.id}
+              size={48}
+            />
+            <p className="font-semibold leading-tight">{match.away_team.name}</p>
+          </div>
+        </div>
+
+        <div className="border-t border-white/10 px-4 py-2.5 text-center text-xs text-muted-foreground sm:px-6">
+          {formatKickoff(match.kickoff_at)}
+          {match.round ? ` · ${match.round}` : ""}
+          {match.venue ? ` · ${match.venue}` : ""}
+          {isSettled && match.settled_at
+            ? ` · Réglé le ${new Date(match.settled_at).toLocaleString("fr-FR")}`
+            : ""}
+        </div>
+      </section>
+
+      {(message || error) && (
+        <div
+          className={cn(
+            "rounded-xl border px-4 py-3 text-sm",
+            error
+              ? "border-destructive/40 bg-destructive/10 text-destructive"
+              : "border-lime-400/30 bg-lime-400/10 text-lime-300",
+          )}
+          role={error ? "alert" : "status"}
+        >
+          {error ?? message}
+        </div>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Formulaire principal */}
+        <div className="space-y-6 lg:col-span-2">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Résultat & cotes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleUpdate} className="space-y-5">
+                <input type="hidden" name="matchId" value={match.id} />
+
+                <div className="grid gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
+                  <div className="space-y-2">
+                    <Label htmlFor="homeScore">{match.home_team.name}</Label>
+                    <Input
+                      id="homeScore"
+                      name="homeScore"
+                      type="number"
+                      min={0}
+                      value={form.homeScore}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          homeScore: e.target.value,
+                        }))
+                      }
+                      placeholder="0"
+                      className="h-12 text-center text-xl font-semibold tabular-nums"
+                    />
+                  </div>
+                  <p className="hidden pb-3 text-center text-sm font-medium text-muted-foreground sm:block">
+                    vs
+                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="awayScore">{match.away_team.name}</Label>
+                    <Input
+                      id="awayScore"
+                      name="awayScore"
+                      type="number"
+                      min={0}
+                      value={form.awayScore}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          awayScore: e.target.value,
+                        }))
+                      }
+                      placeholder="0"
+                      className="h-12 text-center text-xl font-semibold tabular-nums"
+                    />
+                  </div>
+                </div>
+
+                {hasUnsavedScores && (
+                  <p className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                    <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+                    Score modifié — enregistrez avant de clôturer et payer.
+                  </p>
+                )}
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Statut</Label>
+                    <Select
+                      id="status"
+                      name="status"
+                      value={form.status}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          status: e.target.value as EditableMatchStatus,
+                        }))
+                      }
+                      className="h-9 bg-background"
+                      disabled={
+                        isSettled ||
+                        (match.status === "finished" && !isSettled)
+                      }
+                    >
+                      {EDITABLE_STATUS_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {isSettled
+                        ? "Match clôturé — utilisez « Rouvrir » pour modifier le statut."
+                        : "Le statut « Terminé » est appliqué à la clôture. Pour corriger un match réglé, modifiez le score puis enregistrez."}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 rounded-xl border border-amber-500/25 bg-amber-500/5 px-3 py-3">
+                    <div className="space-y-0.5">
+                      <Label
+                        htmlFor="isGolden"
+                        className="flex items-center gap-1.5 text-sm font-medium"
+                      >
+                        <Sparkles className="size-3.5 text-amber-500" />
+                        Golden Match
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Gains doublés à la clôture.
+                      </p>
+                    </div>
+                    <Switch
+                      id="isGolden"
+                      checked={form.isGolden}
+                      onCheckedChange={(checked) =>
+                        setForm((prev) => ({ ...prev, isGolden: checked }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="oddHome">Cote 1</Label>
+                    <Input
+                      id="oddHome"
+                      name="oddHome"
+                      type="number"
+                      step="0.01"
+                      min="1.01"
+                      value={form.oddHome}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, oddHome: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="oddDraw">Cote N</Label>
+                    <Input
+                      id="oddDraw"
+                      name="oddDraw"
+                      type="number"
+                      step="0.01"
+                      min="1.01"
+                      value={form.oddDraw}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, oddDraw: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="oddAway">Cote 2</Label>
+                    <Input
+                      id="oddAway"
+                      name="oddAway"
+                      type="number"
+                      step="0.01"
+                      min="1.01"
+                      value={form.oddAway}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, oddAway: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <Button type="submit" disabled={loading === "update"}>
+                  {loading === "update" ? "Enregistrement…" : "Enregistrer"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card className="border-lime-400/25">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Bot className="size-4 text-lime-400" />
+                Gazette du Match
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Résumé IA des pronostics du groupe (Groq/Gemini).
+              </p>
+              {match.ai_summary ? (
+                <blockquote className="rounded-lg border border-lime-400/20 bg-lime-400/5 p-3 text-sm italic text-foreground/90">
+                  {match.ai_summary}
+                </blockquote>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
-                disabled={loading === "reopen"}
-                onClick={handleReopen}
+                className="border-lime-400/40 text-lime-300 hover:bg-lime-400/10"
+                disabled={loading === "gazette"}
+                onClick={() => handleGenerateGazette(Boolean(match.ai_summary))}
               >
-                {loading === "reopen"
-                  ? "Réouverture…"
-                  : "Rouvrir le match (sans reclôturer)"}
+                {loading === "gazette"
+                  ? "Génération…"
+                  : match.ai_summary
+                    ? "Régénérer"
+                    : "Générer la Gazette"}
               </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Clôture — colonne latérale */}
+        <div className="space-y-6">
+          <Card
+            className={cn(
+              "lg:sticky lg:top-4",
+              paymentPending && "border-amber-500/40",
+              isSettled && "border-emerald-500/30",
             )}
-            {canResettle && (
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={loading === "resettle"}
-                onClick={handleResettle}
-              >
-                {loading === "resettle"
-                  ? "Recalcul…"
-                  : "Recalculer les points (score actuel)"}
-              </Button>
-            )}
-          </div>
-          {match.status === "finished" && (
-            <p className="text-sm text-muted-foreground">
-              Match clôturé. Pour corriger le score : modifiez-le ci-dessus puis
-              « Enregistrer », ou utilisez « Recalculer » si le score est déjà à
-              jour.
+          >
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Trophy className="size-4 text-primary" />
+                Clôture & paiement
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <dl className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-lg bg-muted/40 px-3 py-2">
+                  <dt className="text-xs text-muted-foreground">Classiques</dt>
+                  <dd className="text-lg font-semibold tabular-nums">
+                    {pendingClassicBetsCount}
+                  </dd>
+                </div>
+                <div className="rounded-lg bg-muted/40 px-3 py-2">
+                  <dt className="text-xs text-muted-foreground">Total pending</dt>
+                  <dd className="text-lg font-semibold tabular-nums">
+                    {pendingBetsCount}
+                  </dd>
+                </div>
+              </dl>
+
+              {isSettled ? (
+                <p className="text-sm text-emerald-400/90">
+                  Les gagnants ont été payés. Modifiez le score puis
+                  enregistrez pour recalculer, ou rouvrez le match.
+                </p>
+              ) : paymentPending ? (
+                <p className="flex items-start gap-2 text-sm text-amber-300">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                  Match marqué terminé mais les paris ne sont pas encore réglés.
+                  Cliquez ci-dessous pour payer les gagnants.
+                </p>
+              ) : pendingClassicBetsCount > 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Saisissez le score final, enregistrez, puis clôturez pour
+                  créditer les gagnants.
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Aucun pari classique en attente sur ce match.
+                </p>
+              )}
+
+              <div className="flex flex-col gap-2">
+                <Button
+                  type="button"
+                  className="w-full"
+                  disabled={!canSettle || loading === "settle"}
+                  onClick={handleSettle}
+                >
+                  {loading === "settle"
+                    ? "Clôture en cours…"
+                    : "Clôturer & payer les gagnants"}
+                </Button>
+
+                {canResettle && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full"
+                    disabled={loading === "resettle"}
+                    onClick={handleResettle}
+                  >
+                    {loading === "resettle"
+                      ? "Recalcul…"
+                      : "Recalculer les points"}
+                  </Button>
+                )}
+
+                {canReopen && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={loading === "reopen"}
+                    onClick={handleReopen}
+                  >
+                    {loading === "reopen" ? "Réouverture…" : "Rouvrir le match"}
+                  </Button>
+                )}
+              </div>
+
+              {!canSettle &&
+                !isSettled &&
+                pendingClassicBetsCount > 0 &&
+                !hasUnsavedScores &&
+                !dbScoresComplete && (
+                  <p className="text-xs text-muted-foreground">
+                    Score final requis avant clôture.
+                  </p>
+                )}
+            </CardContent>
+          </Card>
+
+          <Button
+            type="button"
+            variant="destructive"
+            className="w-full"
+            disabled={loading === "delete" || pendingBetsCount > 0}
+            onClick={handleDelete}
+          >
+            Supprimer le match
+          </Button>
+          {pendingBetsCount > 0 && (
+            <p className="text-center text-xs text-muted-foreground">
+              Suppression impossible tant que des paris existent.
             </p>
           )}
-        </CardContent>
-      </Card>
-
-      {message && <p className="text-sm text-primary">{message}</p>}
-      {error && (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      )}
-
-      <Button
-        type="button"
-        variant="destructive"
-        disabled={loading === "delete" || pendingBetsCount > 0}
-        onClick={handleDelete}
-      >
-        Supprimer le match
-      </Button>
-      {pendingBetsCount > 0 && match.status === "finished" && (
-        <p className="text-xs text-muted-foreground">
-          Suppression impossible tant que des paris existent.
-        </p>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
