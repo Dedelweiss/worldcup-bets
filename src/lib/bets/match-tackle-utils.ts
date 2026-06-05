@@ -9,6 +9,7 @@ export interface UserTackleOnMatch {
   phase: TacklePhase;
   is_resolved: boolean;
   attacker_won: boolean | null;
+  attacker_delta: number | null;
 }
 
 export interface UserTackleQuota {

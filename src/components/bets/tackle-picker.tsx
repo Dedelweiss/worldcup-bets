@@ -14,6 +14,7 @@ import {
   displayPlayerName,
   type MatchTackleState,
 } from "@/lib/bets/match-tackle-utils";
+import { tackleRulesSummary } from "@/lib/bets/tackle-stake";
 import type { MatchParticipationPlayer } from "@/lib/bets/match-participation";
 import { cn } from "@/lib/utils";
 
@@ -174,8 +175,8 @@ export function TacklePicker({
           {existing.is_resolved ? (
             <p className="mt-1 text-xs text-muted-foreground">
               {existing.attacker_won
-                ? "Tacle réussi — +3 pts volés à ton rival."
-                : "Tacle raté — -3 pts."}
+                ? `Tacle réussi — +${Math.abs(existing.attacker_delta ?? 0)} pts volés à ton rival.`
+                : `Tacle raté — ${existing.attacker_delta ?? 0} pts.`}
             </p>
           ) : canEditTackle ? (
             <p className="mt-1 text-xs text-muted-foreground">
@@ -276,8 +277,7 @@ export function TacklePicker({
       {open && (
         <div className="rounded-xl border border-border/80 bg-popover p-3 text-popover-foreground shadow-lg shadow-primary/10">
           <p className="mb-2 text-xs font-medium text-muted-foreground">
-            1 tacle par phase. Gagne +3 pts si tu fais mieux que ta cible sur ce
-            match, sinon -3.
+            {tackleRulesSummary()}
           </p>
           {rivals.length === 0 ? (
             <p className="text-sm text-muted-foreground">

@@ -32,6 +32,7 @@ export async function getMatchTackleState(
       phase,
       is_resolved,
       attacker_won,
+      attacker_delta,
       target:profiles!tackles_target_id_fkey (username, display_name)
     `,
     )
@@ -69,6 +70,8 @@ export async function getMatchTackleState(
       phase: onMatch.phase as TacklePhase,
       is_resolved: Boolean(onMatch.is_resolved),
       attacker_won: (onMatch.attacker_won as boolean | null) ?? null,
+      attacker_delta:
+        onMatch.attacker_delta != null ? Number(onMatch.attacker_delta) : null,
     };
   }
 
