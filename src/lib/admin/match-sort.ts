@@ -15,8 +15,16 @@ export function parseAdminMatchSort(
   sort?: string,
   orderParam?: string,
 ): { field: AdminMatchSortField; order: AdminMatchSortOrder } {
-  const field: AdminMatchSortField = sort === "status" ? "status" : "date";
-  const order: AdminMatchSortOrder = orderParam === "asc" ? "asc" : "desc";
+  const field: AdminMatchSortField =
+    sort === "date" ? "date" : sort === "status" ? "status" : "status";
+  const order: AdminMatchSortOrder =
+    orderParam === "asc"
+      ? "asc"
+      : orderParam === "desc"
+        ? "desc"
+        : field === "status"
+          ? "asc"
+          : "desc";
   return { field, order };
 }
 
