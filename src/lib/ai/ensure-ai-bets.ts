@@ -1,3 +1,4 @@
+import { logAppEvent } from "@/lib/logging/app-logger";
 import { generateScorePrediction } from "@/lib/ai/generate-score-prediction";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -29,19 +30,23 @@ async function placeAiBetForRow(
   });
 
   if (placeError) {
-    console.error(
-      `place_ai_exact_score_bet match ${row.match_id}:`,
-      placeError.message,
-    );
+    logAppEvent({
+      level: "error",
+      source: "ai.placeBet",
+      message: placeError.message,
+      metadata: { matchId: row.match_id },
+    });
   }
 }
 
 function getAdminSupabase(): ReturnType<typeof createAdminClient> | null {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!serviceRoleKey) {
-    console.warn(
-      "ensureAiBets: SUPABASE_SERVICE_ROLE_KEY manquante — l'IA ne peut pas parier ni parler.",
-    );
+    logAppEvent({
+      level: "warn",
+      source: "ai.bets",
+      message: "SUPABASE_SERVICE_ROLE_KEY manquante — l'IA ne peut pas parier.",
+    });
     return null;
   }
 

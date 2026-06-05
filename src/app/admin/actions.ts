@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { logAppEvent } from "@/lib/logging/app-logger";
 import { requireAdmin } from "@/lib/auth-server";
 import { generateAndSaveMatchSummary } from "@/lib/ai/generate-match-summary";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -420,7 +421,7 @@ export async function resettleMatchAction(matchId: number): Promise<ActionResult
 }
 
 export async function settleMatchAction(matchId: number): Promise<ActionResult> {
-  await requireAdmin();
+  const profile = await requireAdmin();
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc("settle_match", {
@@ -428,8 +429,23 @@ export async function settleMatchAction(matchId: number): Promise<ActionResult> 
   });
 
   if (error) {
+    logAppEvent({
+      level: "error",
+      source: "admin.settleMatch",
+      message: error.message,
+      metadata: { matchId },
+      userId: profile.id,
+    });
     return { success: false, error: error.message };
   }
+
+  logAppEvent({
+    level: "info",
+    source: "admin.settleMatch",
+    message: `Match ${matchId} clôturé et payé`,
+    metadata: { matchId, settlement: data },
+    userId: profile.id,
+  });
 
   revalidatePath(`/admin/matches/${matchId}`);
   revalidatePath("/admin");
@@ -554,7 +570,7 @@ export async function resetAppAction(options: {
   deleteMatches: boolean;
   startingBalance: number;
 }): Promise<ActionResult & { summary?: Record<string, unknown> }> {
-  await requireAdmin();
+  const profile = await requireAdmin();
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc("admin_reset_app", {
@@ -568,8 +584,23 @@ export async function resetAppAction(options: {
       : error.message.includes("UPDATE requires a WHERE clause")
         ? "Exécutez supabase/migrations/037_fix_admin_reset_where.sql dans Supabase."
         : error.message;
+    logAppEvent({
+      level: "error",
+      source: "admin.resetApp",
+      message: msg,
+      metadata: { options },
+      userId: profile.id,
+    });
     return { success: false, error: msg };
   }
+
+  logAppEvent({
+    level: "warn",
+    source: "admin.resetApp",
+    message: "Réinitialisation complète de l'application",
+    metadata: { options, summary: data },
+    userId: profile.id,
+  });
 
   revalidatePath("/admin");
   revalidatePath("/admin/users");
@@ -764,7 +795,7 @@ export async function generateGazetteAction(
 export async function syncFootballDataAdminAction(): Promise<
   ActionResult & { stats?: SyncMatchProvidersResult }
 > {
-  await requireAdmin();
+  const profile = await requireAdmin();
 
   const { syncMatchProviders } = await import(
     "@/lib/matches/sync-providers"
@@ -772,11 +803,26 @@ export async function syncFootballDataAdminAction(): Promise<
   const stats = await syncMatchProviders({ force: true, includeOdds: true });
 
   if (!stats.ok) {
+    logAppEvent({
+      level: "error",
+      source: "admin.syncApi",
+      message: stats.error ?? "Synchronisation API matchs échouée.",
+      metadata: { stats },
+      userId: profile.id,
+    });
     return {
       success: false,
       error: stats.error ?? "Synchronisation API matchs échouée.",
     };
   }
+
+  logAppEvent({
+    level: "info",
+    source: "admin.syncApi",
+    message: "Sync API matchs déclenchée par admin",
+    metadata: { stats },
+    userId: profile.id,
+  });
 
   revalidatePath("/admin");
   revalidatePath("/dashboard");
@@ -794,7 +840,7 @@ export async function prepareWorldCupAction(options: {
     syncStats?: SyncMatchProvidersResult;
   }
 > {
-  await requireAdmin();
+  const profile = await requireAdmin();
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc("admin_prepare_world_cup", {
@@ -805,8 +851,23 @@ export async function prepareWorldCupAction(options: {
     const msg = error.message.includes("Could not find the function")
       ? "Exécutez supabase/migrations/058_admin_prepare_world_cup.sql dans Supabase."
       : error.message;
+    logAppEvent({
+      level: "error",
+      source: "admin.prepareWorldCup",
+      message: msg,
+      metadata: { options },
+      userId: profile.id,
+    });
     return { success: false, error: msg };
   }
+
+  logAppEvent({
+    level: "warn",
+    source: "admin.prepareWorldCup",
+    message: "Préparation CDM 2026 (reset tests)",
+    metadata: { options, summary: data },
+    userId: profile.id,
+  });
 
   let syncStats: SyncMatchProvidersResult | undefined;
   if (options.syncOddsAfter !== false) {

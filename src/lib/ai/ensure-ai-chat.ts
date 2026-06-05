@@ -7,6 +7,7 @@ import {
   generateAiChatMessage,
   type AiChatContext,
 } from "@/lib/ai/generate-chat-message";
+import { logAppEvent } from "@/lib/logging/app-logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 interface EvaluateAiChatResult {
@@ -80,7 +81,12 @@ async function tryPostAiChat(
   });
 
   if (error) {
-    console.error(`evaluate_ai_chat ${matchId} (${trigger}):`, error.message);
+    logAppEvent({
+      level: "error",
+      source: "ai.chat",
+      message: error.message,
+      metadata: { matchId, trigger },
+    });
     return false;
   }
 
@@ -102,7 +108,12 @@ async function tryPostAiChat(
   });
 
   if (postError) {
-    console.error(`post_ai_match_comment ${matchId}:`, postError.message);
+    logAppEvent({
+      level: "error",
+      source: "ai.chat",
+      message: postError.message,
+      metadata: { matchId, trigger, stage: "post" },
+    });
     return false;
   }
 

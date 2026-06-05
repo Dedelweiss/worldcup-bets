@@ -2,15 +2,11 @@
 
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Info, Loader2, Share2 } from "lucide-react";
+import { Loader2, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { TeamFlag } from "@/components/shared/team-flag";
+import { FutStatInfo } from "@/components/profile/fut-stat-info";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   captureFutCardImage,
   futCardExportFilename,
@@ -203,25 +199,8 @@ export function PronostiqueurCard({
                     <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                       {stat.short}
                     </span>
-                    <span data-export-ignore>
-                      <Tooltip>
-                        <TooltipTrigger
-                          type="button"
-                          className="inline-flex shrink-0 rounded-full text-muted-foreground/70 transition-colors hover:text-lime-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-lime-400"
-                          aria-label={`${stat.label} — en savoir plus`}
-                        >
-                          <Info className="size-2.5" aria-hidden />
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="top"
-                          className="max-w-[210px] border border-white/10 bg-zinc-900 text-left text-zinc-100 shadow-lg"
-                        >
-                          <p className="font-semibold text-lime-300">{stat.label}</p>
-                          <p className="mt-1 font-normal leading-snug text-zinc-300">
-                            {stat.description}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
+                    <span data-export-ignore className="-mr-1">
+                      <FutStatInfo label={stat.label} description={stat.description} />
                     </span>
                   </div>
                   <span className="font-heading text-lg font-bold tabular-nums text-lime-300">

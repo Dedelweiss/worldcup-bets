@@ -1,3 +1,4 @@
+import { logAppEvent } from "@/lib/logging/app-logger";
 import { hasOddsApiConfig } from "@/lib/odds-api/client";
 import { formatOddsApiError } from "@/lib/odds-api/errors";
 import {
@@ -30,7 +31,12 @@ export async function syncOddsApiMatches(options?: {
       if (result.ok) lastSyncAt = Date.now();
       return result;
     } catch (e) {
-      console.error("syncOddsApiMatches:", formatOddsApiError(e));
+      const message = formatOddsApiError(e);
+      logAppEvent({
+        level: "error",
+        source: "sync.odds-api.admin",
+        message,
+      });
       return {
         ok: false,
         oddsUpdated: 0,

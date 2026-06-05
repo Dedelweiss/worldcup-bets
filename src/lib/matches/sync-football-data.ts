@@ -1,3 +1,4 @@
+import { logAppEvent } from "@/lib/logging/app-logger";
 import { FOOTBALL_DATA_SYNC_INTERVAL_MS } from "@/lib/football-data/rate-limit";
 import { hasFootballDataConfig } from "@/lib/football-data/client";
 import { syncFootballDataWc2026 } from "@/lib/football-data/sync-wc2026";
@@ -29,7 +30,12 @@ export async function syncFootballDataMatches(options?: {
       });
       lastSyncAt = Date.now();
     } catch (e) {
-      console.error("syncFootballDataMatches:", e);
+      const message = e instanceof Error ? e.message : String(e);
+      logAppEvent({
+        level: "error",
+        source: "sync.football-data.cron",
+        message,
+      });
     } finally {
       syncInFlight = null;
     }

@@ -135,7 +135,7 @@ function PopoverContent({
   React.useEffect(() => {
     if (!open) return;
 
-    function onPointerDown(e: MouseEvent) {
+    function onPointerDown(e: PointerEvent) {
       const target = e.target as Node;
       if (contentRef.current?.contains(target)) return;
       if (triggerRef.current?.contains(target)) return;
@@ -146,10 +146,10 @@ function PopoverContent({
       if (e.key === "Escape") onOpenChange?.(false);
     }
 
-    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onEscape);
     return () => {
-      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onEscape);
     };
   }, [open, onOpenChange, triggerRef]);

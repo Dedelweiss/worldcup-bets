@@ -10,6 +10,7 @@ const adminNav = [
   { href: "/admin/teams", label: "Équipes" },
   { href: "/admin/matches/new", label: "Créateur" },
   { href: "/admin/users", label: "Joueurs" },
+  { href: "/admin/logs", label: "Journal" },
 ];
 
 export default async function AdminLayout({

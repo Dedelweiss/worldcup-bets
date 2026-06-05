@@ -12,6 +12,7 @@ import {
   isWorldCupEvent,
   type LocalMatchForOddsLink,
 } from "@/lib/odds-api/event-link";
+import { logAppEvent } from "@/lib/logging/app-logger";
 import { formatOddsApiError } from "@/lib/odds-api/errors";
 import { parseOddsApiMatchResult } from "@/lib/odds-api/parse-odds";
 import { ODDS_API_MULTI_BATCH_SIZE } from "@/lib/odds-api/rate-limit";
@@ -278,6 +279,19 @@ export async function syncOddsApiWc2026(options?: {
       }
     }
 
+    logAppEvent({
+      level: "info",
+      source: "sync.odds-api",
+      message: `Sync odds-api OK (${oddsUpdated} cote(s))`,
+      metadata: {
+        oddsUpdated,
+        linkedEvents,
+        eventsLoaded: events.length,
+        apiCalls,
+        leagueSlug,
+      },
+    });
+
     return {
       ok: true,
       oddsUpdated,
@@ -288,7 +302,11 @@ export async function syncOddsApiWc2026(options?: {
     };
   } catch (e) {
     const userMessage = formatOddsApiError(e);
-    console.error("syncOddsApiWc2026:", userMessage);
+    logAppEvent({
+      level: "error",
+      source: "sync.odds-api",
+      message: userMessage,
+    });
     return { ...empty, error: userMessage };
   }
 }

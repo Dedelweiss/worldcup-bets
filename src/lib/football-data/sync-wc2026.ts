@@ -1,3 +1,4 @@
+import { logAppEvent } from "@/lib/logging/app-logger";
 import {
   fetchFootballDataMatchById,
   fetchWcMatches,
@@ -484,6 +485,20 @@ export async function syncFootballDataWc2026(options?: {
       if (!error) updated++;
     }
 
+    logAppEvent({
+      level: "info",
+      source: "sync.football-data",
+      message: `Sync football-data OK (${updated} match(s), ${oddsUpdated} cote(s))`,
+      metadata: {
+        updated,
+        oddsUpdated,
+        linkedTeams,
+        linkedMatches,
+        apiMatches: fdList.length,
+        apiCalls,
+      },
+    });
+
     return {
       ok: true,
       updated,
@@ -495,7 +510,11 @@ export async function syncFootballDataWc2026(options?: {
     };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Sync failed";
-    console.error("syncFootballDataWc2026:", message);
+    logAppEvent({
+      level: "error",
+      source: "sync.football-data",
+      message,
+    });
     return {
       ...empty,
       error: message,
