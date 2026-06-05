@@ -3,10 +3,15 @@ import { Suspense } from "react";
 import { AdminMatchesFilters } from "@/components/admin/admin-matches-filters";
 import { AdminMatchesList } from "@/components/admin/admin-matches-list";
 import { FootballDataSyncButton } from "@/components/admin/football-data-sync-button";
+import { SiteInvitePanel } from "@/components/admin/site-invite-panel";
 import { DashboardAnnouncementPanel } from "@/components/admin/dashboard-announcement-panel";
 import { PrepareWorldCupPanel } from "@/components/admin/prepare-world-cup-panel";
 import { getAdminMatches } from "@/lib/admin/matches";
 import { getTournamentConfig } from "@/lib/tournament/config";
+import {
+  buildSiteInviteMessage,
+  getSignupUrl,
+} from "@/lib/tournament/site-invite-message";
 import { parseAdminMatchSort, sortAdminMatches } from "@/lib/admin/match-sort";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -48,6 +53,11 @@ export default async function AdminPage({
           </Link>
         </div>
       </div>
+
+      <SiteInvitePanel
+        signupUrl={getSignupUrl()}
+        inviteMessage={buildSiteInviteMessage()}
+      />
 
       <DashboardAnnouncementPanel
         enabled={tournamentConfig.dashboardAnnouncementEnabled}

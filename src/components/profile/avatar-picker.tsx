@@ -7,9 +7,10 @@ import { updateAvatarAction } from "@/app/(app)/profile/actions";
 import { AvatarUploadField } from "@/components/profile/avatar-upload-field";
 import {
   CUSTOM_AVATAR_ID,
-  DEFAULT_AVATAR_ID,
-  PROFILE_AVATARS,
+  getActivePresetAvatarId,
   getAvatarUrl,
+  isPersonalPhotoActive,
+  PROFILE_AVATARS,
 } from "@/lib/profile/avatars";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,14 +32,17 @@ export function AvatarPicker({
   currentAvatarUrl,
 }: AvatarPickerProps) {
   const router = useRouter();
-  const isCustom = currentAvatarId === CUSTOM_AVATAR_ID;
-  const savedPresetId =
-    !isCustom &&
-    currentAvatarId &&
-    PROFILE_AVATARS.some((a) => a.id === currentAvatarId)
-      ? currentAvatarId
-      : DEFAULT_AVATAR_ID;
-  const [selected, setSelected] = useState(savedPresetId);
+  const hasPersonalPhoto = isPersonalPhotoActive(
+    currentAvatarId,
+    currentAvatarUrl,
+  );
+  const isLegacyPhoto =
+    hasPersonalPhoto && currentAvatarId !== CUSTOM_AVATAR_ID;
+  const savedPresetId = getActivePresetAvatarId(
+    currentAvatarId,
+    currentAvatarUrl,
+  );
+  const [selected, setSelected] = useState<string | null>(savedPresetId);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,6 +52,8 @@ export function AvatarPicker({
     setLoading(true);
     setError(null);
     setMessage(null);
+
+    if (!selected) return;
 
     const result = await updateAvatarAction(selected);
     if (!result.success) {
@@ -70,7 +76,13 @@ export function AvatarPicker({
       </CardHeader>
       <CardContent className="space-y-6">
         <AvatarUploadField
-          currentCustomUrl={isCustom ? currentAvatarUrl : null}
+          currentCustomUrl={hasPersonalPhoto ? currentAvatarUrl : null}
+          isActive={hasPersonalPhoto}
+          legacyHint={
+            isLegacyPhoto
+              ? "Photo conservée depuis votre ancien compte Google. Uploadez une nouvelle image ou choisissez un avatar ci-dessous."
+              : undefined
+          }
         />
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -83,7 +95,7 @@ export function AvatarPicker({
             aria-label="Choisir un avatar prédéfini"
           >
             {PROFILE_AVATARS.map((avatar) => {
-              const active = !isCustom && selected === avatar.id;
+              const active = !hasPersonalPhoto && selected === avatar.id;
               const src = getAvatarUrl(avatar.id)!;
               return (
                 <button
@@ -117,7 +129,7 @@ export function AvatarPicker({
           </div>
           <Button
             type="submit"
-            disabled={loading || isCustom || selected === savedPresetId}
+            disabled={loading || !selected || selected === savedPresetId}
           >
             {loading ? "…" : "Utiliser cet avatar"}
           </Button>

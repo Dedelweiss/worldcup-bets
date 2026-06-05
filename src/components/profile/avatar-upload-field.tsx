@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { uploadCustomAvatarAction } from "@/app/(app)/profile/actions";
@@ -12,9 +11,15 @@ import { Upload } from "lucide-react";
 
 interface AvatarUploadFieldProps {
   currentCustomUrl?: string | null;
+  isActive?: boolean;
+  legacyHint?: string;
 }
 
-export function AvatarUploadField({ currentCustomUrl }: AvatarUploadFieldProps) {
+export function AvatarUploadField({
+  currentCustomUrl,
+  isActive = false,
+  legacyHint,
+}: AvatarUploadFieldProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -91,7 +96,14 @@ export function AvatarUploadField({ currentCustomUrl }: AvatarUploadFieldProps) 
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+    <div
+      className={cn(
+        "space-y-3 rounded-xl border bg-white/[0.03] p-4 transition-colors",
+        isActive
+          ? "border-lime-400 bg-lime-400/10 ring-1 ring-lime-400/50"
+          : "border-white/10",
+      )}
+    >
       <div className="flex items-start gap-4">
         <div
           className={cn(
@@ -100,13 +112,12 @@ export function AvatarUploadField({ currentCustomUrl }: AvatarUploadFieldProps) 
           )}
         >
           {displayUrl ? (
-            <Image
+            <img
               src={displayUrl}
               alt="Aperçu avatar"
-              width={64}
-              height={64}
               className="size-full object-cover"
-              unoptimized
+              referrerPolicy="no-referrer"
+              decoding="async"
             />
           ) : (
             <Upload className="size-6 text-muted-foreground" aria-hidden />
@@ -118,6 +129,9 @@ export function AvatarUploadField({ currentCustomUrl }: AvatarUploadFieldProps) 
             Image recadrée en carré, compressée automatiquement (max{" "}
             {Math.round(AVATAR_MAX_UPLOAD_BYTES / 1024)} Ko, 256×256 px).
           </p>
+          {legacyHint && (
+            <p className="text-xs text-lime-300/90">{legacyHint}</p>
+          )}
           <input
             ref={inputRef}
             type="file"
