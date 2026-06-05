@@ -3,8 +3,10 @@ import { Suspense } from "react";
 import { AdminMatchesFilters } from "@/components/admin/admin-matches-filters";
 import { AdminMatchesList } from "@/components/admin/admin-matches-list";
 import { FootballDataSyncButton } from "@/components/admin/football-data-sync-button";
+import { DashboardAnnouncementPanel } from "@/components/admin/dashboard-announcement-panel";
 import { PrepareWorldCupPanel } from "@/components/admin/prepare-world-cup-panel";
 import { getAdminMatches } from "@/lib/admin/matches";
+import { getTournamentConfig } from "@/lib/tournament/config";
 import { parseAdminMatchSort, sortAdminMatches } from "@/lib/admin/match-sort";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,11 +23,10 @@ export default async function AdminPage({
     params.sort,
     params.order,
   );
-  const matches = sortAdminMatches(
-    await getAdminMatches(),
-    sortField,
-    sortOrder,
-  );
+  const [matches, tournamentConfig] = await Promise.all([
+    getAdminMatches().then((rows) => sortAdminMatches(rows, sortField, sortOrder)),
+    getTournamentConfig(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -47,6 +48,11 @@ export default async function AdminPage({
           </Link>
         </div>
       </div>
+
+      <DashboardAnnouncementPanel
+        enabled={tournamentConfig.dashboardAnnouncementEnabled}
+        message={tournamentConfig.dashboardAnnouncementMessage}
+      />
 
       <PrepareWorldCupPanel />
 

@@ -9,6 +9,8 @@ export interface TournamentConfig {
   worldCupWinnerTeamId: number | null;
   worldCupWinnerTeam: Team | null;
   favoriteBonusSettled: boolean;
+  dashboardAnnouncementEnabled: boolean;
+  dashboardAnnouncementMessage: string;
 }
 
 const EMPTY_CONFIG: TournamentConfig = {
@@ -16,6 +18,8 @@ const EMPTY_CONFIG: TournamentConfig = {
   worldCupWinnerTeamId: null,
   worldCupWinnerTeam: null,
   favoriteBonusSettled: false,
+  dashboardAnnouncementEnabled: false,
+  dashboardAnnouncementMessage: "",
 };
 
 async function fetchTeam(
@@ -37,7 +41,7 @@ export async function getTournamentConfig(): Promise<TournamentConfig> {
   const { data, error } = await supabase
     .from("tournament_config")
     .select(
-      "favorite_team_bonus_points, world_cup_winner_team_id, favorite_bonus_settled_at",
+      "favorite_team_bonus_points, world_cup_winner_team_id, favorite_bonus_settled_at, dashboard_announcement_enabled, dashboard_announcement_message",
     )
     .eq("id", 1)
     .maybeSingle();
@@ -57,5 +61,11 @@ export async function getTournamentConfig(): Promise<TournamentConfig> {
     worldCupWinnerTeamId: winnerId,
     worldCupWinnerTeam: winnerTeam,
     favoriteBonusSettled: data.favorite_bonus_settled_at != null,
+    dashboardAnnouncementEnabled: Boolean(
+      data.dashboard_announcement_enabled ?? false,
+    ),
+    dashboardAnnouncementMessage: String(
+      data.dashboard_announcement_message ?? "",
+    ).trim(),
   };
 }

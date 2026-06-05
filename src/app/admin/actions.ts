@@ -715,6 +715,35 @@ export async function setWorldCupWinnerAction(
   return { success: true, summary: data as Record<string, unknown> };
 }
 
+export async function setDashboardAnnouncementAction(
+  enabled: boolean,
+  message: string,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("admin_set_dashboard_announcement", {
+    p_enabled: enabled,
+    p_message: message.trim(),
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Exécutez supabase/migrations/066_dashboard_announcement.sql dans Supabase."
+      : error.message.includes("trop long")
+        ? "Le message ne peut pas dépasser 500 caractères."
+        : error.message.includes("requis")
+          ? "Saisissez un message avant d'activer l'annonce."
+          : error.message;
+    return { success: false, error: msg };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
+
+  return { success: true };
+}
+
 export async function generateGazetteAction(
   matchId: number,
   overwrite = false,

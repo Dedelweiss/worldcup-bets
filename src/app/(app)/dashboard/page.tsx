@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
+import { DashboardAnnouncementBanner } from "@/components/dashboard/dashboard-announcement-banner";
 import { DashboardBento } from "@/components/dashboard/dashboard-bento";
 import { getUserMatchBetStatuses } from "@/lib/bets/user-match-status-query";
 import { getDashboardData } from "@/lib/dashboard";
@@ -34,6 +35,8 @@ export default async function DashboardPage() {
             worldCupWinnerTeamId: null,
             worldCupWinnerTeam: null,
             favoriteBonusSettled: false,
+            dashboardAnnouncementEnabled: false,
+            dashboardAnnouncementMessage: "",
           },
           [] as Awaited<ReturnType<typeof getAllTournamentTeams>>,
           DEMO_LEADERBOARD_TOP,
@@ -91,6 +94,14 @@ export default async function DashboardPage() {
           les cotes.
         </p>
       </section>
+
+      {!isDemo &&
+        tournamentConfig.dashboardAnnouncementEnabled &&
+        tournamentConfig.dashboardAnnouncementMessage && (
+          <DashboardAnnouncementBanner
+            message={tournamentConfig.dashboardAnnouncementMessage}
+          />
+        )}
 
       {!isDemo && !profile.username && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-lime-400/30 bg-lime-400/10 px-4 py-3 backdrop-blur-md">
