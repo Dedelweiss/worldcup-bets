@@ -32,6 +32,7 @@ interface LiveMatchAnimationProps {
 
 const BOUNCE_DURATION = 1.35;
 
+/** Ballon entre les drapeaux — tant qu'il n'y a pas de but. */
 export function LiveMatchAnimation({
   homeTeam,
   awayTeam,
@@ -43,6 +44,7 @@ export function LiveMatchAnimation({
         "flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-3",
         className,
       )}
+      aria-label="Match en direct, en attente du premier but"
     >
       <TeamBadge team={homeTeam} />
 
