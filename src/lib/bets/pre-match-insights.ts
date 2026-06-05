@@ -1,6 +1,6 @@
 import { getUserBets } from "@/lib/bets";
 import {
-  heuristicScorePrediction,
+  generateScorePrediction,
   type ScorePrediction,
 } from "@/lib/ai/generate-score-prediction";
 import { impliedMatchResult } from "@/lib/exact-score";
@@ -133,7 +133,7 @@ export async function getPreMatchInsights(
   const userBets = await getUserBets(userId);
   const crowd = estimateCrowdPicksFromOdds(match);
 
-  const aiPrediction = heuristicScorePrediction({
+  const aiPrediction = await generateScorePrediction({
     homeTeam: match.home_team.name,
     awayTeam: match.away_team.name,
     oddHome: match.odd_home,
