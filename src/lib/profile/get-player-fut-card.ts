@@ -1,4 +1,4 @@
-import { getUserBets } from "@/lib/bets";
+import { getUserBetsForFutCard } from "@/lib/bets";
 import { hasSupabaseConfig } from "@/lib/auth-server";
 import { getAllMatchesForStats } from "@/lib/matches";
 import { resolveAvatarUrl } from "@/lib/profile/avatars";
@@ -31,7 +31,7 @@ export async function getPlayerFutCardData(
   if (error || !profile) return null;
 
   const [userBets, favoriteTeam, allMatches] = await Promise.all([
-    getUserBets(userId),
+    getUserBetsForFutCard(userId),
     getProfileFavoriteTeam(userId),
     getAllMatchesForStats(),
   ]);

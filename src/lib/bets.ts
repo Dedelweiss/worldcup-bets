@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   fetchFunMarketSnippets,
   resolveFunMarketId,
@@ -80,9 +81,10 @@ async function fetchUserBetsQuery(
     .order("placed_at", { ascending: false });
 }
 
-export async function getUserBets(userId: string): Promise<BetRow[]> {
-  const supabase = await createClient();
-
+async function fetchUserBetsWithClient(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<BetRow[]> {
   let lastError: string | null = null;
 
   for (const select of USER_BETS_SELECT_VARIANTS) {
@@ -103,4 +105,29 @@ export async function getUserBets(userId: string): Promise<BetRow[]> {
   }
 
   return [];
+}
+
+export async function getUserBets(userId: string): Promise<BetRow[]> {
+  const supabase = await createClient();
+  return fetchUserBetsWithClient(supabase, userId);
+}
+
+/**
+ * Paris d'un joueur pour le calcul de carte FUT affichée aux autres.
+ * Contourne le RLS (sinon seuls les paris « live » des rivaux sont visibles).
+ * Serveur uniquement — ne renvoie que des stats agrégées côté API.
+ */
+export async function getUserBetsForFutCard(userId: string): Promise<BetRow[]> {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (serviceRoleKey) {
+    try {
+      return fetchUserBetsWithClient(createAdminClient(), userId);
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("[getUserBetsForFutCard] admin client failed:", error);
+      }
+    }
+  }
+
+  return getUserBets(userId);
 }
