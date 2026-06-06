@@ -113,9 +113,9 @@ export async function getUserBets(userId: string): Promise<BetRow[]> {
 }
 
 /**
- * Paris d'un joueur pour le calcul de carte FUT affichée aux autres.
- * Contourne le RLS (sinon seuls les paris « live » des rivaux sont visibles).
- * Serveur uniquement — ne renvoie que des stats agrégées côté API.
+ * Paris d'un joueur pour la carte FUT (vue par un autre joueur).
+ * Contourne le RLS puis filtre côté serveur (matchs non commencés exclus).
+ * Serveur uniquement — l'API ne renvoie que des stats agrégées.
  */
 export async function getUserBetsForFutCard(userId: string): Promise<BetRow[]> {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();

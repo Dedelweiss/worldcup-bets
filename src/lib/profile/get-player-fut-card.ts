@@ -1,4 +1,5 @@
-import { getUserBetsForFutCard } from "@/lib/bets";
+import { getUserBets, getUserBetsForFutCard } from "@/lib/bets";
+import { filterBetsVisibleOnPublicFutCard } from "@/lib/bets/fut-card-visible-bets";
 import { hasSupabaseConfig } from "@/lib/auth-server";
 import { getAllMatchesForStats } from "@/lib/matches";
 import { resolveAvatarUrl } from "@/lib/profile/avatars";
@@ -18,6 +19,7 @@ export interface PlayerFutCardPayload {
 
 export async function getPlayerFutCardData(
   userId: string,
+  viewerId?: string | null,
 ): Promise<PlayerFutCardPayload | null> {
   if (!hasSupabaseConfig) return null;
 
@@ -30,8 +32,15 @@ export async function getPlayerFutCardData(
 
   if (error || !profile) return null;
 
-  const [userBets, favoriteTeam, allMatches] = await Promise.all([
-    getUserBetsForFutCard(userId),
+  const isOwnCard = viewerId != null && viewerId === userId;
+  const rawBets = isOwnCard
+    ? await getUserBets(userId)
+    : await getUserBetsForFutCard(userId);
+  const userBets = isOwnCard
+    ? rawBets
+    : filterBetsVisibleOnPublicFutCard(rawBets);
+
+  const [favoriteTeam, allMatches] = await Promise.all([
     getProfileFavoriteTeam(userId),
     getAllMatchesForStats(),
   ]);

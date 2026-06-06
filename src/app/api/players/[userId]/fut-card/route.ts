@@ -16,7 +16,7 @@ export async function GET(
     return NextResponse.json({ error: "Joueur invalide" }, { status: 400 });
   }
 
-  const data = await getPlayerFutCardData(userId);
+  const data = await getPlayerFutCardData(userId, profile.id);
   if (!data) {
     return NextResponse.json({ error: "Joueur introuvable" }, { status: 404 });
   }
