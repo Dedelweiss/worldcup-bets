@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Shield } from "lucide-react";
 import { AppNavLinks } from "@/components/layout/app-nav-links";
+import { HapticLink } from "@/components/ui/haptic-link";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -19,15 +20,16 @@ export function AppHeader({ profile }: AppHeaderProps) {
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl">
       <div className="flex h-14 items-center justify-between px-4 md:px-6">
-        <Link
+        <HapticLink
           href="/dashboard"
+          haptic="light"
           className="flex min-w-0 items-center gap-2 font-heading font-semibold tracking-tight md:hidden"
         >
           <SiteLogo size={32} className="size-8" priority />
           <span className="truncate text-sm">
             WC<span className="text-lime-400">2026</span> Pool
           </span>
-        </Link>
+        </HapticLink>
 
         <div className="hidden flex-1 items-center justify-center md:flex">
           <nav className="flex items-center gap-1 text-sm" aria-label="Raccourcis">
@@ -41,8 +43,9 @@ export function AppHeader({ profile }: AppHeaderProps) {
 
         <div className="flex min-w-0 items-center gap-1 md:hidden">
           {isAdmin && (
-            <Link
+            <HapticLink
               href="/admin"
+              haptic="selection"
               className={cn(
                 buttonVariants({ variant: "outline", size: "icon-sm" }),
                 "shrink-0 border-lime-400/40 bg-lime-400/10 text-lime-400 hover:bg-lime-400/20 hover:text-lime-300",
@@ -51,7 +54,7 @@ export function AppHeader({ profile }: AppHeaderProps) {
               aria-label="Administration"
             >
               <Shield className="size-4" aria-hidden />
-            </Link>
+            </HapticLink>
           )}
           <MobileNav items={appNav} showAdmin={isAdmin} />
           {profile ? (

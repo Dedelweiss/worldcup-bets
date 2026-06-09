@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { CircleHelp, Menu, X } from "lucide-react";
 import { AppNavLinks } from "@/components/layout/app-nav-links";
+import { bindHapticClick } from "@/lib/haptics";
 
 import type { NavItem } from "@/components/layout/app-nav";
 
@@ -45,7 +46,7 @@ export function MobileNav({ items, showAdmin }: MobileNavProps) {
               type="button"
               className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
               aria-label="Fermer le menu"
-              onClick={() => setOpen(false)}
+              onClick={bindHapticClick(() => setOpen(false), "light")}
             />
 
             <nav
@@ -56,7 +57,7 @@ export function MobileNav({ items, showAdmin }: MobileNavProps) {
                 <span className="text-sm font-semibold">Menu</span>
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={bindHapticClick(() => setOpen(false), "light")}
                   className="inline-flex size-9 items-center justify-center rounded-md hover:bg-muted"
                   aria-label="Fermer le menu"
                 >
@@ -75,7 +76,7 @@ export function MobileNav({ items, showAdmin }: MobileNavProps) {
               <div className="shrink-0 border-t border-border p-3">
                 <Link
                   href="/help"
-                  onClick={() => setOpen(false)}
+                  onClick={bindHapticClick(() => setOpen(false), "light")}
                   className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <CircleHelp className="size-4" />
@@ -92,7 +93,7 @@ export function MobileNav({ items, showAdmin }: MobileNavProps) {
     <div className="md:hidden">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={bindHapticClick(() => setOpen((v) => !v), "medium")}
         className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
         aria-expanded={open}

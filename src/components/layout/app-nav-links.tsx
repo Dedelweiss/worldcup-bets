@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Shield } from "lucide-react";
 import { NavFunBadge } from "@/components/layout/nav-fun-badge";
+import { bindHapticClick } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "@/components/layout/app-nav";
 
@@ -50,7 +51,7 @@ export function AppNavLinks({
         const link = (
           <Link
             href={item.href}
-            onClick={onNavigate}
+            onClick={bindHapticClick(onNavigate, "light")}
             className={cn(
               linkClass,
               variant === "mobile" &&
@@ -89,7 +90,7 @@ export function AppNavLinks({
           <li className="mt-2 border-t border-border pt-2">
             <Link
               href="/admin"
-              onClick={onNavigate}
+              onClick={bindHapticClick(onNavigate, "light")}
               className={cn(
                 linkClass,
                 "flex items-center gap-2 border border-lime-400/30 bg-lime-400/10 font-semibold text-lime-400 hover:bg-lime-400/15",
@@ -104,7 +105,7 @@ export function AppNavLinks({
           <div className="w-full">
             <Link
               href="/admin"
-              onClick={onNavigate}
+              onClick={bindHapticClick(onNavigate, "light")}
               className={cn(
                 linkClass,
                 pathname.startsWith("/admin") &&
@@ -118,7 +119,7 @@ export function AppNavLinks({
         ) : (
           <Link
             href="/admin"
-            onClick={onNavigate}
+            onClick={bindHapticClick(onNavigate, "light")}
             className={cn(
               linkClass,
               "text-primary hover:bg-primary/10",

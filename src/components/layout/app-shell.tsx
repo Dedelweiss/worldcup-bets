@@ -15,7 +15,18 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
-      <BottomNav showAdmin={profile?.role === "admin"} />
+      <BottomNav
+        showAdmin={profile?.role === "admin"}
+        profile={
+          profile
+            ? {
+                avatar_url: profile.avatar_url,
+                username: profile.username,
+                display_name: profile.display_name,
+              }
+            : null
+        }
+      />
     </div>
   );
 }

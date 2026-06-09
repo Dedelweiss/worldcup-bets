@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { bindHapticClick } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "@/components/layout/mobile-nav";
 
@@ -23,6 +24,7 @@ export function AdminNav({ items }: AdminNavProps) {
             <Link
               key={item.href}
               href={item.href}
+              onClick={bindHapticClick(undefined, "light")}
               className={cn(
                 "shrink-0 rounded-lg border px-3 py-2 text-sm transition-colors",
                 active

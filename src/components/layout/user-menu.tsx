@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { CircleHelp, LogOut, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { buttonVariants } from "@/components/ui/button";
+import { bindHapticClick } from "@/lib/haptics";
 import { formatPoints } from "@/lib/format";
 import { getPlayerLabel } from "@/lib/profile/player-label";
 import { cn } from "@/lib/utils";
@@ -45,6 +48,7 @@ export function UserMenu({ profile, compact = false }: UserMenuProps) {
       <div className="flex shrink-0 items-center gap-0.5">
         <Link
           href="/help"
+          onClick={bindHapticClick(undefined, "light")}
           className={cn(
             buttonVariants({ variant: "ghost", size: "icon-sm" }),
             "shrink-0",
@@ -55,6 +59,7 @@ export function UserMenu({ profile, compact = false }: UserMenuProps) {
         </Link>
         <Link
           href="/profile"
+          onClick={bindHapticClick(undefined, "light")}
           className={cn(
             buttonVariants({ variant: "ghost", size: "icon-sm" }),
             "shrink-0",
@@ -72,6 +77,7 @@ export function UserMenu({ profile, compact = false }: UserMenuProps) {
         </Link>
         <Link
           href="/profile"
+          onClick={bindHapticClick(undefined, "light")}
           className={cn(
             buttonVariants({ variant: "ghost", size: "icon-sm" }),
             "hidden shrink-0 min-[420px]:inline-flex",
@@ -84,6 +90,7 @@ export function UserMenu({ profile, compact = false }: UserMenuProps) {
         <form action="/auth/signout" method="post" className="shrink-0">
           <button
             type="submit"
+            onClick={bindHapticClick(undefined, "medium")}
             className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
             title="Se déconnecter"
           >
