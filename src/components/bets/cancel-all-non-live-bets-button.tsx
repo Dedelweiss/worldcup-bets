@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { Loader2, Trash2 } from "lucide-react";
+import { useMemo } from "react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { cancelAllNonLivePendingBetsAction } from "@/app/(app)/bets/actions";
+import { ConfirmActionButton } from "@/components/ui/confirm-dialog";
 import { canBulkCancelPendingBet } from "@/lib/bets/can-cancel-bet";
-import { Button } from "@/components/ui/button";
 import type { BetRow } from "@/types/database";
 
 interface CancelAllNonLiveBetsButtonProps {
@@ -17,27 +17,16 @@ export function CancelAllNonLiveBetsButton({
   bets,
 }: CancelAllNonLiveBetsButtonProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
 
   const cancellableCount = useMemo(
     () => bets.filter(canBulkCancelPendingBet).length,
     [bets],
   );
 
-  if (cancellableCount === 0) return null;
+  if (cancellableCount <= 0) return null;
 
-  async function handleClick() {
-    if (
-      !window.confirm(
-        `Supprimer ${cancellableCount} pari${cancellableCount > 1 ? "s" : ""} en attente sur des matchs qui ne sont pas en direct ?\n\nVos paris sur les matchs en cours seront conservés.`,
-      )
-    ) {
-      return;
-    }
-
-    setLoading(true);
+  async function handleConfirm() {
     const result = await cancelAllNonLivePendingBetsAction();
-    setLoading(false);
 
     if (!result.success) {
       toast.error(result.error);
@@ -60,25 +49,16 @@ export function CancelAllNonLiveBetsButton({
   }
 
   return (
-    <Button
-      type="button"
-      variant="outline"
-      size="sm"
-      disabled={loading}
-      onClick={() => void handleClick()}
-      className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+    <ConfirmActionButton
+      title="Supprimer tous mes paris"
+      description={`Supprimer ${cancellableCount} pari${cancellableCount > 1 ? "s" : ""} en attente sur des matchs qui ne sont pas en direct ?\n\nVos paris sur les matchs en cours seront conservés.`}
+      confirmLabel="Supprimer"
+      destructive
+      className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive sm:w-auto"
+      onConfirm={handleConfirm}
     >
-      {loading ? (
-        <>
-          <Loader2 className="animate-spin" aria-hidden />
-          Suppression…
-        </>
-      ) : (
-        <>
-          <Trash2 aria-hidden />
-          Supprimer tous mes paris ({cancellableCount})
-        </>
-      )}
-    </Button>
+      <Trash2 aria-hidden />
+      Supprimer tous mes paris ({cancellableCount})
+    </ConfirmActionButton>
   );
 }
