@@ -135,7 +135,7 @@ export function FavoriteTeamSection({
         Équipe favorite
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Un seul choix · +{formatPoints(bonusPts)} pts si la CDM
+        Un seul choix · +{formatPoints(bonusPts)} pts si champion du monde
       </p>
 
       {!confirmOpen ? (
