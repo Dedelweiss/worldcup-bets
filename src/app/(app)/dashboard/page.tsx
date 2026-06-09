@@ -26,39 +26,53 @@ export const metadata = {
 export default async function DashboardPage() {
   const { profile, upcomingMatches, stats, isDemo } = await getDashboardData();
 
-  const [favoriteTeam, tournamentConfig, tournamentTeams, topPlayers, rankNeighbors] =
-    isDemo
-      ? [
-          null,
-          {
-            favoriteTeamBonusPoints: 100,
-            worldCupWinnerTeamId: null,
-            worldCupWinnerTeam: null,
-            favoriteBonusSettled: false,
-            dashboardAnnouncementEnabled: false,
-            dashboardAnnouncementMessage: "",
-          },
-          [] as Awaited<ReturnType<typeof getAllTournamentTeams>>,
-          DEMO_LEADERBOARD_TOP,
-          getLeaderboardRankNeighbors(DEMO_LEADERBOARD_TOP, profile.id),
-        ]
-      : await (async () => {
-          const [favoriteTeam, tournamentConfig, tournamentTeams, leaderboard] =
-            await Promise.all([
-              getProfileFavoriteTeam(profile.id),
-              getTournamentConfig(),
-              getAllTournamentTeams(),
-              getLeaderboard({ sort: "points" }),
-            ]);
-          const players = leaderboard.players;
-          return [
-            favoriteTeam,
-            tournamentConfig,
-            tournamentTeams,
-            players.slice(0, 3),
-            getLeaderboardRankNeighbors(players, profile.id),
-          ] as const;
-        })();
+  const [
+    favoriteTeam,
+    tournamentConfig,
+    tournamentTeams,
+    topPlayers,
+    rankNeighbors,
+    globalLiveChat,
+  ] = isDemo
+    ? [
+        null,
+        {
+          favoriteTeamBonusPoints: 100,
+          worldCupWinnerTeamId: null,
+          worldCupWinnerTeam: null,
+          favoriteBonusSettled: false,
+          dashboardAnnouncementEnabled: false,
+          dashboardAnnouncementMessage: "",
+        },
+        [] as Awaited<ReturnType<typeof getAllTournamentTeams>>,
+        DEMO_LEADERBOARD_TOP,
+        getLeaderboardRankNeighbors(DEMO_LEADERBOARD_TOP, profile.id),
+        { messages: [], liveMatchIds: [] },
+      ]
+    : await (async () => {
+        const [
+          favoriteTeam,
+          tournamentConfig,
+          tournamentTeams,
+          leaderboard,
+          globalLiveChat,
+        ] = await Promise.all([
+          getProfileFavoriteTeam(profile.id),
+          getTournamentConfig(),
+          getAllTournamentTeams(),
+          getLeaderboard({ sort: "points" }),
+          getGlobalLiveChatInitial(30),
+        ]);
+        const players = leaderboard.players;
+        return [
+          favoriteTeam,
+          tournamentConfig,
+          tournamentTeams,
+          players.slice(0, 3),
+          getLeaderboardRankNeighbors(players, profile.id),
+          globalLiveChat,
+        ] as const;
+      })();
 
   const betStatuses =
     !isDemo && upcomingMatches.length > 0
@@ -67,10 +81,6 @@ export default async function DashboardPage() {
           upcomingMatches.map((m) => m.id),
         )
       : {};
-
-  const globalLiveChat = isDemo
-    ? { messages: [], liveMatchIds: [] }
-    : await getGlobalLiveChatInitial(30);
 
   return (
     <div className="space-y-8">

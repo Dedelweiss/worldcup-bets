@@ -10,46 +10,55 @@ const SYNC_INTERVAL_MS = 30_000;
 let lastSyncAt = 0;
 let syncInFlight: Promise<void> | null = null;
 
+function runAiLiveSideEffects(): void {
+  void (async () => {
+    try {
+      await ensureAiBetsForLiveMatches();
+      await ensureAiKickoffChat();
+    } catch {
+      // Les effets IA ne doivent jamais bloquer une navigation.
+    }
+  })();
+}
+
+async function executeLiveSync(options?: { force?: boolean }): Promise<void> {
+  const now = Date.now();
+  const skipRpcSync = !options?.force && now - lastSyncAt < SYNC_INTERVAL_MS;
+
+  if (!skipRpcSync) {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+    const supabase = serviceRoleKey
+      ? createAdminClient()
+      : await createClient();
+    // football-data d'abord, puis RPC : le passage kickoff → live ne doit pas être écrasé.
+    await syncFootballDataMatches();
+    await supabase.rpc("sync_live_matches");
+    lastSyncAt = Date.now();
+  }
+
+  runAiLiveSideEffects();
+}
+
 /** Met à jour status → live pour les matchs dont le coup d'envoi est passé. */
 export async function syncLiveMatches(options?: {
   force?: boolean;
+  /** Lance la sync sans attendre (pages joueur). */
+  background?: boolean;
 }): Promise<void> {
   if (!hasSupabaseConfig) return;
 
-  const now = Date.now();
-  const skipRpcSync =
-    !options?.force && now - lastSyncAt < SYNC_INTERVAL_MS;
-
   if (syncInFlight) {
+    if (options?.background) return;
     await syncInFlight;
-    if (skipRpcSync) {
-      await runAiLiveSideEffects();
-    }
     return;
   }
 
-  syncInFlight = (async () => {
-    try {
-      if (!skipRpcSync) {
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-        const supabase = serviceRoleKey
-          ? createAdminClient()
-          : await createClient();
-        // football-data d'abord, puis RPC : le passage kickoff → live ne doit pas être écrasé.
-        await syncFootballDataMatches();
-        await supabase.rpc("sync_live_matches");
-        lastSyncAt = Date.now();
-      }
-      await runAiLiveSideEffects();
-    } finally {
-      syncInFlight = null;
-    }
-  })();
+  const job = executeLiveSync(options).finally(() => {
+    syncInFlight = null;
+  });
 
-  await syncInFlight;
-}
+  syncInFlight = job;
 
-async function runAiLiveSideEffects(): Promise<void> {
-  await ensureAiBetsForLiveMatches();
-  await ensureAiKickoffChat();
+  if (options?.background) return;
+  await job;
 }

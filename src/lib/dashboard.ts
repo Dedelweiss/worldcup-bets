@@ -3,11 +3,9 @@ import { hasSupabaseConfig, requireAuth } from "@/lib/auth-server";
 import { getDashboardStats } from "@/lib/dashboard-stats";
 import { syncLiveMatches } from "@/lib/matches/sync-live";
 import { createClient } from "@/lib/supabase/server";
-import type { DashboardData, MatchWithTeams } from "@/types/database";
+import type { DashboardData, MatchWithTeams, Profile } from "@/types/database";
 
-function normalizeMatches(
-  rows: unknown[] | null,
-): MatchWithTeams[] {
+function normalizeMatches(rows: unknown[] | null): MatchWithTeams[] {
   if (!rows?.length) return [];
   return rows.map((row) => {
     const m = row as Record<string, unknown>;
@@ -21,40 +19,53 @@ function normalizeMatches(
   });
 }
 
+async function fetchUpcomingMatches(): Promise<MatchWithTeams[]> {
+  const supabase = await createClient();
+  const { data: matches } = await supabase
+    .from("matches")
+    .select(
+      `
+      id, round, status, kickoff_at, venue, is_golden,
+      home_score, away_score, live_minute, live_injury_time, odd_home, odd_draw, odd_away, odds_synced_at,
+      home_team:teams!matches_home_team_id_fkey (id, name, code, logo_url),
+      away_team:teams!matches_away_team_id_fkey (id, name, code, logo_url)
+    `,
+    )
+    .in("status", ["scheduled", "live"])
+    .order("kickoff_at", { ascending: true })
+    .limit(30);
+
+  return normalizeMatches(matches).filter((m) => {
+    if (m.status === "live") return true;
+    return new Date(m.kickoff_at) >= new Date();
+  });
+}
+
+export async function getDashboardCore(profile: Profile): Promise<{
+  upcomingMatches: MatchWithTeams[];
+  stats: Awaited<ReturnType<typeof getDashboardStats>>;
+}> {
+  const [upcomingMatches, stats] = await Promise.all([
+    fetchUpcomingMatches(),
+    getDashboardStats(profile.id, profile.points),
+  ]);
+
+  return { upcomingMatches, stats };
+}
+
 export async function getDashboardData(): Promise<DashboardData> {
   if (!hasSupabaseConfig) {
     return { ...MOCK_DASHBOARD, isDemo: true };
   }
 
   const profile = await requireAuth();
-  await syncLiveMatches();
-  const supabase = await createClient();
+  void syncLiveMatches({ background: true });
 
-  const [{ data: matches }, stats] = await Promise.all([
-    supabase
-      .from("matches")
-      .select(
-        `
-      id, round, status, kickoff_at, venue, is_golden,
-      home_score, away_score, live_minute, live_injury_time, odd_home, odd_draw, odd_away, odds_synced_at,
-      home_team:teams!matches_home_team_id_fkey (id, name, code, logo_url),
-      away_team:teams!matches_away_team_id_fkey (id, name, code, logo_url)
-    `,
-      )
-      .in("status", ["scheduled", "live"])
-      .order("kickoff_at", { ascending: true })
-      .limit(30),
-    getDashboardStats(profile.id, profile.points),
-  ]);
-
-  const upcoming = normalizeMatches(matches).filter((m) => {
-    if (m.status === "live") return true;
-    return new Date(m.kickoff_at) >= new Date();
-  });
+  const { upcomingMatches, stats } = await getDashboardCore(profile);
 
   return {
     profile,
-    upcomingMatches: upcoming,
+    upcomingMatches,
     stats,
     isDemo: false,
   };
