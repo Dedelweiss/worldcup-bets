@@ -10,13 +10,12 @@ import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { MatchOddsSourceBadge } from "@/components/matches/match-odds-source-badge";
 import {
   MATCH_RESULT_COPY,
-  MATCH_RESULT_OUTCOME,
 } from "@/lib/bets/match-result-copy";
-import { buildMatchPickHref } from "@/lib/bets/match-pick-url";
-import { formatOdd } from "@/lib/format";
+import { MatchCardQuickResultPick } from "@/components/dashboard/match-card-quick-result-pick";
 import { MatchKickoffMeta } from "@/components/matches/match-kickoff-meta";
 import { MatchCardStatusBadges } from "@/components/dashboard/match-card-status-badges";
 import { goldenMatchCardClass } from "@/lib/golden-match";
+import { canPlaceBetOnMatch } from "@/lib/bets/can-place-bet-on-match";
 import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
 import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
 import type { MatchWithTeams, Team } from "@/types/database";
@@ -50,6 +49,9 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
   const hasClassicBet = betStatus?.hasClassicBet ?? false;
   const hasFunToPlay =
     hasClassicBet && (betStatus?.pendingFunToPlay ?? 0) > 0;
+  const { allowed: bettingOpen } = canPlaceBetOnMatch(match);
+  const showQuickPick =
+    !hasScore && !isLive && bettingOpen && !betStatus?.hasExactScore;
 
   const ctaLabel = isLive
     ? hasFunToPlay
@@ -120,36 +122,32 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
             </div>
           )}
 
-          {!hasScore && !isLive && match.odd_home && match.odd_draw && match.odd_away && (
+          {!hasScore && !isLive && (
             <div className="space-y-2">
-              <MatchOddsSourceBadge match={match} className="text-[10px]" />
-              <div className="grid grid-cols-3 gap-2">
-              {(
-                [
-                  { key: "home" as const, label: MATCH_RESULT_OUTCOME.home, odd: match.odd_home },
-                  { key: "draw" as const, label: MATCH_RESULT_OUTCOME.draw, odd: match.odd_draw },
-                  { key: "away" as const, label: MATCH_RESULT_OUTCOME.away, odd: match.odd_away },
-                ] as const
-              ).map((outcome) => (
-                <Link
-                  key={outcome.key}
-                  href={buildMatchPickHref(match.id, outcome.key)}
-                  className={cn(
-                    "flex cursor-pointer flex-col items-center rounded-lg border border-border bg-muted/20 py-2 transition-colors",
-                    "hover:border-lime-400/45 hover:bg-lime-400/10 hover:ring-1 hover:ring-lime-400/25",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50",
-                  )}
-                  title={`Parier ${outcome.label.toLowerCase()} sur ce match`}
-                >
-                  <span className="text-[10px] font-medium text-muted-foreground">
-                    {outcome.label}
-                  </span>
-                  <span className="text-sm font-bold tabular-nums text-primary">
-                    {formatOdd(outcome.odd!)}
-                  </span>
-                </Link>
-              ))}
-            </div>
+              {showQuickPick &&
+                match.odd_home &&
+                match.odd_draw &&
+                match.odd_away && (
+                  <>
+                    <MatchOddsSourceBadge match={match} className="text-[10px]" />
+                    <MatchCardQuickResultPick
+                      match={match}
+                      betStatus={betStatus}
+                      bettingOpen={bettingOpen}
+                    />
+                  </>
+                )}
+              {betStatus?.hasExactScore && (
+                <p className="text-center text-[11px] text-muted-foreground">
+                  Score exact déjà posé —{" "}
+                  <Link
+                    href={`/matches/${match.id}`}
+                    className="text-primary underline-offset-2 hover:underline"
+                  >
+                    voir le détail
+                  </Link>
+                </p>
+              )}
             </div>
           )}
 

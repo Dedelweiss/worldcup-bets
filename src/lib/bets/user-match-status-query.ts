@@ -6,6 +6,7 @@ function emptyStatus(): UserMatchBetStatus {
     hasClassicBet: false,
     hasMatchResult: false,
     hasExactScore: false,
+    matchResultSelection: null,
     openFunCount: 0,
     pendingFunToPlay: 0,
   };
@@ -27,7 +28,7 @@ export async function getUserMatchBetStatuses(
   const [betsRes, funRes] = await Promise.all([
     supabase
       .from("bets")
-      .select("match_id, bet_type, market_id, fun_market_id")
+      .select("match_id, bet_type, market_id, fun_market_id, selection")
       .eq("user_id", userId)
       .eq("status", "pending")
       .in("match_id", uniqueIds),
@@ -47,6 +48,10 @@ export async function getUserMatchBetStatuses(
     if (bet.bet_type === "match_result") {
       status.hasClassicBet = true;
       status.hasMatchResult = true;
+      const side = (bet.selection as { selection?: string } | null)?.selection;
+      if (side === "home" || side === "draw" || side === "away") {
+        status.matchResultSelection = side;
+      }
     }
     if (bet.bet_type === "exact_score") {
       status.hasClassicBet = true;

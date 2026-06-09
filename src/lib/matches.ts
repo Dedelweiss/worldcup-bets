@@ -1,8 +1,9 @@
 import { cache } from "react";
-import { hasKickoffStarted } from "@/lib/format";
 import { syncLiveMatches } from "@/lib/matches/sync-live";
 import { createClient } from "@/lib/supabase/server";
 import type { MatchWithTeams } from "@/types/database";
+
+export { canPlaceBetOnMatch } from "@/lib/bets/can-place-bet-on-match";
 
 export function normalizeMatch(row: unknown): MatchWithTeams {
   const m = row as Record<string, unknown>;
@@ -41,28 +42,6 @@ export const getMatchById = cache(async (
   if (error || !data) return null;
   return normalizeMatch(data);
 });
-
-export function canPlaceBetOnMatch(match: MatchWithTeams): {
-  allowed: boolean;
-  reason?: string;
-} {
-  if (match.status !== "scheduled") {
-    return {
-      allowed: false,
-      reason:
-        match.status === "finished"
-          ? "Ce match est terminé."
-          : "Les paris sont fermés pour ce match.",
-    };
-  }
-  if (hasKickoffStarted(match.kickoff_at)) {
-    return { allowed: false, reason: "Le coup d'envoi est passé." };
-  }
-  if (!match.odd_home || !match.odd_draw || !match.odd_away) {
-    return { allowed: false, reason: "Les cotes ne sont pas encore disponibles." };
-  }
-  return { allowed: true };
-}
 
 /** Liste minimale des matchs pour les stats d'assiduité (FUT END). */
 export async function getAllMatchesForStats(): Promise<

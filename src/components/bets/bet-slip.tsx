@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, Target, Zap } from "lucide-react";
+import { Lock, Target, Zap, Dices } from "lucide-react";
 import {
   placeBetAction,
   placeExactScoreBetAction,
@@ -30,6 +30,7 @@ import {
   buildMatchResultOutcomes,
   MATCH_RESULT_COPY,
 } from "@/lib/bets/match-result-copy";
+import { randomClassicScore } from "@/lib/bets/random-score";
 import type { MatchUserPendingBets } from "@/lib/bets/match-user-bets";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { MatchOddsSourceBadge } from "@/components/matches/match-odds-source-badge";
@@ -362,6 +363,40 @@ export function BetSlip({
     router.refresh();
   }
 
+  async function handleRandomExactScore() {
+    if (!canEditClassic || pending.hasMatchResult || loading) return;
+
+    const score = randomClassicScore(match.id + Date.now());
+    setLoading(true);
+    setError(null);
+    setSavedNotice(null);
+
+    const result = await placeExactScoreBetAction(
+      match.id,
+      score.home,
+      score.away,
+    );
+    setLoading(false);
+
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+
+    setHomeScore(String(score.home));
+    setAwayScore(String(score.away));
+    setMode("exact");
+    if (pending.hasExactScore) {
+      setSavedNotice(MATCH_RESULT_COPY.exactScoreUpdated);
+    } else {
+      setClassicBetConfirmed(true);
+      setSavedNotice(
+        `Score aléatoire enregistré : ${score.home}-${score.away}.`,
+      );
+    }
+    router.refresh();
+  }
+
   if (!bettingOpen && !hasClassicBet) {
     return (
       <Card>
@@ -637,11 +672,26 @@ export function BetSlip({
                   )}
 
                   <div className="space-y-2">
-                    <Label>
-                      {pending.hasExactScore
-                        ? "Votre score exact"
-                        : "Score final prédit"}
-                    </Label>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <Label>
+                        {pending.hasExactScore
+                          ? "Votre score exact"
+                          : "Score final prédit"}
+                      </Label>
+                      {canEditClassic && !pending.hasMatchResult && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={loading}
+                          onClick={() => void handleRandomExactScore()}
+                          className="border-lime-400/30 bg-lime-400/5 text-lime-200 hover:bg-lime-400/10 hover:text-lime-100"
+                        >
+                          <Dices aria-hidden />
+                          Score aléatoire
+                        </Button>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {pending.hasExactScore && canEditClassic
                         ? "Modifiez le score avec +/− ou un raccourci."

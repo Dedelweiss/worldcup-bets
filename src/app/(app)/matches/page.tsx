@@ -3,8 +3,10 @@ import {
   MatchesExplorer,
   type MatchBetFilter,
 } from "@/components/matches/matches-explorer";
+import { FillRandomScoresButton } from "@/components/bets/fill-random-scores-button";
 import { PageLoadingSkeleton } from "@/components/layout/page-loading-skeleton";
 import { requireAuth } from "@/lib/auth-server";
+import { getMatchesWithoutClassicBet } from "@/lib/bets/eligible-classic-bets";
 import { getUserMatchBetStatuses } from "@/lib/bets/user-match-status-query";
 import { listMatchesForPlayers, getTournamentGroups } from "@/lib/tournament/queries";
 
@@ -27,12 +29,13 @@ export default async function MatchesPage({
   const groupId = params.group ? Number(params.group) : undefined;
   const betFilter = parseBetFilterParam(params.bets);
 
-  const [matches, groups] = await Promise.all([
+  const [matches, groups, missingClassic] = await Promise.all([
     listMatchesForPlayers({
       filter: view === "knockout" ? "knockout" : "group",
       groupId: view === "group" ? groupId : undefined,
     }),
     getTournamentGroups(),
+    getMatchesWithoutClassicBet(profile.id),
   ]);
 
   const betStatuses =
@@ -45,13 +48,16 @@ export default async function MatchesPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold tracking-tight">
-          Calendrier
-        </h1>
-        <p className="text-muted-foreground">
-          Matchs à venir et en direct — filtres par poules ou phase finale.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-heading text-2xl font-bold tracking-tight">
+            Calendrier
+          </h1>
+          <p className="text-muted-foreground">
+            Matchs à venir et en direct — filtres par poules ou phase finale.
+          </p>
+        </div>
+        <FillRandomScoresButton missingCount={missingClassic.length} />
       </div>
 
       <Suspense fallback={<PageLoadingSkeleton />}>

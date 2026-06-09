@@ -1,8 +1,12 @@
+import type { MatchResultSelection } from "@/types/database";
+
 export interface UserMatchBetStatus {
   /** Au moins un pari classique (résultat ou score exact) en attente. */
   hasClassicBet: boolean;
   hasMatchResult: boolean;
   hasExactScore: boolean;
+  /** Choix 1N2 en attente (pour surligner le calendrier). */
+  matchResultSelection?: MatchResultSelection | null;
   /** Marchés fun ouverts sur ce match. */
   openFunCount: number;
   /** Marchés fun ouverts sur lesquels le joueur n'a pas encore parié. */

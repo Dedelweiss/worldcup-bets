@@ -134,6 +134,60 @@ export async function placeExactScoreBetAction(
   return { success: true, betId: betId as string };
 }
 
+export type FillRandomClassicScoresResult =
+  | { success: true; placed: number; failed: number }
+  | { success: false; error: string };
+
+/** Score exact aléatoire sur tous les matchs sans pronostic classique. */
+export async function fillRandomClassicScoresAction(): Promise<FillRandomClassicScoresResult> {
+  const profile = await requireAuth();
+  const { getMatchesWithoutClassicBet } = await import(
+    "@/lib/bets/eligible-classic-bets"
+  );
+  const { randomClassicScore } = await import("@/lib/bets/random-score");
+
+  const eligible = await getMatchesWithoutClassicBet(profile.id);
+  if (eligible.length === 0) {
+    return { success: true, placed: 0, failed: 0 };
+  }
+
+  const supabase = await createClient();
+  let placed = 0;
+  let failed = 0;
+
+  for (const match of eligible) {
+    const score = randomClassicScore(match.id);
+    const { error } = await supabase.rpc("place_bet", {
+      p_match_id: match.id,
+      p_bet_type: "exact_score",
+      p_selection: { home: score.home, away: score.away },
+      p_odd: 3,
+      p_stake: 0,
+      p_use_boost: false,
+    });
+
+    if (error) {
+      failed += 1;
+      if (process.env.NODE_ENV === "development") {
+        console.error(
+          `[fillRandomClassicScores] match ${match.id}:`,
+          error.message,
+        );
+      }
+    } else {
+      placed += 1;
+    }
+  }
+
+  revalidatePath("/matches");
+  revalidatePath("/matches/quick");
+  revalidatePath("/dashboard");
+  revalidatePath("/bets");
+  revalidatePath("/leaderboard");
+
+  return { success: true, placed, failed };
+}
+
 export type PlaceTackleResult =
   | { success: true; tackleId: string }
   | { success: false; error: string };
