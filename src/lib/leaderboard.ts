@@ -154,6 +154,7 @@ async function attachPlayerBadges(
     name: string;
     description: string;
     icon_name: string;
+    rarity: string;
     unlocked_at: string;
   }[]) {
     const list = byUser.get(row.user_id) ?? [];
@@ -162,6 +163,7 @@ async function attachPlayerBadges(
       name: row.name,
       description: row.description,
       icon_name: row.icon_name,
+      rarity: row.rarity ?? "common",
       unlocked_at: row.unlocked_at,
     });
     byUser.set(row.user_id, list);

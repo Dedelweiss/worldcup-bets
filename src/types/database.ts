@@ -164,6 +164,7 @@ export interface LeaderboardPlayerBadge {
   name: string;
   description: string;
   icon_name: string;
+  rarity: string;
   unlocked_at: string;
 }
 

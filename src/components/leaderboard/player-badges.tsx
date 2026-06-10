@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { BadgeRarityChip } from "@/components/badges/badge-rarity-chip";
 import {
   Popover,
   PopoverContent,
@@ -11,6 +12,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  getBadgeIconClasses,
+  getBadgeIconInnerClasses,
+  parseBadgeRarity,
+} from "@/lib/badge-rarity";
 import { getBadgeIcon, type PlayerBadge } from "@/lib/badges";
 import { cn } from "@/lib/utils";
 
@@ -19,14 +25,11 @@ interface PlayerBadgesProps {
   className?: string;
 }
 
-const triggerClassName = cn(
-  "inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20 transition-colors",
-  "hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-  "touch-manipulation",
-);
-
 const contentClassName =
   "max-w-[min(220px,calc(100vw-2rem))] text-left text-sm";
+
+const triggerExtras =
+  "cursor-pointer transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-manipulation";
 
 function usePrefersFinePointerHover(): boolean {
   const [prefersHover, setPrefersHover] = useState(false);
@@ -45,8 +48,11 @@ function usePrefersFinePointerHover(): boolean {
 function BadgeDetails({ badge }: { badge: PlayerBadge }) {
   return (
     <>
-      <p className="font-medium">{badge.name}</p>
-      <p className="mt-0.5 text-muted-foreground">{badge.description}</p>
+      <div className="mb-1.5 flex flex-wrap items-center gap-2">
+        <p className="font-medium">{badge.name}</p>
+        <BadgeRarityChip rarity={badge.rarity} />
+      </div>
+      <p className="text-muted-foreground">{badge.description}</p>
     </>
   );
 }
@@ -60,6 +66,10 @@ function PlayerBadgeItem({
 }) {
   const [open, setOpen] = useState(false);
   const Icon = getBadgeIcon(badge.icon_name);
+  const rarity = parseBadgeRarity(badge.rarity);
+  const triggerClassName = cn(getBadgeIconClasses(rarity, "sm"), triggerExtras);
+
+  const icon = <Icon className={getBadgeIconInnerClasses("sm")} aria-hidden />;
 
   if (prefersHover) {
     return (
@@ -69,11 +79,14 @@ function PlayerBadgeItem({
           className={triggerClassName}
           aria-label={badge.name}
         >
-          <Icon className="size-3.5" aria-hidden />
+          {icon}
         </TooltipTrigger>
         <TooltipContent side="top" className={contentClassName}>
-          <p className="font-medium">{badge.name}</p>
-          <p className="mt-0.5 text-background/80">{badge.description}</p>
+          <div className="mb-1 flex flex-wrap items-center gap-2">
+            <p className="font-medium">{badge.name}</p>
+            <BadgeRarityChip rarity={badge.rarity} />
+          </div>
+          <p className="text-background/80">{badge.description}</p>
         </TooltipContent>
       </Tooltip>
     );
@@ -82,7 +95,7 @@ function PlayerBadgeItem({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger className={triggerClassName} aria-label={badge.name}>
-        <Icon className="size-3.5" aria-hidden />
+        {icon}
       </PopoverTrigger>
       <PopoverContent side="top" align="center" className={contentClassName}>
         <BadgeDetails badge={badge} />

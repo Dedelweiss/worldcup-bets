@@ -174,3 +174,21 @@
     color: #fafafa;
   }
 }
+
+@keyframes badge-legendary-shimmer {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgb(251 191 36 / 0.45),
+      0 4px 14px rgb(245 158 11 / 0.22);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgb(252 211 77 / 0.75),
+      0 4px 22px rgb(245 158 11 / 0.42);
+  }
+}
+
+.badge-legendary-shimmer {
+  animation: badge-legendary-shimmer 2.4s ease-in-out infinite;
+}

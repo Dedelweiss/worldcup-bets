@@ -55,11 +55,13 @@ export async function getUserBadgeCollection(
       name: string;
       description: string;
       icon_name: string;
+      rarity: string;
     }) => ({
       id: row.badge_id,
       name: row.name,
       description: row.description,
       icon_name: row.icon_name,
+      rarity: row.rarity ?? "common",
     }),
   );
 
@@ -69,12 +71,14 @@ export async function getUserBadgeCollection(
       name: string;
       description: string;
       icon_name: string;
+      rarity: string;
       unlocked_at: string;
     }) => ({
       id: row.badge_id,
       name: row.name,
       description: row.description,
       icon_name: row.icon_name,
+      rarity: row.rarity ?? "common",
       unlocked_at: row.unlocked_at,
     }),
   );

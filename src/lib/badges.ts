@@ -40,6 +40,7 @@ export interface PlayerBadge {
   name: string;
   description: string;
   icon_name: string;
+  rarity: string;
   unlocked_at: string;
 }
 
@@ -48,6 +49,7 @@ export interface BadgeCatalogEntry {
   name: string;
   description: string;
   icon_name: string;
+  rarity: string;
 }
 
 const ICON_BY_NAME: Record<string, LucideIcon> = {
@@ -99,6 +101,7 @@ export const MOCK_PLAYER_BADGES: PlayerBadge[] = [
     name: "Nostradamus",
     description: "A réussi 3 scores exacts « tout pile ».",
     icon_name: "sparkles",
+    rarity: "epic",
     unlocked_at: new Date().toISOString(),
   },
   {
@@ -106,6 +109,7 @@ export const MOCK_PLAYER_BADGES: PlayerBadge[] = [
     name: "Le Naze",
     description: "A enchaîné 8 paris perdus d'affilée.",
     icon_name: "skull",
+    rarity: "epic",
     unlocked_at: new Date().toISOString(),
   },
   {
@@ -113,27 +117,38 @@ export const MOCK_PLAYER_BADGES: PlayerBadge[] = [
     name: "Le Jackpot",
     description: "A remporté 50 points ou plus sur un seul pari gagnant.",
     icon_name: "trophy",
+    rarity: "epic",
     unlocked_at: new Date().toISOString(),
   },
 ];
 
 export const MOCK_BADGE_CATALOG: BadgeCatalogEntry[] = [
-  ...MOCK_PLAYER_BADGES.map(({ id, name, description, icon_name }) => ({
+  ...MOCK_PLAYER_BADGES.map(({ id, name, description, icon_name, rarity }) => ({
     id,
     name,
     description,
     icon_name,
+    rarity,
   })),
   {
     id: "chambreur",
     name: "Le Chambreur",
     description: "15 messages sur les murs de match.",
     icon_name: "message-circle",
+    rarity: "rare",
   },
   {
     id: "on_fire",
     name: "En Feu",
     description: "Mode On Fire activé.",
     icon_name: "flame",
+    rarity: "rare",
+  },
+  {
+    id: "patron",
+    name: "Le Patron",
+    description: "300 points. Respect.",
+    icon_name: "crown",
+    rarity: "legendary",
   },
 ];

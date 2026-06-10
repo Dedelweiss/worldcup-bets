@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Lock, Sparkles, X } from "lucide-react";
+import { BadgeIcon } from "@/components/badges/badge-icon";
+import { BadgeRarityChip } from "@/components/badges/badge-rarity-chip";
 import { setProfileBadgesAction } from "@/app/(app)/profile/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,10 +17,15 @@ import {
 } from "@/components/ui/card";
 import {
   MAX_PROFILE_BADGES,
-  getBadgeIcon,
   type BadgeCatalogEntry,
   type PlayerBadge,
 } from "@/lib/badges";
+import {
+  BADGE_RARITY_ORDER,
+  getBadgeGridBorderClasses,
+  getBadgeSlotClasses,
+  parseBadgeRarity,
+} from "@/lib/badge-rarity";
 import { cn } from "@/lib/utils";
 
 type FilterMode = "unlocked" | "all" | "locked";
@@ -117,7 +124,12 @@ export function ProfileBadgesSection({
       if (filter === "locked") return !isUnlocked;
       return true;
     });
-    return list.sort((a, b) => a.name.localeCompare(b.name, "fr"));
+    return list.sort((a, b) => {
+      const rarityA = BADGE_RARITY_ORDER.indexOf(parseBadgeRarity(a.rarity));
+      const rarityB = BADGE_RARITY_ORDER.indexOf(parseBadgeRarity(b.rarity));
+      if (rarityA !== rarityB) return rarityA - rarityB;
+      return a.name.localeCompare(b.name, "fr");
+    });
   }, [catalog, filter, unlockedIds]);
 
   const showcaseSlots = Array.from({ length: MAX_PROFILE_BADGES }, (_, i) => {
@@ -208,8 +220,8 @@ export function ProfileBadgesSection({
             const isUnlocked = unlockedIds.has(badge.id);
             const isSelected = selected.includes(badge.id);
             const isFocused = focusedId === badge.id;
-            const Icon = getBadgeIcon(badge.icon_name);
             const slotIndex = selected.indexOf(badge.id);
+            const rarity = parseBadgeRarity(badge.rarity);
 
             return (
               <button
@@ -221,7 +233,10 @@ export function ProfileBadgesSection({
                   "group relative flex aspect-square cursor-pointer flex-col items-center justify-center rounded-2xl border p-2 transition-all duration-200",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/50",
                   isUnlocked
-                    ? "border-white/10 bg-zinc-900/60 hover:-translate-y-0.5 hover:border-lime-400/40 hover:shadow-lg hover:shadow-lime-400/10"
+                    ? cn(
+                        "bg-zinc-900/60 hover:-translate-y-0.5 hover:shadow-lg",
+                        getBadgeGridBorderClasses(rarity),
+                      )
                     : "cursor-default border-white/5 bg-zinc-950/50 opacity-70",
                   isSelected &&
                     "border-lime-400/60 bg-lime-400/10 shadow-md shadow-lime-400/15 ring-1 ring-lime-400/30",
@@ -235,18 +250,12 @@ export function ProfileBadgesSection({
                     <Lock className="size-4 text-zinc-500" aria-hidden />
                   </span>
                 )}
-                <span
-                  className={cn(
-                    "flex size-10 items-center justify-center rounded-full transition-colors",
-                    isUnlocked
-                      ? isSelected
-                        ? "bg-lime-400/20 text-lime-300"
-                        : "bg-white/5 text-zinc-200 group-hover:bg-lime-400/10 group-hover:text-lime-300"
-                      : "bg-muted/30 text-muted-foreground",
-                  )}
-                >
-                  <Icon className="size-5" aria-hidden />
-                </span>
+                <BadgeIcon
+                  iconName={badge.icon_name}
+                  rarity={badge.rarity}
+                  size="md"
+                  className={cn(!isUnlocked && "opacity-50 grayscale")}
+                />
                 <span className="mt-1 line-clamp-2 w-full text-center text-[9px] font-medium leading-tight text-zinc-400 group-hover:text-zinc-200">
                   {badge.name.replace(/^Le |^La |^L'/, "")}
                 </span>
@@ -283,21 +292,22 @@ export function ProfileBadgesSection({
               )}
             >
               <div className="flex items-start gap-3">
-                <span
+                <BadgeIcon
+                  iconName={focusedBadge.icon_name}
+                  rarity={focusedBadge.rarity}
+                  size="lg"
                   className={cn(
-                    "flex size-12 shrink-0 items-center justify-center rounded-2xl",
-                    focusedUnlocked
-                      ? "bg-lime-400/15 text-lime-300"
-                      : "bg-muted/40 text-muted-foreground",
+                    "rounded-2xl",
+                    !focusedUnlocked && "opacity-50 grayscale",
                   )}
-                >
-                  {(() => {
-                    const Icon = getBadgeIcon(focusedBadge.icon_name);
-                    return <Icon className="size-6" aria-hidden />;
-                  })()}
-                </span>
+                />
                 <div className="min-w-0 flex-1">
-                  <p className="font-heading font-semibold">{focusedBadge.name}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-heading font-semibold">
+                      {focusedBadge.name}
+                    </p>
+                    <BadgeRarityChip rarity={focusedBadge.rarity} />
+                  </div>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {focusedBadge.description}
                   </p>
@@ -377,7 +387,7 @@ function ShowcaseSlot({
     );
   }
 
-  const Icon = getBadgeIcon(badge.icon_name);
+  const rarity = parseBadgeRarity(badge.rarity);
 
   return (
     <motion.div
@@ -387,12 +397,12 @@ function ShowcaseSlot({
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: "spring", stiffness: 420, damping: 28 }}
     >
-      <div
-        className={cn(
-          "flex aspect-square w-full flex-col items-center justify-center rounded-xl border border-lime-400/40 bg-gradient-to-b from-lime-400/15 to-zinc-900/80 shadow-lg shadow-lime-400/10 sm:rounded-2xl",
-        )}
-      >
-        <Icon className="size-5 text-lime-300 sm:size-6" aria-hidden />
+      <div className={getBadgeSlotClasses(rarity)}>
+        <BadgeIcon
+          iconName={badge.icon_name}
+          rarity={badge.rarity}
+          size="sm"
+        />
       </div>
       <button
         type="button"
