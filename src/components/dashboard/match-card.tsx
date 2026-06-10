@@ -51,7 +51,7 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
     hasClassicBet && (betStatus?.pendingFunToPlay ?? 0) > 0;
   const { allowed: bettingOpen } = canPlaceBetOnMatch(match);
   const showQuickPick =
-    !hasScore && !isLive && bettingOpen && !betStatus?.hasExactScore;
+    !hasScore && !isLive && bettingOpen && !hasClassicBet;
 
   const ctaLabel = isLive
     ? hasFunToPlay
@@ -68,7 +68,9 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
   const ctaHref =
     hasFunToPlay && hasClassicBet
       ? `/matches/${match.id}#paris-fun`
-      : `/matches/${match.id}`;
+      : hasClassicBet
+        ? `/matches/${match.id}#mon-pronostic`
+        : `/matches/${match.id}`;
 
   return (
     <Card
@@ -141,7 +143,7 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
                 <p className="text-center text-[11px] text-muted-foreground">
                   Score exact déjà posé —{" "}
                   <Link
-                    href={`/matches/${match.id}`}
+                    href={`/matches/${match.id}#mon-pronostic`}
                     className="text-primary underline-offset-2 hover:underline"
                   >
                     voir le détail

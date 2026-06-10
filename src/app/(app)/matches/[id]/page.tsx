@@ -5,6 +5,7 @@ import { MarkFunBetsSeen } from "@/components/fun-bets/mark-fun-bets-seen";
 import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
 import { MatchChat } from "@/components/matches/match-chat";
 import { MatchGazette } from "@/components/matches/match-gazette";
+import { HashAnchorScroller } from "@/components/layout/hash-anchor-scroller";
 import { MatchHeader } from "@/components/matches/match-header";
 import { MatchParticipation } from "@/components/matches/match-participation";
 import { MatchPlayerPronos } from "@/components/matches/match-player-pronos";
@@ -72,6 +73,7 @@ export default async function MatchBetPage({
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
+      <HashAnchorScroller />
       <MarkFunBetsSeen matchId={matchId} />
       {(match.status === "live" || kickoffStarted) && <LiveStatusPoller />}
 

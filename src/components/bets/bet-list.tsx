@@ -104,7 +104,7 @@ function BetCard({ bet }: { bet: BetRow }) {
       )}
     >
     <Link
-      href={`/matches/${bet.match_id}${isLive ? "#paris-fun" : ""}`}
+      href={`/matches/${bet.match_id}${isLive ? "#paris-fun" : "#mon-pronostic"}`}
       className="block cursor-pointer"
     >
       {isLive && (
