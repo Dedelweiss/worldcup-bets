@@ -130,7 +130,7 @@ export function ProfileBadgesSection({
   });
 
   return (
-    <Card className="overflow-hidden border-white/10 bg-zinc-900/40 backdrop-blur-md">
+    <Card className="border-white/10 bg-zinc-900/40 backdrop-blur-md">
       <CardHeader className="border-b border-white/5 pb-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -151,15 +151,15 @@ export function ProfileBadgesSection({
 
       <CardContent className="space-y-5 pt-5">
         {/* Vitrine — emplacements type loadout */}
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-zinc-900/80 to-zinc-950/90 p-4 shadow-inner">
+        <div className="relative rounded-2xl border border-white/10 bg-gradient-to-b from-zinc-900/80 to-zinc-950/90 p-3 shadow-inner sm:p-4">
           <div
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(163,230,53,0.08),transparent_55%)]"
+            className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl bg-[radial-gradient(ellipse_at_top,rgba(163,230,53,0.08),transparent_55%)]"
             aria-hidden
           />
           <p className="relative mb-3 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
             Affichage public
           </p>
-          <div className="relative flex justify-center gap-2 sm:gap-3">
+          <div className="relative grid grid-cols-5 gap-1.5 pt-0.5 sm:gap-3">
             {showcaseSlots.map((badge, index) => (
               <ShowcaseSlot
                 key={`slot-${index}`}
@@ -251,7 +251,7 @@ export function ProfileBadgesSection({
                   {badge.name.replace(/^Le |^La |^L'/, "")}
                 </span>
                 {isSelected && slotIndex >= 0 && (
-                  <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-lime-400 text-[10px] font-bold text-black shadow-md">
+                  <span className="absolute right-0 top-0 flex size-4 translate-x-1/4 -translate-y-1/4 items-center justify-center rounded-full bg-lime-400 text-[9px] font-bold text-black shadow-md sm:size-5 sm:text-[10px]">
                     {slotIndex + 1}
                   </span>
                 )}
@@ -367,10 +367,12 @@ function ShowcaseSlot({
   if (!badge) {
     return (
       <div
-        className="flex size-[4.25rem] shrink-0 flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-black/20 sm:size-[4.75rem]"
+        className="flex aspect-square w-full min-w-0 flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-black/20 sm:rounded-2xl"
         aria-label={`Emplacement ${index + 1} vide`}
       >
-        <span className="text-lg font-light text-zinc-600">{index + 1}</span>
+        <span className="text-sm font-light text-zinc-600 sm:text-lg">
+          {index + 1}
+        </span>
       </div>
     );
   }
@@ -380,26 +382,26 @@ function ShowcaseSlot({
   return (
     <motion.div
       layout
-      className="group relative shrink-0"
+      className="group relative w-full min-w-0"
       initial={{ scale: 0.85, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: "spring", stiffness: 420, damping: 28 }}
     >
       <div
         className={cn(
-          "flex size-[4.25rem] flex-col items-center justify-center rounded-2xl border border-lime-400/40 bg-gradient-to-b from-lime-400/15 to-zinc-900/80 shadow-lg shadow-lime-400/10 sm:size-[4.75rem]",
+          "flex aspect-square w-full flex-col items-center justify-center rounded-xl border border-lime-400/40 bg-gradient-to-b from-lime-400/15 to-zinc-900/80 shadow-lg shadow-lime-400/10 sm:rounded-2xl",
         )}
       >
-        <Icon className="size-6 text-lime-300" aria-hidden />
+        <Icon className="size-5 text-lime-300 sm:size-6" aria-hidden />
       </div>
       <button
         type="button"
         disabled={disabled}
         onClick={onRemove}
-        className="absolute -right-1.5 -top-1.5 flex size-5 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-zinc-900 text-zinc-300 opacity-0 shadow-md transition-opacity group-hover:opacity-100 focus:opacity-100"
+        className="absolute right-0 top-0 flex size-4 translate-x-1/4 -translate-y-1/4 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-zinc-900 text-zinc-300 opacity-100 shadow-md sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
         aria-label={`Retirer ${badge.name} de la vitrine`}
       >
-        <X className="size-3" />
+        <X className="size-2.5 sm:size-3" />
       </button>
       <span className="sr-only">{badge.name}</span>
     </motion.div>
