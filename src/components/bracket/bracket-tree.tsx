@@ -2,10 +2,12 @@ import { BracketSlotCard } from "@/components/bracket/bracket-slot-card";
 import { TbdTeamBadge } from "@/components/shared/tbd-team-badge";
 import { cn } from "@/lib/utils";
 import { STAGE_LABELS } from "@/lib/tournament/constants";
+import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
 import type { BracketSlotWithMatch, MatchStage } from "@/types/database";
 
 interface BracketTreeProps {
   slots: BracketSlotWithMatch[];
+  betStatuses?: Record<number, UserMatchBetStatus>;
   isAdmin?: boolean;
 }
 
@@ -24,10 +26,12 @@ function splitHalf(items: BracketSlotWithMatch[]) {
 function BracketPairColumn({
   slots,
   side,
+  betStatuses,
   isAdmin,
 }: {
   slots: BracketSlotWithMatch[];
   side: "left" | "right";
+  betStatuses: Record<number, UserMatchBetStatus>;
   isAdmin?: boolean;
 }) {
   const pairs: BracketSlotWithMatch[][] = [];
@@ -49,6 +53,9 @@ function BracketPairColumn({
             <BracketSlotCard
               key={slot.id}
               slot={slot}
+              betStatus={
+                slot.match ? betStatuses[slot.match.id] : undefined
+              }
               compact
               isAdmin={isAdmin}
             />
@@ -109,11 +116,13 @@ function BracketConnector({
 function SingleSlotColumn({
   slot,
   side,
+  betStatuses,
   isAdmin,
   highlight,
 }: {
   slot: BracketSlotWithMatch | undefined;
   side: "left" | "right";
+  betStatuses: Record<number, UserMatchBetStatus>;
   isAdmin?: boolean;
   highlight?: boolean;
 }) {
@@ -127,6 +136,7 @@ function SingleSlotColumn({
     >
       <BracketSlotCard
         slot={slot}
+        betStatus={slot.match ? betStatuses[slot.match.id] : undefined}
         compact
         isAdmin={isAdmin}
         highlight={highlight}
@@ -136,7 +146,11 @@ function SingleSlotColumn({
   );
 }
 
-export function BracketTree({ slots, isAdmin }: BracketTreeProps) {
+export function BracketTree({
+  slots,
+  betStatuses = {},
+  isAdmin,
+}: BracketTreeProps) {
   const r16 = byStage(slots, "r16");
   const r32 = byStage(slots, "r32");
   const qf = byStage(slots, "qf");
@@ -172,12 +186,22 @@ export function BracketTree({ slots, isAdmin }: BracketTreeProps) {
           {/* Gauche */}
           <div className="flex flex-col">
             <RoundLabel label={firstLabel} />
-            <BracketPairColumn slots={r1.left} side="left" isAdmin={isAdmin} />
+            <BracketPairColumn
+              slots={r1.left}
+              side="left"
+              betStatuses={betStatuses}
+              isAdmin={isAdmin}
+            />
           </div>
 
           <div className="flex flex-col border-l border-primary/10">
             <RoundLabel label={STAGE_LABELS.qf} />
-            <BracketPairColumn slots={qfHalf.left} side="left" isAdmin={isAdmin} />
+            <BracketPairColumn
+              slots={qfHalf.left}
+              side="left"
+              betStatuses={betStatuses}
+              isAdmin={isAdmin}
+            />
           </div>
 
           <div className="flex flex-col border-l border-primary/10">
@@ -185,6 +209,7 @@ export function BracketTree({ slots, isAdmin }: BracketTreeProps) {
             <SingleSlotColumn
               slot={sfLeft}
               side="left"
+              betStatuses={betStatuses}
               isAdmin={isAdmin}
             />
           </div>
@@ -196,6 +221,11 @@ export function BracketTree({ slots, isAdmin }: BracketTreeProps) {
               {finalSlot ? (
                 <BracketSlotCard
                   slot={finalSlot}
+                  betStatus={
+                    finalSlot.match
+                      ? betStatuses[finalSlot.match.id]
+                      : undefined
+                  }
                   isAdmin={isAdmin}
                   highlight
                 />
@@ -217,7 +247,16 @@ export function BracketTree({ slots, isAdmin }: BracketTreeProps) {
                 <p className="mb-2 text-center text-[10px] font-medium uppercase text-muted-foreground">
                   {STAGE_LABELS.third_place}
                 </p>
-                <BracketSlotCard slot={thirdSlot} compact isAdmin={isAdmin} />
+                <BracketSlotCard
+                  slot={thirdSlot}
+                  betStatus={
+                    thirdSlot.match
+                      ? betStatuses[thirdSlot.match.id]
+                      : undefined
+                  }
+                  compact
+                  isAdmin={isAdmin}
+                />
               </div>
             )}
           </div>
@@ -228,18 +267,29 @@ export function BracketTree({ slots, isAdmin }: BracketTreeProps) {
             <SingleSlotColumn
               slot={sfRight}
               side="right"
+              betStatuses={betStatuses}
               isAdmin={isAdmin}
             />
           </div>
 
           <div className="flex flex-col border-r border-primary/10">
             <RoundLabel label={STAGE_LABELS.qf} />
-            <BracketPairColumn slots={qfHalf.right} side="right" isAdmin={isAdmin} />
+            <BracketPairColumn
+              slots={qfHalf.right}
+              side="right"
+              betStatuses={betStatuses}
+              isAdmin={isAdmin}
+            />
           </div>
 
           <div className="flex flex-col">
             <RoundLabel label={firstLabel} />
-            <BracketPairColumn slots={r1.right} side="right" isAdmin={isAdmin} />
+            <BracketPairColumn
+              slots={r1.right}
+              side="right"
+              betStatuses={betStatuses}
+              isAdmin={isAdmin}
+            />
           </div>
         </div>
       </div>

@@ -73,6 +73,8 @@ export interface Profile {
   /** Actif après 3 victoires classiques d'affilée. */
   on_fire?: boolean;
   favorite_team_id?: number | null;
+  /** Badges choisis pour l'affichage public (max 5). */
+  profile_badge_ids?: string[];
   role?: UserRole;
   /** Joueur système (pronostiqueur IA). */
   is_ai?: boolean;

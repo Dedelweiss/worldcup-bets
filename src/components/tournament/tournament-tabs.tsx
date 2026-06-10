@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BracketView } from "@/components/bracket/bracket-view";
 import { GroupStandingsView } from "@/components/tournament/group-standings";
 import { cn } from "@/lib/utils";
+import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
 import type { BracketSlotWithMatch } from "@/types/database";
 import type { GroupStandings } from "@/lib/tournament/standings";
 
@@ -12,12 +13,14 @@ type Tab = "groups" | "knockout";
 interface TournamentTabsProps {
   standings: GroupStandings[];
   slots: BracketSlotWithMatch[];
+  betStatuses?: Record<number, UserMatchBetStatus>;
   isAdmin?: boolean;
 }
 
 export function TournamentTabs({
   standings,
   slots,
+  betStatuses = {},
   isAdmin,
 }: TournamentTabsProps) {
   const [tab, setTab] = useState<Tab>("groups");
@@ -50,7 +53,11 @@ export function TournamentTabs({
       {tab === "groups" ? (
         <GroupStandingsView standings={standings} />
       ) : (
-        <BracketView slots={slots} isAdmin={isAdmin} />
+        <BracketView
+          slots={slots}
+          betStatuses={betStatuses}
+          isAdmin={isAdmin}
+        />
       )}
     </div>
   );

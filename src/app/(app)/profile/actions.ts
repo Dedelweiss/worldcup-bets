@@ -116,6 +116,45 @@ function revalidateAvatarPaths() {
   revalidatePath("/matches", "layout");
 }
 
+export type SetProfileBadgesResult =
+  | { success: true; badgeIds: string[] }
+  | { success: false; error: string };
+
+function mapProfileBadgesError(message: string): string {
+  if (message.includes("Could not find the function")) {
+    return "Fonction badges absente. Exécutez la migration 071 dans Supabase.";
+  }
+  if (message.includes("Maximum 5")) {
+    return "Tu ne peux afficher que 5 badges maximum.";
+  }
+  if (message.includes("non débloqué")) {
+    return "Un des badges sélectionnés n'est pas débloqué.";
+  }
+  return message;
+}
+
+export async function setProfileBadgesAction(
+  badgeIds: string[],
+): Promise<SetProfileBadgesResult> {
+  await requireAuth();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("set_profile_badges", {
+    p_badge_ids: badgeIds,
+  });
+
+  if (error) {
+    return { success: false, error: mapProfileBadgesError(error.message) };
+  }
+
+  revalidateAvatarPaths();
+
+  return {
+    success: true,
+    badgeIds: Array.isArray(data) ? data.map(String) : [],
+  };
+}
+
 export async function uploadCustomAvatarAction(
   formData: FormData,
 ): Promise<UploadCustomAvatarResult> {

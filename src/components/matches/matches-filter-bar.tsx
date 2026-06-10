@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { LayoutGroup, motion } from "framer-motion";
 import {
   GitBranch,
   LayoutGrid,
@@ -76,39 +76,41 @@ export function MatchesFilterBar({
   return (
     <div className="space-y-4 rounded-2xl border border-white/10 bg-zinc-900/50 p-4 shadow-xl shadow-black/20 backdrop-blur-md">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div
-          className="relative flex w-full rounded-xl border border-white/10 bg-zinc-950/80 p-1 sm:max-w-xs"
-          role="tablist"
-          aria-label="Phase du tournoi"
-        >
-          {VIEW_TABS.map((tab) => {
-            const active = view === tab.id;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => onViewChange(tab.id)}
-                className={cn(
-                  "relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  active ? "text-black" : "text-zinc-400 hover:text-zinc-200",
-                )}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="calendar-view-tab"
-                    className="absolute inset-0 rounded-lg bg-lime-400 shadow-lg shadow-lime-400/30"
-                    transition={{ type: "spring", stiffness: 420, damping: 32 }}
-                  />
-                )}
-                <Icon className="relative z-10 size-4 shrink-0" aria-hidden />
-                <span className="relative z-10">{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        <LayoutGroup id="calendar-view-tabs">
+          <div
+            className="relative flex w-full rounded-xl border border-white/10 bg-zinc-950/80 p-1 sm:max-w-xs"
+            role="tablist"
+            aria-label="Phase du tournoi"
+          >
+            {VIEW_TABS.map((tab) => {
+              const active = view === tab.id;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => onViewChange(tab.id)}
+                  className={cn(
+                    "relative z-0 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    active ? "text-black" : "text-zinc-400 hover:text-zinc-200",
+                  )}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="calendar-view-tab"
+                      className="pointer-events-none absolute inset-0 rounded-lg bg-lime-400 shadow-lg shadow-lime-400/30"
+                      transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                    />
+                  )}
+                  <Icon className="relative z-10 size-4 shrink-0" aria-hidden />
+                  <span className="relative z-10">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </LayoutGroup>
 
         <div className="flex flex-wrap gap-2">
           <Link

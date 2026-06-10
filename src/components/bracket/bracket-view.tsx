@@ -1,6 +1,7 @@
 import { BracketSlotCard } from "@/components/bracket/bracket-slot-card";
 import { BracketTree } from "@/components/bracket/bracket-tree";
 import { STAGE_LABELS } from "@/lib/tournament/constants";
+import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
 import type { BracketSlotWithMatch, MatchStage } from "@/types/database";
 
 const STAGE_ORDER: MatchStage[] = [
@@ -14,10 +15,11 @@ const STAGE_ORDER: MatchStage[] = [
 
 interface BracketViewProps {
   slots: BracketSlotWithMatch[];
+  betStatuses?: Record<number, UserMatchBetStatus>;
   isAdmin?: boolean;
 }
 
-export function BracketView({ slots, isAdmin }: BracketViewProps) {
+export function BracketView({ slots, betStatuses = {}, isAdmin }: BracketViewProps) {
   if (slots.length === 0) {
     return (
       <p className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
@@ -36,13 +38,13 @@ export function BracketView({ slots, isAdmin }: BracketViewProps) {
       {/* Arbre type compétition (grand écran) */}
       {hasKnockoutTree && (
         <div className="hidden lg:block">
-          <BracketTree slots={slots} isAdmin={isAdmin} />
+          <BracketTree slots={slots} betStatuses={betStatuses} isAdmin={isAdmin} />
         </div>
       )}
 
       {/* Liste par tour (mobile / tablette) */}
       <div className={hasKnockoutTree ? "lg:hidden" : ""}>
-        <BracketMobileList slots={slots} isAdmin={isAdmin} />
+        <BracketMobileList slots={slots} betStatuses={betStatuses} isAdmin={isAdmin} />
       </div>
     </>
   );
@@ -50,9 +52,11 @@ export function BracketView({ slots, isAdmin }: BracketViewProps) {
 
 function BracketMobileList({
   slots,
+  betStatuses,
   isAdmin,
 }: {
   slots: BracketSlotWithMatch[];
+  betStatuses: Record<number, UserMatchBetStatus>;
   isAdmin?: boolean;
 }) {
   const byStage = STAGE_ORDER.map((stage) => ({
@@ -73,7 +77,14 @@ function BracketMobileList({
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {items.map((slot) => (
-              <BracketSlotCard key={slot.id} slot={slot} isAdmin={isAdmin} />
+              <BracketSlotCard
+                key={slot.id}
+                slot={slot}
+                betStatus={
+                  slot.match ? betStatuses[slot.match.id] : undefined
+                }
+                isAdmin={isAdmin}
+              />
             ))}
           </div>
         </section>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PointsEvolutionChart } from "@/components/profile/points-evolution-chart";
 import { AvatarPicker } from "@/components/profile/avatar-picker";
 import { PronostiqueurCard } from "@/components/profile/pronostiqueur-card";
+import { ProfileBadgesSection } from "@/components/profile/profile-badges-section";
 import { UsernameForm } from "@/components/profile/username-form";
 import { getUserBets } from "@/lib/bets";
 import { hasSupabaseConfig, requireAuth } from "@/lib/auth-server";
@@ -13,22 +14,27 @@ import {
   getPointsHistory,
 } from "@/lib/profile/points-history";
 import { getPlayerLabel } from "@/lib/profile/player-label";
+import { getUserBadgeCollection } from "@/lib/profile/user-badges";
 
 export const metadata = { title: "Mon profil · WC2026 Pool" };
 
 export default async function ProfilePage() {
   const profile = await requireAuth();
 
-  const [history, userBets, favoriteTeam, allMatches] = await Promise.all([
-    hasSupabaseConfig
-      ? getPointsHistory(profile.id, profile.points)
-      : Promise.resolve(getMockPointsHistory(profile.points)),
-    hasSupabaseConfig ? getUserBets(profile.id) : Promise.resolve([]),
-    hasSupabaseConfig
-      ? getProfileFavoriteTeam(profile.id)
-      : Promise.resolve(null),
-    hasSupabaseConfig ? getAllMatchesForStats() : Promise.resolve([]),
-  ]);
+  const [history, userBets, favoriteTeam, allMatches, badgeCollection] =
+    await Promise.all([
+      hasSupabaseConfig
+        ? getPointsHistory(profile.id, profile.points)
+        : Promise.resolve(getMockPointsHistory(profile.points)),
+      hasSupabaseConfig ? getUserBets(profile.id) : Promise.resolve([]),
+      hasSupabaseConfig
+        ? getProfileFavoriteTeam(profile.id)
+        : Promise.resolve(null),
+      hasSupabaseConfig ? getAllMatchesForStats() : Promise.resolve([]),
+      hasSupabaseConfig
+        ? getUserBadgeCollection(profile.id)
+        : Promise.resolve(null),
+    ]);
 
   const futStats = calculateFUTStats(userBets, allMatches);
   const playerName = getPlayerLabel(profile);
@@ -61,6 +67,14 @@ export default async function ProfilePage() {
       </section>
 
       <PointsEvolutionChart points={history} currentPoints={profile.points} />
+
+      {badgeCollection && (
+        <ProfileBadgesSection
+          catalog={badgeCollection.catalog}
+          unlocked={badgeCollection.unlocked}
+          selectedIds={badgeCollection.selectedIds}
+        />
+      )}
 
       <AvatarPicker
         currentAvatarId={profile.avatar_id ?? null}

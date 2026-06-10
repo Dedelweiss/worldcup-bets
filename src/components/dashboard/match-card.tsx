@@ -51,7 +51,7 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
     hasClassicBet && (betStatus?.pendingFunToPlay ?? 0) > 0;
   const { allowed: bettingOpen } = canPlaceBetOnMatch(match);
   const showQuickPick =
-    !hasScore && !isLive && bettingOpen && !hasClassicBet;
+    !hasScore && !isLive && bettingOpen && !betStatus?.hasExactScore;
 
   const ctaLabel = isLive
     ? hasFunToPlay
