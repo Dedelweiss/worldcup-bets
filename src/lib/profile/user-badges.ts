@@ -22,7 +22,8 @@ async function getProfileBadgeIds(userId: string): Promise<string[]> {
 
   if (error || !data?.profile_badge_ids) return [];
   return data.profile_badge_ids.filter(
-    (id): id is string => typeof id === "string" && id.length > 0,
+    (id: unknown): id is string =>
+      typeof id === "string" && id.length > 0,
   );
 }
 

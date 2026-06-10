@@ -40,7 +40,7 @@ export interface PlayerBadge {
   name: string;
   description: string;
   icon_name: string;
-  unlocked_at?: string;
+  unlocked_at: string;
 }
 
 export interface BadgeCatalogEntry {
