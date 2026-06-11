@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { ExportLeaderboardButton } from "@/components/leaderboard/export-leaderboard-button";
 import { LeagueInvitePanel } from "@/components/leagues/league-invite-panel";
 import { LeaderboardFilters } from "@/components/leaderboard/leaderboard-filters";
 import { LeaderboardFutCardProvider } from "@/components/leaderboard/leaderboard-fut-card-context";
@@ -28,16 +29,31 @@ export function LeaderboardExplorer({
   sort,
   leagueName,
 }: LeaderboardExplorerProps) {
+  const showTable = scope !== "league" || Boolean(leagueId);
+
   return (
     <div className="space-y-6">
-      <Suspense fallback={<div className="h-28 animate-pulse rounded-xl bg-muted/40" />}>
-        <LeaderboardFilters
-          leagues={leagues}
-          scope={scope}
-          leagueId={leagueId}
-          sort={sort}
-        />
-      </Suspense>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <Suspense
+          fallback={<div className="h-28 flex-1 animate-pulse rounded-xl bg-muted/40" />}
+        >
+          <LeaderboardFilters
+            leagues={leagues}
+            scope={scope}
+            leagueId={leagueId}
+            sort={sort}
+          />
+        </Suspense>
+        {showTable && players.length > 0 && (
+          <ExportLeaderboardButton
+            players={players}
+            scope={scope}
+            sort={sort}
+            leagueName={leagueName}
+            className="w-full shrink-0 sm:w-auto"
+          />
+        )}
+      </div>
 
       {scope === "league" && leagues.length === 0 && (
         <div className="space-y-4">
@@ -71,7 +87,7 @@ export function LeaderboardExplorer({
         </p>
       )}
 
-      {(scope !== "league" || leagueId) && (
+      {showTable && (
         <p className="text-sm text-muted-foreground">
           {scope === "general"
             ? "Tous les joueurs"

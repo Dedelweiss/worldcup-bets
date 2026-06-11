@@ -202,20 +202,83 @@ async function inlineImages(node: HTMLElement): Promise<RestoreFn> {
   };
 }
 
+function resolveCaptureTarget(node: HTMLElement): HTMLElement {
+  if (node.dataset.leaderboardExportCard === "true") return node;
+  const card = node.querySelector<HTMLElement>("[data-leaderboard-export-card]");
+  if (card) return card;
+  if (node.childElementCount === 1 && node.firstElementChild instanceof HTMLElement) {
+    return node.firstElementChild;
+  }
+  return node;
+}
+
+function isNodeCapturable(node: HTMLElement): boolean {
+  const style = getComputedStyle(node);
+  if (parseFloat(style.opacity) < 0.99) return false;
+  if (style.visibility === "hidden" || style.display === "none") return false;
+
+  const rect = node.getBoundingClientRect();
+  if (rect.width < 1 || rect.height < 1) return false;
+
+  return true;
+}
+
+/** Clone visible dans le body — Chrome/Arc ne peint pas les nœuds hors écran / opacity 0. */
+function mountCloneForCapture(source: HTMLElement): {
+  node: HTMLElement;
+  cleanup: RestoreFn;
+} {
+  const clone = source.cloneNode(true) as HTMLElement;
+  const width = Math.max(source.offsetWidth, source.scrollWidth, 300);
+  const shell = document.createElement("div");
+  shell.setAttribute("data-export-shell", "true");
+  shell.style.cssText = [
+    "position:fixed",
+    "left:0",
+    "top:0",
+    "margin:0",
+    "padding:0",
+    "opacity:1",
+    "visibility:visible",
+    "pointer-events:none",
+    "z-index:2147483647",
+    `width:${width}px`,
+  ].join(";");
+
+  clone.style.opacity = "1";
+  clone.style.visibility = "visible";
+  clone.classList.remove("opacity-0");
+  shell.appendChild(clone);
+  document.body.appendChild(shell);
+
+  return {
+    node: clone,
+    cleanup: () => shell.remove(),
+  };
+}
+
 export async function captureFutCardImage(node: HTMLElement): Promise<Blob> {
-  node.setAttribute("data-exporting", "true");
-  const restorePatches = applyExportPatches(node);
+  const source = resolveCaptureTarget(node);
+  const mounted = isNodeCapturable(source)
+    ? { node: source, cleanup: () => {} }
+    : mountCloneForCapture(source);
+
+  const { node: captureNode, cleanup } = mounted;
+
+  captureNode.setAttribute("data-exporting", "true");
+  const restorePatches = applyExportPatches(captureNode);
   let restoreImages: RestoreFn | null = null;
 
   try {
-    restoreImages = await inlineImages(node);
-    await waitNextFrame(3);
+    restoreImages = await inlineImages(captureNode);
+    await waitNextFrame(4);
 
-    const blob = await toBlob(node, {
+    const blob = await toBlob(captureNode, {
       pixelRatio: 2,
       cacheBust: true,
-      skipFonts: false,
+      skipFonts: true,
       includeQueryParams: true,
+      backgroundColor: "#09090b",
       filter: (element) =>
         !(element instanceof Element && element.hasAttribute("data-export-ignore")),
     });
@@ -228,7 +291,8 @@ export async function captureFutCardImage(node: HTMLElement): Promise<Blob> {
   } finally {
     restoreImages?.();
     restorePatches();
-    node.removeAttribute("data-exporting");
+    captureNode.removeAttribute("data-exporting");
+    cleanup();
   }
 }
 
