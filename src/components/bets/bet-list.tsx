@@ -306,17 +306,45 @@ function renderBetItem(bet: BetRow) {
 }
 
 type BetsTab = "pending" | "settled";
+type MatchLiveFilter = "all" | "live" | "upcoming";
 
-function EmptyTabMessage({ tab }: { tab: BetsTab }) {
+function isBetOnLiveMatch(bet: BetRow): boolean {
+  return bet.match?.status === "live";
+}
+
+function matchesLiveFilter(bet: BetRow, filter: MatchLiveFilter): boolean {
+  if (filter === "all") return true;
+  if (filter === "live") return isBetOnLiveMatch(bet);
+  return !isBetOnLiveMatch(bet);
+}
+
+function EmptyTabMessage({
+  tab,
+  liveFilter,
+}: {
+  tab: BetsTab;
+  liveFilter: MatchLiveFilter;
+}) {
   return (
     <p className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
       {tab === "pending" ? (
-        <>
-          Aucun pari en cours.{" "}
-          <Link href="/dashboard" className="text-primary hover:underline">
-            Parier sur un match
-          </Link>
-        </>
+        liveFilter === "live" ? (
+          "Aucun pari sur un match en direct pour le moment."
+        ) : liveFilter === "upcoming" ? (
+          <>
+            Aucun pari sur un match programmé.{" "}
+            <Link href="/dashboard" className="text-primary hover:underline">
+              Parier sur un match
+            </Link>
+          </>
+        ) : (
+          <>
+            Aucun pari en cours.{" "}
+            <Link href="/dashboard" className="text-primary hover:underline">
+              Parier sur un match
+            </Link>
+          </>
+        )
       ) : (
         "Aucun pari terminé pour le moment."
       )}
@@ -324,9 +352,19 @@ function EmptyTabMessage({ tab }: { tab: BetsTab }) {
   );
 }
 
-function BetListContent({ bets }: { bets: BetRow[] }) {
-  const liveBets = bets.filter((b) => b.match?.status === "live");
-  const otherBets = bets.filter((b) => b.match?.status !== "live");
+function BetListContent({
+  bets,
+  liveFilter,
+}: {
+  bets: BetRow[];
+  liveFilter: MatchLiveFilter;
+}) {
+  const liveBets = bets.filter(isBetOnLiveMatch);
+  const otherBets = bets.filter((b) => !isBetOnLiveMatch(b));
+
+  if (liveFilter !== "all") {
+    return <div className="space-y-3">{bets.map(renderBetItem)}</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -364,6 +402,7 @@ interface BetListProps {
 
 export function BetList({ bets }: BetListProps) {
   const [tab, setTab] = useState<BetsTab>("pending");
+  const [liveFilter, setLiveFilter] = useState<MatchLiveFilter>("all");
 
   const pendingBets = useMemo(
     () => bets.filter((b) => b.status === "pending"),
@@ -374,6 +413,15 @@ export function BetList({ bets }: BetListProps) {
     [bets],
   );
 
+  const liveMatchCounts = useMemo(
+    () => ({
+      all: pendingBets.length,
+      live: pendingBets.filter(isBetOnLiveMatch).length,
+      upcoming: pendingBets.filter((b) => !isBetOnLiveMatch(b)).length,
+    }),
+    [pendingBets],
+  );
+
   const counts = useMemo(
     () => ({
       pending: pendingBets.length,
@@ -381,6 +429,12 @@ export function BetList({ bets }: BetListProps) {
     }),
     [pendingBets.length, settledBets.length],
   );
+
+  const visibleBets = useMemo(() => {
+    const tabBets = tab === "pending" ? pendingBets : settledBets;
+    if (tab !== "pending") return tabBets;
+    return tabBets.filter((b) => matchesLiveFilter(b, liveFilter));
+  }, [tab, pendingBets, settledBets, liveFilter]);
 
   if (bets.length === 0) {
     return (
@@ -392,8 +446,6 @@ export function BetList({ bets }: BetListProps) {
       </p>
     );
   }
-
-  const visibleBets = tab === "pending" ? pendingBets : settledBets;
 
   return (
     <div className="space-y-4">
@@ -413,7 +465,10 @@ export function BetList({ bets }: BetListProps) {
             type="button"
             role="tab"
             aria-selected={tab === id}
-            onClick={() => setTab(id)}
+            onClick={() => {
+              setTab(id);
+              if (id === "settled") setLiveFilter("all");
+            }}
             className={cn(
               "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
               tab === id
@@ -436,10 +491,54 @@ export function BetList({ bets }: BetListProps) {
         ))}
       </div>
 
+      {tab === "pending" && (
+        <div
+          className="flex flex-wrap gap-2"
+          role="group"
+          aria-label="Filtrer par statut du match"
+        >
+          {(
+            [
+              ["all", "Tous", liveMatchCounts.all],
+              ["live", "Match en direct", liveMatchCounts.live],
+              ["upcoming", "Programmés", liveMatchCounts.upcoming],
+            ] as const
+          ).map(([id, label, count]) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={liveFilter === id}
+              onClick={() => setLiveFilter(id)}
+              className={cn(
+                "flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                liveFilter === id
+                  ? id === "live"
+                    ? "border-lime-400/50 bg-lime-400/15 text-lime-300"
+                    : "border-white/20 bg-white/10 text-foreground"
+                  : "border-white/10 bg-transparent text-muted-foreground hover:border-white/20 hover:text-foreground",
+              )}
+            >
+              {id === "live" && (
+                <Radio className="size-3 shrink-0" aria-hidden />
+              )}
+              <span>{label}</span>
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-px text-[10px] tabular-nums",
+                  liveFilter === id ? "bg-black/20" : "bg-white/10",
+                )}
+              >
+                {count}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {visibleBets.length === 0 ? (
-        <EmptyTabMessage tab={tab} />
+        <EmptyTabMessage tab={tab} liveFilter={liveFilter} />
       ) : (
-        <BetListContent bets={visibleBets} />
+        <BetListContent bets={visibleBets} liveFilter={liveFilter} />
       )}
     </div>
   );
