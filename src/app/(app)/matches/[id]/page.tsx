@@ -64,7 +64,9 @@ export default async function MatchBetPage({
   const [funMarkets, comments, pendingBets, funBetsByMarket, participation, tackleState, preMatchInsights, revealedBets] =
     await Promise.all([
       getFunMarketsByMatch(matchId),
-      kickoffStarted || canReveal ? getMatchComments(matchId) : Promise.resolve([]),
+      !isFinished && (kickoffStarted || canReveal)
+        ? getMatchComments(matchId)
+        : Promise.resolve([]),
       getMatchUserPendingBets(matchId, profile.id),
       getMatchUserFunBets(matchId, profile.id),
       getMatchBettingParticipation(matchId),
@@ -169,7 +171,7 @@ export default async function MatchBetPage({
         </section>
       )}
 
-      {(kickoffStarted || canReveal) && (
+      {!isFinished && (kickoffStarted || canReveal) && (
         <section id="chambrages" className="scroll-mt-20">
           <MatchChat
             matchId={matchId}
