@@ -11,7 +11,9 @@ export function goldenMatchCardClass(isGolden: boolean, isLive = false): string 
   return cn(
     isGolden &&
       "border-fuchsia-500/80 ring-2 ring-fuchsia-500/50 shadow-[0_0_20px_-4px] shadow-fuchsia-500/30 animate-golden-border md:hover:border-fuchsia-400/70",
-    isLive && !isGolden && "border-primary ring-2 ring-primary/30 animate-pulse",
+    isLive &&
+      !isGolden &&
+      "border-red-500/40 shadow-[0_0_24px_-8px] shadow-red-500/30 ring-1 ring-red-500/25",
     isLive &&
       isGolden &&
       "border-fuchsia-400 ring-fuchsia-400/60 shadow-fuchsia-500/40",

@@ -15,7 +15,7 @@ function TeamBadge({ team }: { team: Team }) {
         logoUrl={team.logo_url}
         teamId={team.id}
         size={40}
-        className="border-2 border-primary/50 shadow-sm"
+        className="border-2 border-white/15 shadow-sm"
       />
       <span className="max-w-[72px] truncate text-[10px] font-medium text-muted-foreground">
         {tbdTeamDisplayName(team)}
@@ -40,17 +40,14 @@ export function LiveMatchAnimation({
 }: LiveMatchAnimationProps) {
   return (
     <div
-      className={cn(
-        "flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-3",
-        className,
-      )}
+      className={cn("flex w-full items-center gap-2", className)}
       aria-label="Match en direct, en attente du premier but"
     >
       <TeamBadge team={homeTeam} />
 
       <div className="relative h-14 min-w-[100px] flex-1">
         <div
-          className="absolute inset-x-0 bottom-3 h-px bg-primary/25"
+          className="absolute inset-x-0 bottom-3 h-px bg-white/10"
           aria-hidden
         />
 

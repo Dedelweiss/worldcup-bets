@@ -23,7 +23,6 @@ interface MatchScoreInlineProps {
   awayTeam: Team;
   homeScore: number | null;
   awayScore: number | null;
-  isLive?: boolean;
   size?: "sm" | "lg";
   className?: string;
 }
@@ -34,7 +33,6 @@ export function MatchScoreInline({
   awayTeam,
   homeScore,
   awayScore,
-  isLive = false,
   size = "sm",
   className,
 }: MatchScoreInlineProps) {
@@ -64,9 +62,6 @@ export function MatchScoreInline({
             <span className="mx-0.5 font-normal text-muted-foreground">-</span>
             {awayScore}
           </p>
-          {isLive && size === "sm" && (
-            <p className="mt-0.5 text-[10px] font-medium text-primary">En cours</p>
-          )}
         </div>
         <TeamLogo team={awayTeam} />
       </div>

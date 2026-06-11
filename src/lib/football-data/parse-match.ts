@@ -104,13 +104,124 @@ export function parseFootballDataOdds(
   };
 }
 
+export type LiveClockPhase =
+  | "first_half"
+  | "half_time"
+  | "second_half"
+  | "extra_time";
+
+export type LiveClockParts = {
+  minute: number;
+  injuryTime: number | null;
+  phase: LiveClockPhase;
+  phaseLabel: string;
+  displayMinute: number;
+  isStoppageTime: boolean;
+  /** Minute déduite du coup d'envoi (API indisponible). */
+  isEstimated?: boolean;
+};
+
+const HALFTIME_BREAK_MIN = 15;
+
+/** Estime la minute de jeu à partir du coup d'envoi (pause ~15 min). */
+export function estimateLiveMinute(
+  kickoffAt: string,
+  now = Date.now(),
+): number | null {
+  const elapsedMin = Math.floor(
+    (now - new Date(kickoffAt).getTime()) / 60_000,
+  );
+  if (elapsedMin < 0) return null;
+  if (elapsedMin === 0) return 1;
+  if (elapsedMin <= 45) return elapsedMin;
+  if (elapsedMin < 45 + HALFTIME_BREAK_MIN) return 45;
+  const secondHalf = elapsedMin - 45 - HALFTIME_BREAK_MIN;
+  return Math.min(90, 46 + secondHalf);
+}
+
+function isHalfTimeWindow(kickoffAt: string, now: number): boolean {
+  const elapsedMin = Math.floor(
+    (now - new Date(kickoffAt).getTime()) / 60_000,
+  );
+  return elapsedMin > 45 && elapsedMin < 45 + HALFTIME_BREAK_MIN;
+}
+
+/** Minute API en priorité, sinon estimation depuis le coup d'envoi. */
+export function resolveLiveClock(options: {
+  kickoffAt: string;
+  minute?: number | null;
+  injuryTime?: number | null;
+  now?: number;
+}): LiveClockParts | null {
+  const now = options.now ?? Date.now();
+  const { kickoffAt, minute, injuryTime } = options;
+
+  if (minute != null && minute >= 0) {
+    return parseLiveClock(minute, injuryTime) ?? null;
+  }
+
+  if (isHalfTimeWindow(kickoffAt, now)) {
+    return {
+      minute: 45,
+      injuryTime: null,
+      phase: "half_time",
+      phaseLabel: "Mi-temps",
+      displayMinute: 45,
+      isStoppageTime: false,
+      isEstimated: true,
+    };
+  }
+
+  const estimated = estimateLiveMinute(kickoffAt, now);
+  if (estimated == null) return null;
+
+  const parts = parseLiveClock(estimated, null);
+  if (!parts) return null;
+  return { ...parts, isEstimated: true };
+}
+
+/** Décompose le temps de jeu pour un rendu type diffusion TV. */
+export function parseLiveClock(
+  minute: number | null | undefined,
+  injuryTime: number | null | undefined,
+): LiveClockParts | null {
+  if (minute == null || minute < 0) return null;
+
+  const injury = injuryTime != null && injuryTime > 0 ? injuryTime : null;
+  const isStoppageTime = injury != null;
+
+  let phase: LiveClockPhase;
+  let phaseLabel: string;
+
+  if (minute <= 45) {
+    phase = "first_half";
+    phaseLabel = "1re mi-temps";
+  } else if (minute <= 90) {
+    phase = "second_half";
+    phaseLabel = "2e mi-temps";
+  } else {
+    phase = "extra_time";
+    phaseLabel = "Prolongations";
+  }
+
+  return {
+    minute,
+    injuryTime: injury,
+    phase,
+    phaseLabel,
+    displayMinute: minute,
+    isStoppageTime,
+  };
+}
+
 export function formatLiveClock(
   minute: number | null | undefined,
   injuryTime: number | null | undefined,
 ): string | null {
-  if (minute == null || minute < 0) return null;
-  if (injuryTime != null && injuryTime > 0) {
-    return `${minute}'+${injuryTime}`;
+  const parts = parseLiveClock(minute, injuryTime);
+  if (!parts) return null;
+  if (parts.isStoppageTime && parts.injuryTime != null) {
+    return `${parts.displayMinute}'+${parts.injuryTime}`;
   }
-  return `${minute}'`;
+  return `${parts.displayMinute}'`;
 }

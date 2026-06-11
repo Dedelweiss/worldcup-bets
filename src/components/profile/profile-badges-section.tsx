@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Lock, Sparkles, X } from "lucide-react";
@@ -30,6 +30,10 @@ import { cn } from "@/lib/utils";
 
 type FilterMode = "unlocked" | "all" | "locked";
 
+function sameBadgeSelection(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((id, i) => id === b[i]);
+}
+
 interface ProfileBadgesSectionProps {
   catalog: BadgeCatalogEntry[];
   unlocked: PlayerBadge[];
@@ -55,16 +59,18 @@ export function ProfileBadgesSection({
     [catalog],
   );
 
-  const [selected, setSelected] = useState<string[]>(initialSelected);
+  const [selected, setSelected] = useState(initialSelected);
+  const [savedSelected, setSavedSelected] = useState(initialSelected);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<FilterMode>("unlocked");
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  useEffect(() => {
+  if (!sameBadgeSelection(initialSelected, savedSelected)) {
+    setSavedSelected(initialSelected);
     setSelected(initialSelected);
-  }, [initialSelected]);
+  }
 
   const dirty =
     selected.length !== initialSelected.length ||

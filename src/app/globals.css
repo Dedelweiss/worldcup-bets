@@ -105,6 +105,19 @@
   animation: golden-border-pulse 2.5s ease-in-out infinite;
 }
 
+@keyframes live-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@utility animate-live-shimmer {
+  animation: live-shimmer 2.8s ease-in-out infinite;
+}
+
 @utility glass-card {
   @apply rounded-2xl border border-white/10 bg-zinc-900/50 backdrop-blur-md;
 }

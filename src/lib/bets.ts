@@ -15,7 +15,7 @@ const BET_BASE_FIELDS = `
 
 const MATCH_EMBED_BASE = `
   match:matches (
-    id, round, status, kickoff_at, home_score, away_score,
+    id, round, status, kickoff_at, home_score, away_score, live_minute, live_injury_time,
     home_team:teams!matches_home_team_id_fkey (id, name, code, logo_url),
     away_team:teams!matches_away_team_id_fkey (id, name, code, logo_url)
   )
@@ -23,7 +23,7 @@ const MATCH_EMBED_BASE = `
 
 const MATCH_EMBED_WITH_GOLDEN = `
   match:matches (
-    id, round, status, kickoff_at, is_golden, home_score, away_score,
+    id, round, status, kickoff_at, is_golden, home_score, away_score, live_minute, live_injury_time,
     home_team:teams!matches_home_team_id_fkey (id, name, code, logo_url),
     away_team:teams!matches_away_team_id_fkey (id, name, code, logo_url)
   )

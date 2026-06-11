@@ -220,6 +220,8 @@ export interface BetRow {
     | "is_golden"
     | "home_score"
     | "away_score"
+    | "live_minute"
+    | "live_injury_time"
     | "home_team"
     | "away_team"
   > | null;

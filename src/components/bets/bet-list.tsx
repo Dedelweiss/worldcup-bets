@@ -8,6 +8,7 @@ import { BetCancelButton } from "@/components/bets/bet-cancel-button";
 import { Badge } from "@/components/ui/badge";
 import { BetResultAnimation } from "@/components/bets/bet-result-animation";
 import { LiveMatchAnimation } from "@/components/matches/live-match-animation";
+import { LiveMatchClock } from "@/components/matches/live-match-clock";
 import { MatchScoreInline } from "@/components/matches/match-score-inline";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import {
@@ -205,14 +206,21 @@ function BetCard({ bet }: { bet: BetRow }) {
         </div>
 
         {isLive && match?.home_team && match?.away_team && (
-          <div className="mt-4">
+          <div className="mt-4 space-y-3">
+            <div className="flex justify-center">
+              <LiveMatchClock
+                kickoffAt={match.kickoff_at}
+                minute={match.live_minute}
+                injuryTime={match.live_injury_time}
+                size="sm"
+              />
+            </div>
             {hasScore ? (
               <MatchScoreInline
                 homeTeam={match.home_team}
                 awayTeam={match.away_team}
                 homeScore={match.home_score}
                 awayScore={match.away_score}
-                isLive
                 size="sm"
               />
             ) : (

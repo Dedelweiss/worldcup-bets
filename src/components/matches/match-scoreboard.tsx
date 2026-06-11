@@ -1,18 +1,10 @@
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { LiveMatchAnimation } from "@/components/matches/live-match-animation";
+import { LiveMatchClock } from "@/components/matches/live-match-clock";
 import { MatchScoreInline } from "@/components/matches/match-score-inline";
-import { formatLiveClock } from "@/lib/football-data/parse-match";
+import { MatchTimingBanner } from "@/components/matches/match-timing-banner";
 import { cn } from "@/lib/utils";
-import type { MatchStatus, MatchWithTeams } from "@/types/database";
-
-const STATUS_LABEL: Record<MatchStatus, string> = {
-  scheduled: "À venir",
-  live: "En direct",
-  finished: "Terminé",
-  postponed: "Reporté",
-  cancelled: "Annulé",
-};
+import type { MatchWithTeams } from "@/types/database";
 
 interface MatchScoreboardProps {
   match: MatchWithTeams;
@@ -20,50 +12,32 @@ interface MatchScoreboardProps {
 
 export function MatchScoreboard({ match }: MatchScoreboardProps) {
   const isLive = match.status === "live";
-  const isFinished = match.status === "finished";
   const hasScore = match.home_score !== null && match.away_score !== null;
-  const liveClock = isLive
-    ? formatLiveClock(match.live_minute, match.live_injury_time)
-    : null;
-
-  const scoreLabel = isFinished
-    ? "Score final"
-    : isLive
-      ? "Score en cours"
-      : hasScore
-        ? "Score provisoire"
-        : null;
 
   return (
     <Card
       className={cn(
         "overflow-hidden",
-        isLive && "border-primary/50 ring-1 ring-primary/30",
+        isLive &&
+          "border-red-500/30 shadow-[0_0_32px_-12px] shadow-red-500/25 ring-1 ring-red-500/20",
       )}
     >
-      <CardContent className="space-y-4 p-4 sm:p-6">
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {scoreLabel && (
-            <Badge variant={isLive ? "default" : "secondary"} className="text-xs">
-              {scoreLabel}
-            </Badge>
-          )}
-          {isLive && liveClock && (
-            <Badge variant="default" className="animate-pulse text-xs">
-              {liveClock}
-            </Badge>
-          )}
-          {isLive && !liveClock && !hasScore && (
-            <Badge variant="default" className="animate-pulse text-xs">
-              En direct
-            </Badge>
-          )}
-          {!isLive && !isFinished && (
-            <Badge variant="secondary" className="text-xs">
-              {STATUS_LABEL[match.status]}
-            </Badge>
-          )}
-        </div>
+      <MatchTimingBanner
+        isLive={isLive}
+        kickoffAt={match.kickoff_at}
+        round={match.round}
+      />
+      <CardContent className="space-y-5 p-4 sm:p-6">
+        {isLive && (
+          <div className="flex justify-center">
+            <LiveMatchClock
+              kickoffAt={match.kickoff_at}
+              minute={match.live_minute}
+              injuryTime={match.live_injury_time}
+              size="lg"
+            />
+          </div>
+        )}
 
         {isLive && !hasScore ? (
           <LiveMatchAnimation
@@ -76,17 +50,8 @@ export function MatchScoreboard({ match }: MatchScoreboardProps) {
             awayTeam={match.away_team}
             homeScore={match.home_score}
             awayScore={match.away_score}
-            isLive={isLive}
             size="lg"
           />
-        )}
-
-        {isLive && hasScore && (
-          <p className="text-center text-sm font-medium text-primary">
-            {liveClock
-              ? `En direct · ${liveClock}`
-              : "Match en cours"}
-          </p>
         )}
       </CardContent>
     </Card>
