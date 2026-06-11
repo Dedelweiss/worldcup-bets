@@ -8,13 +8,15 @@ import { MatchGazette } from "@/components/matches/match-gazette";
 import { HashAnchorScroller } from "@/components/layout/hash-anchor-scroller";
 import { MatchHeader } from "@/components/matches/match-header";
 import { MatchParticipation } from "@/components/matches/match-participation";
-import { MatchPlayerPronos } from "@/components/matches/match-player-pronos";
+import { MatchFinishedPronos } from "@/components/matches/match-finished-pronos";
+import { MatchLivePronos } from "@/components/matches/match-live-pronos";
 import { MatchScoreboard } from "@/components/matches/match-scoreboard";
 import { requireAuth } from "@/lib/auth-server";
 import { canRevealPlayerBets } from "@/lib/bets/can-reveal-player-bets";
 import { getMatchBettingParticipation } from "@/lib/bets/match-participation";
 import { getMatchTackleState } from "@/lib/bets/match-tackle";
 import { getMatchUserFunBets } from "@/lib/bets/match-user-fun-bets";
+import { getMatchRevealedBets } from "@/lib/bets/match-live-bets";
 import { getMatchUserPendingBets } from "@/lib/bets/match-user-bets";
 import { getPreMatchInsights } from "@/lib/bets/pre-match-insights";
 import { hasKickoffStarted } from "@/lib/format";
@@ -52,11 +54,14 @@ export default async function MatchBetPage({
 
   const kickoffStarted = hasKickoffStarted(match.kickoff_at);
   const canReveal = canRevealPlayerBets(match);
+  const isFinished = match.status === "finished";
+  const isLive = match.status === "live";
+  const showPronosBoard = canReveal && (isFinished || isLive);
 
   const adminEditHref =
     profile.role === "admin" ? `/admin/matches/${matchId}` : undefined;
 
-  const [funMarkets, comments, pendingBets, funBetsByMarket, participation, tackleState, preMatchInsights] =
+  const [funMarkets, comments, pendingBets, funBetsByMarket, participation, tackleState, preMatchInsights, revealedBets] =
     await Promise.all([
       getFunMarketsByMatch(matchId),
       kickoffStarted || canReveal ? getMatchComments(matchId) : Promise.resolve([]),
@@ -67,6 +72,7 @@ export default async function MatchBetPage({
       !kickoffStarted && match.status === "scheduled"
         ? getPreMatchInsights(match, profile.id)
         : Promise.resolve(null),
+      showPronosBoard ? getMatchRevealedBets(matchId) : Promise.resolve([]),
     ]);
 
   const hasFunSection = funMarkets.length > 0;
@@ -133,15 +139,32 @@ export default async function MatchBetPage({
         </section>
       )}
 
-      {canReveal && (
+      {showPronosBoard && isFinished && (
         <section id="pronostics-joueurs" className="scroll-mt-20">
-          <MatchPlayerPronos
-            matchId={matchId}
-            bettors={participation.bettors}
-            pending={participation.pending}
+          <MatchFinishedPronos
+            bets={revealedBets}
             currentUserId={profile.id}
             isGoldenMatch={match.is_golden ?? false}
-            currentUserPendingBets={pendingBets}
+            homeTeamName={match.home_team.name}
+            awayTeamName={match.away_team.name}
+            homeScore={match.home_score}
+            awayScore={match.away_score}
+            pendingPlayers={participation.pending}
+          />
+        </section>
+      )}
+
+      {showPronosBoard && isLive && (
+        <section id="pronostics-joueurs" className="scroll-mt-20">
+          <MatchLivePronos
+            bets={revealedBets}
+            currentUserId={profile.id}
+            isGoldenMatch={match.is_golden ?? false}
+            homeTeamName={match.home_team.name}
+            awayTeamName={match.away_team.name}
+            homeScore={match.home_score}
+            awayScore={match.away_score}
+            pendingPlayers={participation.pending}
           />
         </section>
       )}

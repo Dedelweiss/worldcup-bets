@@ -53,12 +53,15 @@ interface MatchLiveBetsProps {
   bets: MatchLiveBetRow[];
   currentUserId: string;
   isGoldenMatch?: boolean;
+  /** Liste complète sans mise en avant « vous » (panneau admin). */
+  adminView?: boolean;
 }
 
 export function MatchLiveBets({
   bets,
   currentUserId,
   isGoldenMatch = false,
+  adminView = false,
 }: MatchLiveBetsProps) {
   if (bets.length === 0) {
     return (
@@ -74,19 +77,23 @@ export function MatchLiveBets({
   return (
     <section className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
       <div>
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold">Paris des joueurs</h2>
-          <Badge className="text-[10px]">Public</Badge>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Visibles pour tous après le coup d&apos;envoi — pronostic et points
-          potentiels (selon la cote).
-        </p>
+        {!adminView && (
+          <>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold">Paris des joueurs</h2>
+              <Badge className="text-[10px]">Public</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Visibles pour tous après le coup d&apos;envoi — pronostic et points
+              potentiels (selon la cote).
+            </p>
+          </>
+        )}
       </div>
 
       <ul className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border bg-card">
         {bets.map((bet) => {
-          const isYou = bet.user_id === currentUserId;
+          const isYou = !adminView && bet.user_id === currentUserId;
           const statusInfo = STATUS_BADGE[bet.status];
           return (
             <li

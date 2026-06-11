@@ -3,13 +3,19 @@ import {
   resolveFunMarketId,
 } from "@/lib/bets/fun-market-lookup";
 import { createClient } from "@/lib/supabase/server";
-import type { BetStatus, BetType, MatchResultSelection } from "@/types/database";
+import type {
+  BetStatus,
+  BetType,
+  MatchResultSelection,
+  ScorePrecision,
+} from "@/types/database";
 
 export interface MatchLiveBetRow {
   id: string;
   user_id: string;
   display_name: string | null;
   username: string | null;
+  avatar_url: string | null;
   bet_type: BetType;
   selection: {
     selection?: MatchResultSelection;
@@ -21,6 +27,7 @@ export interface MatchLiveBetRow {
   potential_payout: number;
   is_boosted: boolean;
   status: BetStatus;
+  score_precision: ScorePrecision | null;
   placed_at: string;
   fun_question: string | null;
 }
@@ -56,6 +63,7 @@ export async function getMatchRevealedBets(
       potential_payout,
       is_boosted,
       status,
+      score_precision,
       placed_at,
       market_id,
       fun_market_id,
@@ -103,12 +111,14 @@ export async function getMatchRevealedBets(
       user_id: r.user_id as string,
       display_name: p?.display_name ?? null,
       username: p?.username ?? null,
+      avatar_url: (p?.avatar_url as string | null) ?? null,
       bet_type: r.bet_type as BetType,
       selection: r.selection as MatchLiveBetRow["selection"],
       odd_at_placement: Number(r.odd_at_placement),
       potential_payout: Number(r.potential_payout),
       is_boosted: Boolean(r.is_boosted),
       status: r.status as BetStatus,
+      score_precision: (r.score_precision as ScorePrecision | null) ?? null,
       placed_at: r.placed_at as string,
       fun_question: funSnippet?.question ?? null,
     };

@@ -22,20 +22,32 @@ export async function needsLiveScoreSync(now = Date.now()): Promise<boolean> {
     const from = new Date(now - POST_KICKOFF_MS).toISOString();
     const to = new Date(now + PRE_KICKOFF_MS).toISOString();
 
-    const [{ count: liveCount }, { count: windowCount }] = await Promise.all([
-      supabase
-        .from("matches")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "live"),
-      supabase
-        .from("matches")
-        .select("id", { count: "exact", head: true })
-        .in("status", ["scheduled", "live"])
-        .gte("kickoff_at", from)
-        .lte("kickoff_at", to),
-    ]);
+    const [{ count: liveCount }, { count: windowCount }, { count: unsettledFinished }] =
+      await Promise.all([
+        supabase
+          .from("matches")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "live"),
+        supabase
+          .from("matches")
+          .select("id", { count: "exact", head: true })
+          .in("status", ["scheduled", "live"])
+          .gte("kickoff_at", from)
+          .lte("kickoff_at", to),
+        supabase
+          .from("matches")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "finished")
+          .is("settled_at", null)
+          .gte("kickoff_at", from)
+          .lte("kickoff_at", to),
+      ]);
 
-    return (liveCount ?? 0) > 0 || (windowCount ?? 0) > 0;
+    return (
+      (liveCount ?? 0) > 0 ||
+      (windowCount ?? 0) > 0 ||
+      (unsettledFinished ?? 0) > 0
+    );
   } catch {
     return false;
   }

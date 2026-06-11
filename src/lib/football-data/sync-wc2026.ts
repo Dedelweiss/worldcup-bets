@@ -14,6 +14,7 @@ import {
   mapFootballDataScoreToLocal,
   mapFootballDataStatus,
   parseFootballDataOdds,
+  isFootballDataFinishedStatus,
   parseFootballDataScore,
   shouldApplyFootballDataStatus,
 } from "@/lib/football-data/parse-match";
@@ -429,7 +430,11 @@ export async function syncFootballDataWc2026(options?: {
 
       if (fd.venue) patch.venue = fd.venue;
 
-      if (mappedStatus) {
+      const apiFinished = isFootballDataFinishedStatus(fd.status);
+      if (apiFinished && local.status !== "finished") {
+        // Terminé côté API : statut finished sans clôture / paiement des paris.
+        patch.status = "finished";
+      } else if (mappedStatus) {
         const suppress = Boolean(local.suppress_auto_live);
         if (shouldApplyFootballDataStatus(local.status, mappedStatus, suppress)) {
           patch.status = mappedStatus;
@@ -456,7 +461,10 @@ export async function syncFootballDataWc2026(options?: {
       if (!clockManual && isLiveApi && fd.minute != null) {
         patch.live_minute = fd.minute;
         patch.live_injury_time = fd.injuryTime ?? null;
-      } else if (!clockManual && mappedStatus === "finished") {
+      } else if (
+        !clockManual &&
+        (mappedStatus === "finished" || apiFinished)
+      ) {
         patch.live_minute = null;
         patch.live_injury_time = null;
         patch.live_clock_anchor_at = null;

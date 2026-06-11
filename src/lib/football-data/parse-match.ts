@@ -1,6 +1,10 @@
 import type { MatchStatus } from "@/types/database";
 import type { FootballDataMatch } from "@/lib/football-data/types";
 
+export function isFootballDataFinishedStatus(apiStatus: string): boolean {
+  return apiStatus === "FINISHED" || apiStatus === "AWARDED";
+}
+
 export function mapFootballDataStatus(apiStatus: string): MatchStatus | null {
   switch (apiStatus) {
     case "SCHEDULED":
