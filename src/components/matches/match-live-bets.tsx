@@ -5,11 +5,17 @@ import {
   parseExactScoreSelection,
 } from "@/lib/exact-score";
 import { MATCH_RESULT_OUTCOME } from "@/lib/bets/match-result-copy";
+import {
+  resolveBetPointsDisplay,
+  type BetPointsDisplay,
+  type MatchForPointsDisplay,
+} from "@/lib/bets/bet-display-points";
 import { formatOdd, formatPoints } from "@/lib/format";
-import type { BetStatus } from "@/types/database";
 import { betDisplayPayout } from "@/lib/points";
 import { getPlayerLabel } from "@/lib/profile/player-label";
 import { isAiPlayer } from "@/lib/ai/constants";
+import { cn } from "@/lib/utils";
+import type { BetStatus } from "@/types/database";
 import type { MatchLiveBetRow } from "@/lib/bets/match-live-bets";
 
 const SELECTION_LABEL: Record<string, string> = {
@@ -55,6 +61,41 @@ interface MatchLiveBetsProps {
   isGoldenMatch?: boolean;
   /** Liste complète sans mise en avant « vous » (panneau admin). */
   adminView?: boolean;
+  /** Contexte match pour calculer correctement gains / pertes (admin). */
+  matchForPoints?: MatchForPointsDisplay;
+}
+
+function resolvePointsForBet(
+  bet: MatchLiveBetRow,
+  isGoldenMatch: boolean,
+  matchForPoints?: MatchForPointsDisplay,
+): BetPointsDisplay {
+  if (matchForPoints) {
+    return resolveBetPointsDisplay(
+      {
+        bet_type: bet.bet_type,
+        status: bet.status,
+        selection: bet.selection,
+        potential_payout: bet.potential_payout,
+        odd_at_placement: bet.odd_at_placement,
+        is_boosted: bet.is_boosted,
+        score_precision: bet.score_precision,
+      },
+      matchForPoints,
+    );
+  }
+  if (bet.status === "lost") {
+    return { points: null, label: "Perdu", tone: "lost" as const };
+  }
+  return {
+    points: betDisplayPayout(
+      bet.potential_payout,
+      bet.is_boosted,
+      isGoldenMatch,
+    ),
+    label: bet.status === "won" ? "Points gagnés" : "Gain potentiel",
+    tone: bet.status === "won" ? "won" : "pending",
+  };
 }
 
 export function MatchLiveBets({
@@ -62,6 +103,7 @@ export function MatchLiveBets({
   currentUserId,
   isGoldenMatch = false,
   adminView = false,
+  matchForPoints,
 }: MatchLiveBetsProps) {
   if (bets.length === 0) {
     return (
@@ -95,6 +137,11 @@ export function MatchLiveBets({
         {bets.map((bet) => {
           const isYou = !adminView && bet.user_id === currentUserId;
           const statusInfo = STATUS_BADGE[bet.status];
+          const pointsDisplay = resolvePointsForBet(
+            bet,
+            isGoldenMatch,
+            matchForPoints,
+          );
           return (
             <li
               key={bet.id}
@@ -126,26 +173,37 @@ export function MatchLiveBets({
                 <p className="text-xs text-muted-foreground">
                   Cote {formatOdd(bet.odd_at_placement)}
                 </p>
-                <p className="font-semibold text-primary">
-                  +
-                  {formatPoints(
-                    betDisplayPayout(
-                      bet.potential_payout,
-                      bet.is_boosted,
-                      isGoldenMatch,
-                    ),
-                  )}{" "}
-                  pts
-                  {(bet.is_boosted || isGoldenMatch) && (
-                    <span className="ml-1 text-[10px] font-normal text-amber-600 dark:text-amber-400">
-                      {bet.is_boosted && isGoldenMatch
-                        ? "Boost×2 · Golden×2"
-                        : bet.is_boosted
-                          ? "Boost×2"
-                          : "Golden×2"}
-                    </span>
-                  )}
+                <p className="text-[10px] text-muted-foreground">
+                  {pointsDisplay.label}
                 </p>
+                {pointsDisplay.points != null &&
+                pointsDisplay.tone !== "lost" ? (
+                  <p
+                    className={cn(
+                      "font-semibold",
+                      pointsDisplay.tone === "won" &&
+                        "text-emerald-600 dark:text-emerald-400",
+                      pointsDisplay.tone === "live" &&
+                        "text-lime-600 dark:text-lime-400",
+                      pointsDisplay.tone === "pending" && "text-primary",
+                    )}
+                  >
+                    +{formatPoints(pointsDisplay.points)} pts
+                    {(bet.is_boosted || isGoldenMatch) &&
+                      bet.status !== "won" &&
+                      bet.bet_type !== "exact_score" && (
+                        <span className="ml-1 text-[10px] font-normal text-amber-600 dark:text-amber-400">
+                          {bet.is_boosted && isGoldenMatch
+                            ? "Boost×2 · Golden×2"
+                            : bet.is_boosted
+                              ? "Boost×2"
+                              : "Golden×2"}
+                        </span>
+                      )}
+                  </p>
+                ) : (
+                  <p className="font-semibold text-muted-foreground">0 pt</p>
+                )}
               </div>
             </li>
           );

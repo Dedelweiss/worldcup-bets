@@ -43,6 +43,8 @@ export default async function AdminMatchPage({
           matchId={matchId}
           matchStatus={match.status}
           isGoldenMatch={match.is_golden ?? false}
+          homeScore={match.home_score}
+          awayScore={match.away_score}
           bets={bets}
         />
       )}

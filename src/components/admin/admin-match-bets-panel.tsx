@@ -7,6 +7,8 @@ interface AdminMatchBetsPanelProps {
   matchId: number;
   matchStatus: MatchStatus;
   isGoldenMatch?: boolean;
+  homeScore: number | null;
+  awayScore: number | null;
   bets: MatchLiveBetRow[];
 }
 
@@ -14,6 +16,8 @@ export function AdminMatchBetsPanel({
   matchId,
   matchStatus,
   isGoldenMatch = false,
+  homeScore,
+  awayScore,
   bets,
 }: AdminMatchBetsPanelProps) {
   if (matchStatus !== "live" && matchStatus !== "finished") {
@@ -36,6 +40,12 @@ export function AdminMatchBetsPanel({
           currentUserId=""
           isGoldenMatch={isGoldenMatch}
           adminView
+          matchForPoints={{
+            status: matchStatus,
+            home_score: homeScore,
+            away_score: awayScore,
+            is_golden: isGoldenMatch,
+          }}
         />
       </CardContent>
     </Card>
