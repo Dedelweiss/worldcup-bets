@@ -20,6 +20,7 @@ export const MATCH_SELECT = `
   id, round, status, stage, kickoff_at, venue, settled_at,
   tournament_group_id, bet_scope_note, is_golden, ai_summary,
   home_score, away_score, live_minute, live_injury_time,
+  live_clock_anchor_at, live_clock_manual,
   odd_home, odd_draw, odd_away, odds_synced_at,
   home_team:teams!matches_home_team_id_fkey (id, name, code, logo_url),
   away_team:teams!matches_away_team_id_fkey (id, name, code, logo_url)

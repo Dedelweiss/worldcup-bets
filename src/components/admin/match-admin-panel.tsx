@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   Bot,
   CheckCircle2,
+  Clock,
   ExternalLink,
   Sparkles,
   Trophy,
@@ -18,6 +19,7 @@ import {
   generateGazetteAction,
   reopenMatchAction,
   resettleMatchAction,
+  setLiveClockAction,
   settleMatchAction,
   updateMatchAction,
 } from "@/app/admin/actions";
@@ -74,6 +76,22 @@ function buildFormState(match: MatchWithTeams) {
   };
 }
 
+function toDatetimeLocalValue(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function buildClockFormState(match: MatchWithTeams) {
+  return {
+    minute: optionalNumberField(match.live_minute),
+    injuryTime: optionalNumberField(match.live_injury_time),
+    anchorAt: toDatetimeLocalValue(match.live_clock_anchor_at),
+  };
+}
+
 function statusBadgeVariant(
   status: MatchStatus,
 ): "default" | "secondary" | "outline" | "destructive" {
@@ -93,6 +111,7 @@ export function MatchAdminPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [form, setForm] = useState(() => buildFormState(match));
+  const [clockForm, setClockForm] = useState(() => buildClockFormState(match));
 
   useEffect(() => {
     setForm(buildFormState(match));
@@ -106,6 +125,16 @@ export function MatchAdminPanel({
     match.odd_away,
     match.is_golden,
     match.settled_at,
+  ]);
+
+  useEffect(() => {
+    setClockForm(buildClockFormState(match));
+  }, [
+    match.id,
+    match.live_minute,
+    match.live_injury_time,
+    match.live_clock_anchor_at,
+    match.live_clock_manual,
   ]);
 
   const isSettled = match.settled_at != null;
@@ -325,6 +354,57 @@ export function MatchAdminPanel({
   const canReopen = isSettled;
 
   const displayStatus = match.status;
+  const showLiveClockControls =
+    match.status === "live" || form.status === "live";
+
+  async function handleSetLiveClock(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading("clock");
+    setError(null);
+    setMessage(null);
+
+    const formData = new FormData(e.currentTarget);
+    const result = await setLiveClockAction(formData);
+    if (!result.success) {
+      setError(result.error);
+    } else {
+      setMessage("Chrono en direct recalibré.");
+      router.refresh();
+    }
+    setLoading(null);
+  }
+
+  async function handleResetLiveClock() {
+    if (
+      !confirm(
+        "Reprendre l'estimation automatique du chrono (coup d'envoi prévu ou API) ?",
+      )
+    ) {
+      return;
+    }
+    setLoading("clock-reset");
+    setError(null);
+    setMessage(null);
+
+    const formData = new FormData();
+    formData.set("matchId", String(match.id));
+    formData.set("reset", "true");
+    const result = await setLiveClockAction(formData);
+    if (!result.success) {
+      setError(result.error);
+    } else {
+      setMessage("Chrono automatique réactivé.");
+      router.refresh();
+    }
+    setLoading(null);
+  }
+
+  function setAnchorNow() {
+    setClockForm((prev) => ({
+      ...prev,
+      anchorAt: toDatetimeLocalValue(new Date().toISOString()),
+    }));
+  }
 
   return (
     <div className="space-y-6">
@@ -602,6 +682,135 @@ export function MatchAdminPanel({
               </form>
             </CardContent>
           </Card>
+
+          {showLiveClockControls && (
+            <Card className="border-red-500/30">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+                  <Clock className="size-4 text-red-400" />
+                  Chrono en direct
+                  {match.live_clock_manual && (
+                    <Badge
+                      variant="outline"
+                      className="border-red-500/40 text-red-300"
+                    >
+                      Manuel
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSetLiveClock} className="space-y-4">
+                  <input type="hidden" name="matchId" value={match.id} />
+                  <p className="text-sm text-muted-foreground">
+                    Recalibrez l&apos;horloge si le match a du retard ou si
+                    l&apos;estimation automatique est fausse. Le chrono continue
+                    de défiler à partir de la valeur enregistrée.
+                  </p>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="liveMinute">Minute actuelle</Label>
+                      <Input
+                        id="liveMinute"
+                        name="liveMinute"
+                        type="number"
+                        min={0}
+                        max={130}
+                        value={clockForm.minute}
+                        onChange={(e) =>
+                          setClockForm((prev) => ({
+                            ...prev,
+                            minute: e.target.value,
+                          }))
+                        }
+                        placeholder="ex. 67"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Laissé vide si vous ne définissez que le coup
+                        d&apos;envoi effectif.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="liveInjuryTime">Temps additionnel</Label>
+                      <Input
+                        id="liveInjuryTime"
+                        name="liveInjuryTime"
+                        type="number"
+                        min={0}
+                        max={15}
+                        value={clockForm.injuryTime}
+                        onChange={(e) =>
+                          setClockForm((prev) => ({
+                            ...prev,
+                            injuryTime: e.target.value,
+                          }))
+                        }
+                        placeholder="ex. 3"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <Label htmlFor="liveClockAnchorAt">
+                        Coup d&apos;envoi effectif
+                      </Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={setAnchorNow}
+                      >
+                        Maintenant
+                      </Button>
+                    </div>
+                    <Input
+                      id="liveClockAnchorAt"
+                      name="liveClockAnchorAt"
+                      type="datetime-local"
+                      value={clockForm.anchorAt}
+                      onChange={(e) =>
+                        setClockForm((prev) => ({
+                          ...prev,
+                          anchorAt: e.target.value,
+                        }))
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Utile si le match a commencé en retard : indiquez
+                      l&apos;heure réelle du coup d&apos;envoi, sans minute.
+                      Avec une minute saisie, laissez vide pour ancrer sur
+                      maintenant.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="submit"
+                      disabled={loading === "clock" || loading === "clock-reset"}
+                    >
+                      {loading === "clock"
+                        ? "Recalibrage…"
+                        : "Recalibrer le chrono"}
+                    </Button>
+                    {match.live_clock_manual && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={loading === "clock" || loading === "clock-reset"}
+                        onClick={handleResetLiveClock}
+                      >
+                        {loading === "clock-reset"
+                          ? "Réinitialisation…"
+                          : "Reprendre l'auto"}
+                      </Button>
+                    )}
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="border-lime-400/25">
             <CardHeader className="pb-3">

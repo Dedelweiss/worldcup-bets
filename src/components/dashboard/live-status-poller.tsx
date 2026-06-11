@@ -5,7 +5,8 @@ import { useEffect } from "react";
 import { syncLiveMatchesAction } from "@/app/(app)/sync-live-action";
 import { refreshPreservingScroll } from "@/lib/navigation/refresh-preserving-scroll";
 
-const POLL_INTERVAL_MS = 30_000;
+/** Aligné sur FOOTBALL_DATA_SYNC_INTERVAL_LIVE_MS (60 s). */
+const POLL_INTERVAL_MS = 60_000;
 
 /** Rafraîchit les pages pour détecter les matchs passés en live. */
 export function LiveStatusPoller() {

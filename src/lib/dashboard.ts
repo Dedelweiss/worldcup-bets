@@ -26,7 +26,9 @@ async function fetchUpcomingMatches(): Promise<MatchWithTeams[]> {
     .select(
       `
       id, round, status, kickoff_at, venue, is_golden,
-      home_score, away_score, live_minute, live_injury_time, odd_home, odd_draw, odd_away, odds_synced_at,
+      home_score, away_score, live_minute, live_injury_time,
+      live_clock_anchor_at, live_clock_manual,
+      odd_home, odd_draw, odd_away, odds_synced_at,
       home_team:teams!matches_home_team_id_fkey (id, name, code, logo_url),
       away_team:teams!matches_away_team_id_fkey (id, name, code, logo_url)
     `,

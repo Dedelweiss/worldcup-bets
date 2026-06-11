@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Trophy, Zap } from "lucide-react";
+import { Radio, Trophy, Zap } from "lucide-react";
 import { FavoriteTeamSection } from "@/components/dashboard/favorite-team-section";
+import { LivePointsDisplay } from "@/components/shared/live-points-display";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatPoints } from "@/lib/format";
 import { getPlayerLabel } from "@/lib/profile/player-label";
@@ -34,6 +35,17 @@ export function DashboardSummary({
   selectionOpen = true,
   isDemo,
 }: DashboardSummaryProps) {
+  const rankValue =
+    stats.hasLiveScoring && stats.liveRank != null && stats.totalPlayers > 0
+      ? formatRank(stats.liveRank, stats.totalPlayers)
+      : stats.rank != null && stats.totalPlayers > 0
+        ? formatRank(stats.rank, stats.totalPlayers)
+        : "—";
+
+  const rankHint = stats.hasLiveScoring
+    ? "classement live (avec points en cours)"
+    : "classement général";
+
   const secondaryStats = [
     {
       label: "Paris en cours",
@@ -42,13 +54,10 @@ export function DashboardSummary({
       href: isDemo ? undefined : "/bets",
     },
     {
-      label: "Classement",
-      value:
-        stats.rank != null && stats.totalPlayers > 0
-          ? formatRank(stats.rank, stats.totalPlayers)
-          : "—",
-      hint: "classement général",
-      href: isDemo ? undefined : "/leaderboard",
+      label: stats.hasLiveScoring ? "Classement live" : "Classement",
+      value: rankValue,
+      hint: rankHint,
+      href: isDemo ? undefined : "/leaderboard?sort=live_points",
     },
   ] as const;
 
@@ -62,9 +71,20 @@ export function DashboardSummary({
                 <p className="text-sm font-medium text-muted-foreground">
                   Mes points
                 </p>
-                <p className="mt-1 text-4xl font-bold tabular-nums tracking-tight text-primary">
-                  {formatPoints(profile.points)}
-                </p>
+                <div className="mt-1 text-4xl font-bold tracking-tight text-primary">
+                  <LivePointsDisplay
+                    balance={profile.points}
+                    livePoints={stats.livePoints}
+                    valueClassName="text-4xl font-bold"
+                    liveClassName="text-lg"
+                  />
+                </div>
+                {stats.livePoints > 0 && (
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-lime-400">
+                    <Radio className="size-3.5 shrink-0" aria-hidden />
+                    Pronos en bonne voie sur un match en direct
+                  </p>
+                )}
                 <p className="mt-1 text-xs text-muted-foreground">
                   {getPlayerLabel(profile)}
                 </p>

@@ -1,4 +1,6 @@
 import type { PlayerBadge } from "@/lib/badges";
+import { getLiveProvisionalPointsByUser } from "@/lib/bets/live-provisional-points.server";
+import { effectivePoints } from "@/lib/bets/live-provisional-points";
 import { resolveAvatarUrl } from "@/lib/profile/avatars";
 import { createClient } from "@/lib/supabase/server";
 import type { LeaderboardEntry, LeaderboardSort } from "@/types/database";
@@ -33,11 +35,42 @@ function sortPlayers(
     let diff = 0;
     if (sort === "classic_won") diff = b.classic_won - a.classic_won;
     else if (sort === "fun_won") diff = b.fun_won - a.fun_won;
-    else diff = b.balance - a.balance;
+    else if (sort === "live_points") {
+      diff =
+        effectivePoints(b.balance, b.live_points) -
+        effectivePoints(a.balance, a.live_points);
+    } else diff = b.balance - a.balance;
     if (diff !== 0) return diff;
     return b.balance - a.balance;
   });
   return copy;
+}
+
+async function attachLiveProvisionalPoints(
+  players: LeaderboardEntry[],
+): Promise<LeaderboardEntry[]> {
+  if (players.length === 0) return players;
+
+  const provisional = await getLiveProvisionalPointsByUser(
+    players.map((p) => p.id),
+  );
+  if (provisional.size === 0) {
+    return players.map((p) => ({ ...p, live_points: 0 }));
+  }
+
+  return players.map((p) => ({
+    ...p,
+    live_points: provisional.get(p.id) ?? 0,
+  }));
+}
+
+/** Points live calculés côté app : attacher puis trier (l’RPC ne connaît pas live_points). */
+async function finalizeLeaderboardOrder(
+  players: LeaderboardEntry[],
+  sort: LeaderboardSort,
+): Promise<LeaderboardEntry[]> {
+  const withLive = await attachLiveProvisionalPoints(players);
+  return sortPlayers(withLive, sort);
 }
 
 async function getLeaderboardFallback(options: {
@@ -83,7 +116,7 @@ async function getLeaderboardFallback(options: {
   );
 
   return {
-    players: sortPlayers(players, options.sort),
+    players,
     warning:
       "Filtres avancés indisponibles. Exécutez supabase/migrations/012_private_leagues_leaderboard.sql dans Supabase.",
   };
@@ -236,12 +269,14 @@ export async function getLeaderboard(options?: {
           const ids = new Set((members ?? []).map((m) => m.user_id));
           players = players.filter((p) => ids.has(p.id));
         }
-        const labeled = await attachLeagueLabels(sortPlayers(players, sort));
+        const ordered = await finalizeLeaderboardOrder(players, sort);
+        const labeled = await attachLeagueLabels(ordered);
         const withAvatars = await attachPlayerAvatars(labeled);
         return { players: await attachPlayerBadges(withAvatars) };
       }
       const fallback = await getLeaderboardFallback({ leagueId, sort });
-      const labeled = await attachLeagueLabels(fallback.players);
+      const ordered = await finalizeLeaderboardOrder(fallback.players, sort);
+      const labeled = await attachLeagueLabels(ordered);
       const withAvatars = await attachPlayerAvatars(labeled);
       return {
         ...fallback,
@@ -253,7 +288,8 @@ export async function getLeaderboard(options?: {
   }
 
   const players = (data ?? []).map((row: Record<string, unknown>) => mapRow(row));
-  const labeled = await attachLeagueLabels(players);
+  const ordered = await finalizeLeaderboardOrder(players, sort);
+  const labeled = await attachLeagueLabels(ordered);
   const withAvatars = await attachPlayerAvatars(labeled);
   return { players: await attachPlayerBadges(withAvatars) };
 }
@@ -309,6 +345,7 @@ export function getLeaderboardRankNeighbors(
 
 export function parseLeaderboardSort(value: string | undefined): LeaderboardSort {
   if (value === "classic_won" || value === "fun_won") return value;
+  if (value === "live_points" || value === "live") return "live_points";
   if (value === "points" || value === "balance") return "points";
   return "points";
 }

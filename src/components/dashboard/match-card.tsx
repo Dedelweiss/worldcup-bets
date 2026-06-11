@@ -106,6 +106,8 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
                 kickoffAt={match.kickoff_at}
                 minute={match.live_minute}
                 injuryTime={match.live_injury_time}
+                clockAnchorAt={match.live_clock_anchor_at}
+                clockManual={match.live_clock_manual}
                 size="md"
               />
             </div>

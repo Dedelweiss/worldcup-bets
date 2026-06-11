@@ -62,6 +62,15 @@ export function LeaderboardExplorer({
         </p>
       )}
 
+      {players.some((p) => (p.live_points ?? 0) > 0) && (
+        <p className="rounded-lg border border-lime-400/25 bg-lime-400/10 px-4 py-3 text-sm text-lime-200/90">
+          Match(s) en direct — le suffixe{" "}
+          <span className="font-semibold text-lime-300">+pts</span> est provisoire
+          et peut changer si le score évolue. Les points ne sont crédités qu&apos;à
+          la fin du match.
+        </p>
+      )}
+
       {(scope !== "league" || leagueId) && (
         <p className="text-sm text-muted-foreground">
           {scope === "general"
@@ -71,10 +80,12 @@ export function LeaderboardExplorer({
               : "Ligue sélectionnée"}
           {" · "}
           {sort === "points"
-            ? "tri par points"
-            : sort === "classic_won"
-              ? "tri par paris matchs gagnés"
-              : "tri par paris fun gagnés"}
+            ? "tri par points confirmés"
+            : sort === "live_points"
+              ? "tri par points + gains provisoires (matchs en direct)"
+              : sort === "classic_won"
+                ? "tri par paris matchs gagnés"
+                : "tri par paris fun gagnés"}
         </p>
       )}
 

@@ -101,6 +101,9 @@ export interface MatchWithTeams {
   away_score: number | null;
   live_minute?: number | null;
   live_injury_time?: number | null;
+  /** Instant de référence pour le chrono recalibré par l'admin. */
+  live_clock_anchor_at?: string | null;
+  live_clock_manual?: boolean;
   odds_synced_at?: string | null;
   odds_api_event_id?: number | null;
   odd_home: number | null;
@@ -128,6 +131,11 @@ export interface DashboardStats {
   pendingBets: number;
   rank: number | null;
   totalPlayers: number;
+  /** Points provisoires (pronos en bonne voie sur matchs live). */
+  livePoints: number;
+  /** Classement si on inclut les points live (null si aucun live actif). */
+  liveRank: number | null;
+  hasLiveScoring: boolean;
 }
 
 export interface DashboardData {
@@ -137,7 +145,7 @@ export interface DashboardData {
   isDemo?: boolean;
 }
 
-export type LeaderboardSort = "points" | "classic_won" | "fun_won";
+export type LeaderboardSort = "points" | "live_points" | "classic_won" | "fun_won";
 
 export type LeaderboardScope = "general" | "league";
 
@@ -175,6 +183,8 @@ export interface LeaderboardEntry {
   avatar_url?: string | null;
   /** Points totaux (RPC renvoie encore la colonne `balance`). */
   balance: number;
+  /** Points provisoires sur matchs en direct (non crédités en base). */
+  live_points?: number;
   classic_won: number;
   classic_lost: number;
   fun_won: number;

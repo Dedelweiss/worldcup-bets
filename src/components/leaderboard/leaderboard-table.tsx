@@ -8,6 +8,8 @@ import { PlayerLeaderboardAvatar } from "@/components/leaderboard/player-leaderb
 import { ON_FIRE_STREAK_REQUIRED } from "@/lib/on-fire";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { LivePointsDisplay } from "@/components/shared/live-points-display";
+import { effectivePoints } from "@/lib/bets/live-provisional-points";
 import { formatPoints } from "@/lib/format";
 import { getPlayerLabel } from "@/lib/profile/player-label";
 import type { LeaderboardEntry, LeaderboardSort } from "@/types/database";
@@ -22,6 +24,7 @@ interface LeaderboardTableProps {
 function sortLabel(sort: LeaderboardSort): string {
   if (sort === "classic_won") return "Paris matchs gagnés";
   if (sort === "fun_won") return "Paris fun gagnés";
+  if (sort === "live_points") return "Points live";
   return "Points";
 }
 
@@ -35,6 +38,9 @@ function playerIsOnFire(player: LeaderboardEntry): boolean {
 function primaryValue(player: LeaderboardEntry, sort: LeaderboardSort): string {
   if (sort === "classic_won") return String(player.classic_won);
   if (sort === "fun_won") return String(player.fun_won);
+  if (sort === "live_points") {
+    return formatPoints(effectivePoints(player.balance, player.live_points));
+  }
   return formatPoints(player.balance);
 }
 
@@ -106,17 +112,33 @@ export function LeaderboardTable({
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
                   {sortLabel(highlightSort)}
                 </p>
-                <p className="text-xl font-bold tabular-nums text-primary">
-                  {primaryValue(player, highlightSort)}
-                </p>
+                {highlightSort === "points" || highlightSort === "live_points" ? (
+                  <LivePointsDisplay
+                    balance={player.balance}
+                    livePoints={player.live_points}
+                    showTotal={highlightSort === "live_points"}
+                    valueClassName="text-xl font-bold text-primary"
+                    liveClassName="text-sm"
+                  />
+                ) : (
+                  <p className="text-xl font-bold tabular-nums text-primary">
+                    {primaryValue(player, highlightSort)}
+                  </p>
+                )}
               </div>
             </div>
 
             <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border/60 pt-3 text-center text-xs">
               <StatCell
                 label="Points"
-                value={formatPoints(player.balance)}
-                active={highlightSort === "points"}
+                value={
+                  (player.live_points ?? 0) > 0
+                    ? `${formatPoints(player.balance)} +${formatPoints(player.live_points ?? 0)}`
+                    : formatPoints(player.balance)
+                }
+                active={
+                  highlightSort === "points" || highlightSort === "live_points"
+                }
               />
               <StatCell
                 label="Résultat"
@@ -143,7 +165,8 @@ export function LeaderboardTable({
               <th
                 className={cn(
                   "px-3 py-3 font-medium text-right",
-                  highlightSort === "points" && "text-primary",
+                  (highlightSort === "points" || highlightSort === "live_points") &&
+                    "text-primary",
                 )}
               >
                 Points
@@ -233,12 +256,22 @@ export function LeaderboardTable({
                 <td
                   className={cn(
                     "px-3 py-3 text-right font-semibold tabular-nums",
-                    highlightSort === "points"
+                    highlightSort === "points" || highlightSort === "live_points"
                       ? "text-primary text-base"
                       : "text-foreground",
                   )}
                 >
-                  {formatPoints(player.balance)}
+                  <LivePointsDisplay
+                    balance={player.balance}
+                    livePoints={player.live_points}
+                    showTotal={highlightSort === "live_points"}
+                    valueClassName={cn(
+                      highlightSort === "points" || highlightSort === "live_points"
+                        ? "text-primary text-base font-semibold"
+                        : "font-semibold",
+                    )}
+                    liveClassName="text-sm"
+                  />
                 </td>
                 <td
                   className={cn(

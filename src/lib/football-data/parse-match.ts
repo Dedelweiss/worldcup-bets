@@ -123,6 +123,18 @@ export type LiveClockParts = {
 
 const HALFTIME_BREAK_MIN = 15;
 
+/** Minute courante à partir d'une ancre admin (minute de base + temps écoulé). */
+export function resolveManualLiveMinute(
+  baseMinute: number,
+  anchorAt: string,
+  now = Date.now(),
+): number {
+  const elapsedMin = Math.floor(
+    (now - new Date(anchorAt).getTime()) / 60_000,
+  );
+  return Math.max(0, baseMinute + elapsedMin);
+}
+
 /** Estime la minute de jeu à partir du coup d'envoi (pause ~15 min). */
 export function estimateLiveMinute(
   kickoffAt: string,
@@ -151,10 +163,39 @@ export function resolveLiveClock(options: {
   kickoffAt: string;
   minute?: number | null;
   injuryTime?: number | null;
+  clockAnchorAt?: string | null;
+  clockManual?: boolean;
   now?: number;
 }): LiveClockParts | null {
   const now = options.now ?? Date.now();
-  const { kickoffAt, minute, injuryTime } = options;
+  const { kickoffAt, minute, injuryTime, clockAnchorAt, clockManual } = options;
+
+  if (clockManual && clockAnchorAt) {
+    if (minute != null && minute >= 0) {
+      const currentMinute = resolveManualLiveMinute(minute, clockAnchorAt, now);
+      const parts = parseLiveClock(currentMinute, injuryTime);
+      if (!parts) return null;
+      return { ...parts, isEstimated: false };
+    }
+
+    if (isHalfTimeWindow(clockAnchorAt, now)) {
+      return {
+        minute: 45,
+        injuryTime: null,
+        phase: "half_time",
+        phaseLabel: "Mi-temps",
+        displayMinute: 45,
+        isStoppageTime: false,
+        isEstimated: true,
+      };
+    }
+
+    const estimated = estimateLiveMinute(clockAnchorAt, now);
+    if (estimated != null) {
+      const parts = parseLiveClock(estimated, null);
+      if (parts) return { ...parts, isEstimated: true };
+    }
+  }
 
   if (minute != null && minute >= 0) {
     return parseLiveClock(minute, injuryTime) ?? null;

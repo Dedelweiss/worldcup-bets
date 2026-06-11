@@ -47,6 +47,7 @@ interface DbMatch {
   status: MatchStatus;
   settled_at: string | null;
   suppress_auto_live: boolean | null;
+  live_clock_manual: boolean | null;
   football_data_id: number | null;
 }
 
@@ -374,7 +375,7 @@ export async function syncFootballDataWc2026(options?: {
     const { data: dbMatches } = await supabase
       .from("matches")
       .select(
-        "id, home_team_id, away_team_id, kickoff_at, status, settled_at, suppress_auto_live, football_data_id",
+        "id, home_team_id, away_team_id, kickoff_at, status, settled_at, suppress_auto_live, live_clock_manual, football_data_id",
       )
       .eq("season", 2026);
 
@@ -451,13 +452,17 @@ export async function syncFootballDataWc2026(options?: {
 
       const isLiveApi =
         fd.status === "IN_PLAY" || fd.status === "PAUSED";
-      if (isLiveApi && fd.minute != null) {
+      const clockManual = Boolean(local.live_clock_manual);
+      if (!clockManual && isLiveApi && fd.minute != null) {
         patch.live_minute = fd.minute;
         patch.live_injury_time = fd.injuryTime ?? null;
-      } else if (mappedStatus === "finished") {
+      } else if (!clockManual && mappedStatus === "finished") {
         patch.live_minute = null;
         patch.live_injury_time = null;
+        patch.live_clock_anchor_at = null;
+        patch.live_clock_manual = false;
       } else if (
+        !clockManual &&
         mappedStatus === "scheduled" &&
         shouldApplyFootballDataStatus(
           local.status,
@@ -467,6 +472,8 @@ export async function syncFootballDataWc2026(options?: {
       ) {
         patch.live_minute = null;
         patch.live_injury_time = null;
+        patch.live_clock_anchor_at = null;
+        patch.live_clock_manual = false;
       }
 
       if (odds) {

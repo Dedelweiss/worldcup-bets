@@ -19,17 +19,19 @@ export function MatchTimingBanner({
   round,
   className,
 }: MatchTimingBannerProps) {
-  const [now, setNow] = useState(() => new Date());
+  // null jusqu'au montage client : évite un décalage SSR/hydratation sur le compte à rebours.
+  const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
     if (isLive) return;
+    setNow(new Date());
     const id = setInterval(() => setNow(new Date()), 1_000);
     return () => clearInterval(id);
-  }, [isLive]);
+  }, [isLive, kickoffAt]);
 
   if (isLive) return null;
 
-  const countdown = getKickoffCountdown(kickoffAt, now);
+  const countdown = now ? getKickoffCountdown(kickoffAt, now) : null;
 
   return (
     <div

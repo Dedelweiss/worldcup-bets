@@ -11,6 +11,8 @@ interface LiveMatchClockProps {
   kickoffAt: string;
   minute?: number | null;
   injuryTime?: number | null;
+  clockAnchorAt?: string | null;
+  clockManual?: boolean;
   size?: "sm" | "md" | "lg";
   showLiveLabel?: boolean;
   showPhase?: boolean;
@@ -43,22 +45,43 @@ export function LiveMatchClock({
   kickoffAt,
   minute,
   injuryTime,
+  clockAnchorAt,
+  clockManual,
   size = "md",
   showLiveLabel = true,
   showPhase = true,
   className,
 }: LiveMatchClockProps) {
-  const [now, setNow] = useState(() => Date.now());
+  const manualTick =
+    Boolean(clockManual) &&
+    Boolean(clockAnchorAt) &&
+    minute != null &&
+    minute >= 0;
+  const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30_000);
+    setNow(Date.now());
+    const tickMs = manualTick ? 1_000 : 30_000;
+    const id = setInterval(() => setNow(Date.now()), tickMs);
     return () => clearInterval(id);
-  }, []);
+  }, [manualTick]);
 
-  const clock = useMemo(
-    () => resolveLiveClock({ kickoffAt, minute, injuryTime, now }),
-    [kickoffAt, minute, injuryTime, now],
-  );
+  const clock = useMemo(() => {
+    if (now == null) {
+      if (minute != null && minute >= 0) {
+        return resolveLiveClock({ kickoffAt, minute, injuryTime });
+      }
+      return null;
+    }
+    return resolveLiveClock({
+      kickoffAt,
+      minute,
+      injuryTime,
+      clockAnchorAt,
+      clockManual,
+      now,
+    });
+  }, [kickoffAt, minute, injuryTime, clockAnchorAt, clockManual, now]);
 
   const ariaLabel = clock
     ? clock.phase === "half_time"

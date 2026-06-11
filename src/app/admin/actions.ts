@@ -292,6 +292,76 @@ export async function updateMatchAction(formData: FormData): Promise<ActionResul
   return { success: true, matchId };
 }
 
+export async function setLiveClockAction(formData: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const matchId = Number(formData.get("matchId"));
+  const reset = formData.get("reset") === "true";
+
+  if (Number.isNaN(matchId)) {
+    return { success: false, error: "Match invalide." };
+  }
+
+  const minuteRaw = String(formData.get("liveMinute") ?? "").trim();
+  const injuryRaw = String(formData.get("liveInjuryTime") ?? "").trim();
+  const anchorRaw = String(formData.get("liveClockAnchorAt") ?? "").trim();
+
+  let pLiveMinute: number | null = null;
+  let pLiveInjury: number | null = null;
+  let pAnchor: string | null = null;
+
+  if (!reset) {
+    if (minuteRaw !== "") {
+      pLiveMinute = Number(minuteRaw);
+      if (Number.isNaN(pLiveMinute) || pLiveMinute < 0) {
+        return { success: false, error: "Minute invalide." };
+      }
+    }
+    if (injuryRaw !== "") {
+      pLiveInjury = Number(injuryRaw);
+      if (Number.isNaN(pLiveInjury) || pLiveInjury < 0) {
+        return { success: false, error: "Temps additionnel invalide." };
+      }
+    }
+    if (anchorRaw) {
+      const anchorDate = new Date(anchorRaw);
+      if (Number.isNaN(anchorDate.getTime())) {
+        return { success: false, error: "Date de coup d'envoi effectif invalide." };
+      }
+      pAnchor = anchorDate.toISOString();
+    }
+    if (pLiveMinute == null && pAnchor == null) {
+      return {
+        success: false,
+        error: "Indiquez la minute actuelle ou l'heure réelle de coup d'envoi.",
+      };
+    }
+  }
+
+  const { error } = await supabase.rpc("admin_set_live_clock", {
+    p_match_id: matchId,
+    p_live_minute: pLiveMinute,
+    p_live_injury_time: pLiveInjury,
+    p_live_clock_anchor_at: pAnchor,
+    p_reset: reset,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Exécutez supabase/migrations/074_admin_live_clock.sql dans Supabase."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  revalidatePath(`/admin/matches/${matchId}`);
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
+  revalidatePath("/matches");
+  revalidatePath(`/matches/${matchId}`);
+  return { success: true, matchId };
+}
+
 async function triggerAiBetIfLive(
   _matchId: number,
   status: MatchStatus | null,

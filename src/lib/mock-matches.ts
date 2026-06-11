@@ -14,6 +14,9 @@ export const MOCK_DASHBOARD: DashboardData = {
     pendingBets: 2,
     rank: 1,
     totalPlayers: 8,
+    livePoints: 0,
+    liveRank: null,
+    hasLiveScoring: false,
   },
   upcomingMatches: [
     {
