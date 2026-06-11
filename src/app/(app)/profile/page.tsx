@@ -14,6 +14,7 @@ import {
   getPointsHistory,
 } from "@/lib/profile/points-history";
 import { getPlayerLabel } from "@/lib/profile/player-label";
+import { resolveAvatarUrl } from "@/lib/profile/avatars";
 import { getUserBadgeCollection } from "@/lib/profile/user-badges";
 
 export const metadata = { title: "Mon profil · WC2026 Pool" };
@@ -38,6 +39,7 @@ export default async function ProfilePage() {
 
   const futStats = calculateFUTStats(userBets, allMatches);
   const playerName = getPlayerLabel(profile);
+  const avatarUrl = resolveAvatarUrl(profile, profile.id) ?? profile.avatar_url;
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
@@ -56,7 +58,7 @@ export default async function ProfilePage() {
       <section className="flex flex-col items-center gap-2 rounded-3xl border border-white/10 bg-zinc-900/40 p-6 backdrop-blur-md">
         <PronostiqueurCard
           playerName={playerName}
-          avatarUrl={profile.avatar_url}
+          avatarUrl={avatarUrl}
           favoriteTeam={favoriteTeam?.team ?? null}
           futStats={futStats}
         />

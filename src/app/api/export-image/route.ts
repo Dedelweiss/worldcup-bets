@@ -7,6 +7,8 @@ const ALLOWED_HOSTS = [
   "www.flagcdn.com",
   ".supabase.co",
   ".supabase.in",
+  "lh3.googleusercontent.com",
+  ".googleusercontent.com",
 ];
 
 const PUBLIC_AVATAR_PREFIX = "/avatars/";

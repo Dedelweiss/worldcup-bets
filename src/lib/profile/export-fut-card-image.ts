@@ -1,4 +1,4 @@
-import { toBlob } from "html-to-image";
+import { domToBlob } from "modern-screenshot";
 
 function sanitizeFilename(name: string): string {
   return name
@@ -22,6 +22,10 @@ function pushRestore(restores: RestoreFn[], fn: RestoreFn) {
 }
 
 function resolveFetchTarget(src: string): string {
+  if (src.startsWith("data:") || src.startsWith("blob:")) {
+    return src;
+  }
+
   if (src.startsWith("/")) {
     if (src.startsWith("/avatars/")) {
       return `/api/export-image?path=${encodeURIComponent(src)}`;
@@ -57,7 +61,6 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-/** Rasterise toute image (SVG, WebP, PNG…) en PNG base64 pour html-to-image. */
 async function rasterizeToPngDataUrl(
   src: string,
   width: number,
@@ -107,6 +110,85 @@ function waitForImageElement(img: HTMLImageElement): Promise<void> {
   });
 }
 
+/** Remplace les src cross-origin par des PNG locaux (sinon canvas tainted → avatar absent). */
+async function inlineImages(node: HTMLElement): Promise<RestoreFn> {
+  const restores: RestoreFn[] = [];
+  const images = Array.from(node.querySelectorAll("img"));
+
+  for (const img of images) {
+    const src = img.currentSrc || img.src;
+    if (!src || src.startsWith("data:image/png")) continue;
+
+    const isAvatar = img.hasAttribute("data-export-avatar");
+    const scale = isAvatar ? 3 : 2.5;
+    const width =
+      (img.offsetWidth || img.naturalWidth || (isAvatar ? 112 : 36)) * scale;
+    const height =
+      (img.offsetHeight || img.naturalHeight || (isAvatar ? 112 : 36)) * scale;
+
+    const previousSrc = img.src;
+    const previousSrcset = img.getAttribute("srcset");
+    pushRestore(restores, () => {
+      img.src = previousSrc;
+      if (previousSrcset) img.setAttribute("srcset", previousSrcset);
+      else img.removeAttribute("srcset");
+      img.removeAttribute("crossorigin");
+    });
+
+    try {
+      const pngDataUrl = await rasterizeToPngDataUrl(src, width, height);
+      img.src = pngDataUrl;
+      img.removeAttribute("srcset");
+      img.setAttribute("crossorigin", "anonymous");
+      await waitForImageElement(img);
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[export-dom] inline image failed:", src, error);
+      }
+    }
+  }
+
+  return () => {
+    for (let i = restores.length - 1; i >= 0; i -= 1) {
+      restores[i]!();
+    }
+  };
+}
+
+/** Proxy CORS pour modern-screenshot (avatars Supabase, drapeaux flagcdn, SVG locaux). */
+async function exportFetchFn(url: string): Promise<string | false> {
+  if (url.startsWith("data:") || url.startsWith("blob:")) {
+    return false;
+  }
+
+  try {
+    const blob = await fetchImageBlob(url);
+    return await blobToDataUrl(blob);
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[export-dom] fetchFn failed:", url, error);
+    }
+    return false;
+  }
+}
+
+function waitNextFrame(frames = 1): Promise<void> {
+  return new Promise((resolve) => {
+    let remaining = frames;
+    const tick = () => {
+      remaining -= 1;
+      if (remaining <= 0) resolve();
+      else requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
+/** Laisse React figer l’animation du gradient avant la capture. */
+export async function waitForExportReady(): Promise<void> {
+  await waitNextFrame(3);
+}
+
 function applyExportPatches(node: HTMLElement): RestoreFn {
   const restores: RestoreFn[] = [];
 
@@ -143,6 +225,10 @@ function applyExportPatches(node: HTMLElement): RestoreFn {
     patchStyle(el, { display: "none" });
   });
 
+  node.querySelectorAll<HTMLElement>("[data-export-animate]").forEach((el) => {
+    patchStyle(el, { transform: "none", animation: "none" });
+  });
+
   node.querySelectorAll<HTMLElement>("*").forEach((el) => {
     const computed = getComputedStyle(el);
     const hasBlur =
@@ -164,137 +250,83 @@ function applyExportPatches(node: HTMLElement): RestoreFn {
   };
 }
 
-async function inlineImages(node: HTMLElement): Promise<RestoreFn> {
-  const restores: RestoreFn[] = [];
-  const images = Array.from(node.querySelectorAll("img"));
+/** Détecte un PNG entièrement/noir (échec html-to-image) — pas un fond sombre légitime. */
+async function isEffectivelyBlank(blob: Blob): Promise<boolean> {
+  try {
+    const bitmap = await createImageBitmap(blob);
+    const sample = 64;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.min(bitmap.width, sample);
+    canvas.height = Math.min(bitmap.height, sample);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return false;
+    }
 
-  for (const img of images) {
-    const src = img.currentSrc || img.src;
-    if (!src || src.startsWith("data:image/png")) continue;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
 
-    const isAvatar = img.hasAttribute("data-export-avatar");
-    const scale = isAvatar ? 3 : 2.5;
-    const width = (img.offsetWidth || img.width || (isAvatar ? 112 : 36)) * scale;
-    const height = (img.offsetHeight || img.height || (isAvatar ? 112 : 36)) * scale;
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let contentPixels = 0;
+    const total = data.length / 4;
 
-    const previousSrc = img.src;
-    pushRestore(restores, () => {
-      img.src = previousSrc;
-      img.removeAttribute("crossorigin");
-    });
-
-    try {
-      const pngDataUrl = await rasterizeToPngDataUrl(src, width, height);
-      img.src = pngDataUrl;
-      img.removeAttribute("srcset");
-      await waitForImageElement(img);
-    } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("[export-fut-card] inline image failed:", src, error);
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i]!;
+      const g = data[i + 1]!;
+      const b = data[i + 2]!;
+      const a = data[i + 3]!;
+      if (a > 12 && (r > 48 || g > 48 || b > 48)) {
+        contentPixels += 1;
       }
     }
+
+    return contentPixels / total < 0.015;
+  } catch {
+    return false;
   }
-
-  return () => {
-    for (let i = restores.length - 1; i >= 0; i -= 1) {
-      restores[i]!();
-    }
-  };
 }
 
-function resolveCaptureTarget(node: HTMLElement): HTMLElement {
-  if (node.dataset.leaderboardExportCard === "true") return node;
-  const card = node.querySelector<HTMLElement>("[data-leaderboard-export-card]");
-  if (card) return card;
-  if (node.childElementCount === 1 && node.firstElementChild instanceof HTMLElement) {
-    return node.firstElementChild;
-  }
-  return node;
-}
-
-function isNodeCapturable(node: HTMLElement): boolean {
-  const style = getComputedStyle(node);
-  if (parseFloat(style.opacity) < 0.99) return false;
-  if (style.visibility === "hidden" || style.display === "none") return false;
-
-  const rect = node.getBoundingClientRect();
-  if (rect.width < 1 || rect.height < 1) return false;
-
-  return true;
-}
-
-/** Clone visible dans le body — Chrome/Arc ne peint pas les nœuds hors écran / opacity 0. */
-function mountCloneForCapture(source: HTMLElement): {
-  node: HTMLElement;
-  cleanup: RestoreFn;
-} {
-  const clone = source.cloneNode(true) as HTMLElement;
-  const width = Math.max(source.offsetWidth, source.scrollWidth, 300);
-  const shell = document.createElement("div");
-  shell.setAttribute("data-export-shell", "true");
-  shell.style.cssText = [
-    "position:fixed",
-    "left:0",
-    "top:0",
-    "margin:0",
-    "padding:0",
-    "opacity:1",
-    "visibility:visible",
-    "pointer-events:none",
-    "z-index:2147483647",
-    `width:${width}px`,
-  ].join(";");
-
-  clone.style.opacity = "1";
-  clone.style.visibility = "visible";
-  clone.classList.remove("opacity-0");
-  shell.appendChild(clone);
-  document.body.appendChild(shell);
-
-  return {
-    node: clone,
-    cleanup: () => shell.remove(),
-  };
-}
-
-export async function captureFutCardImage(node: HTMLElement): Promise<Blob> {
-  const source = resolveCaptureTarget(node);
-  const mounted = isNodeCapturable(source)
-    ? { node: source, cleanup: () => {} }
-    : mountCloneForCapture(source);
-
-  const { node: captureNode, cleanup } = mounted;
-
-  captureNode.setAttribute("data-exporting", "true");
-  const restorePatches = applyExportPatches(captureNode);
+/** Capture le nœud visible tel qu’affiché (pas de clone hors écran). */
+export async function captureDomImage(source: HTMLElement): Promise<Blob> {
+  source.setAttribute("data-exporting", "true");
+  const restorePatches = applyExportPatches(source);
   let restoreImages: RestoreFn | null = null;
 
   try {
-    restoreImages = await inlineImages(captureNode);
-    await waitNextFrame(4);
+    if (typeof document !== "undefined" && document.fonts?.ready) {
+      await document.fonts.ready;
+    }
+    restoreImages = await inlineImages(source);
+    await waitNextFrame(2);
 
-    const blob = await toBlob(captureNode, {
-      pixelRatio: 2,
-      cacheBust: true,
-      skipFonts: true,
-      includeQueryParams: true,
+    const blob = await domToBlob(source, {
+      scale: 2,
       backgroundColor: "#09090b",
-      filter: (element) =>
-        !(element instanceof Element && element.hasAttribute("data-export-ignore")),
+      timeout: 30_000,
+      fetchFn: exportFetchFn,
+      filter: (node) =>
+        !(node instanceof Element && node.hasAttribute("data-export-ignore")),
     });
 
     if (!blob || blob.size === 0) {
       throw new Error("Empty export blob");
     }
 
+    if (await isEffectivelyBlank(blob)) {
+      throw new Error("Blank export capture");
+    }
+
     return blob;
   } finally {
     restoreImages?.();
     restorePatches();
-    captureNode.removeAttribute("data-exporting");
-    cleanup();
+    source.removeAttribute("data-exporting");
   }
 }
+
+/** @deprecated Alias historique */
+export const captureFutCardImage = captureDomImage;
 
 export type FutCardShareResult = "shared" | "downloaded";
 
@@ -307,11 +339,16 @@ export class FutCardShareCancelledError extends Error {
 
 let shareInFlight = false;
 
-/**
- * Partage ou télécharge une image PNG.
- * Ne passe que `files` au share natif : title/text provoquent un double collage
- * (image + texte) sur macOS/iOS quand l'utilisateur choisit « Copier ».
- */
+function downloadBlob(blob: Blob, filename: string): FutCardShareResult {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+  return "downloaded";
+}
+
 export async function shareOrDownloadFutCard(
   blob: Blob,
   filename: string,
@@ -341,30 +378,15 @@ export async function shareOrDownloadFutCard(
         ) {
           throw new FutCardShareCancelledError();
         }
-        throw error;
+        if (process.env.NODE_ENV === "development") {
+          console.warn("[export] share failed, falling back to download:", error);
+        }
+        return downloadBlob(blob, filename);
       }
     }
 
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = filename;
-    anchor.click();
-    URL.revokeObjectURL(url);
-    return "downloaded";
+    return downloadBlob(blob, filename);
   } finally {
     shareInFlight = false;
   }
-}
-
-function waitNextFrame(frames = 1): Promise<void> {
-  return new Promise((resolve) => {
-    let remaining = frames;
-    const tick = () => {
-      remaining -= 1;
-      if (remaining <= 0) resolve();
-      else requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  });
 }

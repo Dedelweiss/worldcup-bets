@@ -11,6 +11,8 @@ interface TeamFlagProps {
   size?: number;
   className?: string;
   teamId?: number;
+  /** Rasterise le drapeau en PNG pour l’export DOM (carte FUT). */
+  exportInline?: boolean;
 }
 
 export function TeamFlag({
@@ -20,6 +22,7 @@ export function TeamFlag({
   size = 32,
   className,
   teamId,
+  exportInline = false,
 }: TeamFlagProps) {
   if (isTbdTeam({ id: teamId, name, code, logo_url: logoUrl })) {
     return (
@@ -45,6 +48,7 @@ export function TeamFlag({
         className={cn("rounded-full bg-muted object-cover", className)}
         style={{ width: size, height: size }}
         unoptimized
+        {...(exportInline ? { "data-export-avatar": "" } : {})}
       />
     );
   }

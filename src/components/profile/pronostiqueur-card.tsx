@@ -8,11 +8,13 @@ import { TeamFlag } from "@/components/shared/team-flag";
 import { FutStatInfo } from "@/components/profile/fut-stat-info";
 import { Button } from "@/components/ui/button";
 import {
-  captureFutCardImage,
+  captureDomImage,
   futCardExportFilename,
   FutCardShareCancelledError,
   shareOrDownloadFutCard,
+  waitForExportReady,
 } from "@/lib/profile/export-fut-card-image";
+import { renderFutCardImage } from "@/lib/profile/render-fut-card-image";
 import { getPlayerInitials, getPlayerLabel } from "@/lib/profile/player-label";
 import type { FUTCardStats } from "@/lib/profile/calculate-fut-stats";
 import { cn } from "@/lib/utils";
@@ -55,7 +57,33 @@ export function PronostiqueurCard({
     exportingRef.current = true;
     setIsExporting(true);
     try {
-      const blob = await captureFutCardImage(node);
+      await waitForExportReady();
+
+      let blob: Blob;
+      try {
+        blob = await captureDomImage(node);
+      } catch (domError) {
+        const detail =
+          domError instanceof Error
+            ? domError.message
+            : typeof domError === "string"
+              ? domError
+              : "unknown";
+        if (process.env.NODE_ENV === "development") {
+          console.warn(
+            "[PronostiqueurCard] DOM capture failed, canvas fallback:",
+            detail,
+            domError,
+          );
+        }
+        blob = await renderFutCardImage({
+          playerName,
+          avatarUrl: showAvatar ? avatarUrl : null,
+          initials,
+          favoriteTeam,
+          futStats,
+        });
+      }
       const filename = futCardExportFilename(playerName, futStats.ovr);
       const result = await shareOrDownloadFutCard(blob, filename);
 
@@ -66,9 +94,13 @@ export function PronostiqueurCard({
       }
     } catch (error) {
       if (error instanceof FutCardShareCancelledError) return;
-      if (process.env.NODE_ENV === "development") {
-        console.error("[PronostiqueurCard] export failed:", error);
-      }
+      const detail =
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+            ? error
+            : JSON.stringify(error);
+      console.error("[PronostiqueurCard] export failed:", detail, error);
       toast.error("Impossible d'exporter la carte. Réessayez dans un instant.");
     } finally {
       exportingRef.current = false;
@@ -148,6 +180,7 @@ export function PronostiqueurCard({
                     logoUrl={favoriteTeam.logo_url}
                     teamId={favoriteTeam.id}
                     size={36}
+                    exportInline
                     className="rounded-md border border-lime-400/40 shadow-[0_0_12px_rgba(204,255,0,0.25)]"
                   />
                   <span className="max-w-[72px] truncate text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
