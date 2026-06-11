@@ -52,23 +52,22 @@ export function LiveMatchClock({
   showPhase = true,
   className,
 }: LiveMatchClockProps) {
-  const manualTick =
-    Boolean(clockManual) &&
-    Boolean(clockAnchorAt) &&
-    minute != null &&
-    minute >= 0;
+  const manualClock =
+    Boolean(clockManual) && Boolean(clockAnchorAt);
+  const needsTick = manualClock || minute == null;
   const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
     setNow(Date.now());
-    const tickMs = manualTick ? 1_000 : 30_000;
+    const tickMs = needsTick ? 1_000 : 30_000;
     const id = setInterval(() => setNow(Date.now()), tickMs);
     return () => clearInterval(id);
-  }, [manualTick]);
+  }, [needsTick]);
 
   const clock = useMemo(() => {
     if (now == null) {
-      if (minute != null && minute >= 0) {
+      // Évite d'afficher une minute figée avant le montage client (chrono manuel).
+      if (!needsTick && minute != null && minute >= 0) {
         return resolveLiveClock({ kickoffAt, minute, injuryTime });
       }
       return null;
@@ -81,7 +80,7 @@ export function LiveMatchClock({
       clockManual,
       now,
     });
-  }, [kickoffAt, minute, injuryTime, clockAnchorAt, clockManual, now]);
+  }, [kickoffAt, minute, injuryTime, clockAnchorAt, clockManual, now, needsTick]);
 
   const ariaLabel = clock
     ? clock.phase === "half_time"

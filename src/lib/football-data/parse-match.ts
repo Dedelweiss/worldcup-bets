@@ -123,16 +123,32 @@ export type LiveClockParts = {
 
 const HALFTIME_BREAK_MIN = 15;
 
-/** Minute courante à partir d'une ancre admin (minute de base + temps écoulé). */
+/** Minutes murales depuis le coup d'envoi pour atteindre une minute de jeu donnée. */
+export function wallClockMinutesForMatchMinute(
+  matchMinute: number,
+  halftimeBreakMin = HALFTIME_BREAK_MIN,
+): number {
+  if (matchMinute <= 45) return matchMinute;
+  return 45 + halftimeBreakMin + (matchMinute - 45);
+}
+
+/** Coup d'envoi fictif : à l'ancre admin, le match était à `baseMinute`. */
+export function syntheticKickoffFromAnchor(
+  baseMinute: number,
+  anchorAt: string,
+): string {
+  const anchorMs = new Date(anchorAt).getTime();
+  const offsetMin = wallClockMinutesForMatchMinute(baseMinute);
+  return new Date(anchorMs - offsetMin * 60_000).toISOString();
+}
+
+/** Minute courante depuis une ancre admin (mi-temps et 2e période incluses). */
 export function resolveManualLiveMinute(
   baseMinute: number,
   anchorAt: string,
   now = Date.now(),
-): number {
-  const elapsedMin = Math.floor(
-    (now - new Date(anchorAt).getTime()) / 60_000,
-  );
-  return Math.max(0, baseMinute + elapsedMin);
+): number | null {
+  return estimateLiveMinute(syntheticKickoffFromAnchor(baseMinute, anchorAt), now);
 }
 
 /** Estime la minute de jeu à partir du coup d'envoi (pause ~15 min). */
@@ -148,7 +164,7 @@ export function estimateLiveMinute(
   if (elapsedMin <= 45) return elapsedMin;
   if (elapsedMin < 45 + HALFTIME_BREAK_MIN) return 45;
   const secondHalf = elapsedMin - 45 - HALFTIME_BREAK_MIN;
-  return Math.min(90, 46 + secondHalf);
+  return Math.min(90, 45 + secondHalf);
 }
 
 function isHalfTimeWindow(kickoffAt: string, now: number): boolean {
@@ -172,10 +188,23 @@ export function resolveLiveClock(options: {
 
   if (clockManual && clockAnchorAt) {
     if (minute != null && minute >= 0) {
+      const syntheticKickoff = syntheticKickoffFromAnchor(minute, clockAnchorAt);
+      if (isHalfTimeWindow(syntheticKickoff, now)) {
+        return {
+          minute: 45,
+          injuryTime: null,
+          phase: "half_time",
+          phaseLabel: "Mi-temps",
+          displayMinute: 45,
+          isStoppageTime: false,
+          isEstimated: false,
+        };
+      }
       const currentMinute = resolveManualLiveMinute(minute, clockAnchorAt, now);
-      const parts = parseLiveClock(currentMinute, injuryTime);
-      if (!parts) return null;
-      return { ...parts, isEstimated: false };
+      if (currentMinute != null) {
+        const parts = parseLiveClock(currentMinute, injuryTime);
+        if (parts) return { ...parts, isEstimated: false };
+      }
     }
 
     if (isHalfTimeWindow(clockAnchorAt, now)) {
