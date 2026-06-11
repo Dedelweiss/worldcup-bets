@@ -232,6 +232,8 @@ export interface BetRow {
     | "away_score"
     | "live_minute"
     | "live_injury_time"
+    | "live_clock_anchor_at"
+    | "live_clock_manual"
     | "home_team"
     | "away_team"
   > | null;
