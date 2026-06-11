@@ -1,4 +1,5 @@
 import { BalanceAdjustForm } from "@/components/admin/balance-adjust-form";
+import { PlayerDataExportPanel } from "@/components/admin/player-data-export-panel";
 import { ResetAppPanel } from "@/components/admin/reset-app-panel";
 import { UsersTable } from "@/components/admin/users-table";
 import { requireAdmin } from "@/lib/auth-server";
@@ -29,6 +30,8 @@ export default async function AdminUsersPage() {
       </div>
 
       <BalanceAdjustForm players={players ?? []} />
+
+      <PlayerDataExportPanel />
 
       <ResetAppPanel />
 
