@@ -16,6 +16,7 @@ interface DashboardSummaryProps {
   teams: TournamentTeam[];
   favorite: ProfileFavoriteTeam | null;
   tournamentConfig: TournamentConfig;
+  selectionOpen?: boolean;
   isDemo?: boolean;
 }
 
@@ -30,6 +31,7 @@ export function DashboardSummary({
   teams,
   favorite,
   tournamentConfig,
+  selectionOpen = true,
   isDemo,
 }: DashboardSummaryProps) {
   const secondaryStats = [
@@ -85,6 +87,7 @@ export function DashboardSummary({
             teams={teams}
             favorite={favorite}
             config={tournamentConfig}
+            selectionOpen={selectionOpen}
             isDemo={isDemo}
           />
         </div>

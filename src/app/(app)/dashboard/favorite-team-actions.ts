@@ -16,6 +16,9 @@ function mapError(message: string): string {
   if (m.includes("invalid tournament team")) {
     return "Équipe invalide.";
   }
+  if (m.includes("selection closed")) {
+    return "Le choix d'équipe favorite est fermé (premier match commencé).";
+  }
   if (message.includes("Could not find the function")) {
     return "Fonction indisponible. Exécutez la migration 035 dans Supabase.";
   }
@@ -38,5 +41,6 @@ export async function setFavoriteTeamAction(
 
   revalidatePath("/dashboard");
   revalidatePath("/profile");
+  revalidatePath("/choose-favorite-team");
   return { success: true };
 }

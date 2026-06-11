@@ -45,9 +45,9 @@ export function SignupAvatarPicker({ value, onChange }: SignupAvatarPickerProps)
               <Image
                 src={src}
                 alt=""
-                width={40}
-                height={40}
-                className="mx-auto size-10 rounded-full"
+                width={64}
+                height={64}
+                className="mx-auto block size-10 rounded-full object-cover"
                 unoptimized
               />
             </button>

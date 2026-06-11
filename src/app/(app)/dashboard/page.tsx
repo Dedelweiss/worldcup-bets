@@ -11,6 +11,7 @@ import {
   getLeaderboardRankNeighbors,
 } from "@/lib/leaderboard";
 import { getProfileFavoriteTeam } from "@/lib/profile/favorite-team";
+import { isFavoriteTeamSelectionOpen } from "@/lib/profile/favorite-team-selection";
 import { getAllTournamentTeams } from "@/lib/tournament/queries";
 import { getTournamentConfig } from "@/lib/tournament/config";
 import { getPlayerLabel } from "@/lib/profile/player-label";
@@ -30,6 +31,7 @@ export default async function DashboardPage() {
     favoriteTeam,
     tournamentConfig,
     tournamentTeams,
+    selectionOpen,
     topPlayers,
     rankNeighbors,
     globalLiveChat,
@@ -45,6 +47,7 @@ export default async function DashboardPage() {
           dashboardAnnouncementMessage: "",
         },
         [] as Awaited<ReturnType<typeof getAllTournamentTeams>>,
+        true,
         DEMO_LEADERBOARD_TOP,
         getLeaderboardRankNeighbors(DEMO_LEADERBOARD_TOP, profile.id),
         { messages: [], liveMatchIds: [] },
@@ -54,12 +57,14 @@ export default async function DashboardPage() {
           favoriteTeam,
           tournamentConfig,
           tournamentTeams,
+          selectionOpen,
           leaderboard,
           globalLiveChat,
         ] = await Promise.all([
           getProfileFavoriteTeam(profile.id),
           getTournamentConfig(),
           getAllTournamentTeams(),
+          isFavoriteTeamSelectionOpen(),
           getLeaderboard({ sort: "points" }),
           getGlobalLiveChatInitial(30),
         ]);
@@ -68,6 +73,7 @@ export default async function DashboardPage() {
           favoriteTeam,
           tournamentConfig,
           tournamentTeams,
+          selectionOpen,
           players.slice(0, 3),
           getLeaderboardRankNeighbors(players, profile.id),
           globalLiveChat,
@@ -131,6 +137,7 @@ export default async function DashboardPage() {
         teams={tournamentTeams}
         favorite={favoriteTeam}
         tournamentConfig={tournamentConfig}
+        selectionOpen={selectionOpen}
         isDemo={isDemo}
         upcomingMatches={upcomingMatches}
         betStatuses={betStatuses}

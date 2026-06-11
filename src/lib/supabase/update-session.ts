@@ -9,8 +9,15 @@ const PROTECTED_PREFIXES = [
   "/leaderboard",
   "/leagues",
   "/matches",
+  "/profile",
+  "/bracket",
+  "/help",
+  "/choose-favorite-team",
   "/admin",
 ];
+
+const FAVORITE_TEAM_ROUTE = "/choose-favorite-team";
+const FAVORITE_TEAM_SKIP_PREFIXES = ["/admin", "/api", FAVORITE_TEAM_ROUTE];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -78,5 +85,56 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  if (
+    user &&
+    !isAuthRoute &&
+    !FAVORITE_TEAM_SKIP_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  ) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("favorite_team_id, is_ai")
+      .eq("id", user.id)
+      .single();
+
+    if (
+      profile &&
+      !profile.is_ai &&
+      profile.favorite_team_id == null
+    ) {
+      const { data: selectionOpen, error: selectionError } = await supabase.rpc(
+        "is_favorite_team_selection_open",
+      );
+
+      const open =
+        selectionError == null
+          ? Boolean(selectionOpen)
+          : await fallbackFavoriteTeamSelectionOpen(supabase);
+
+      if (open) {
+        const url = request.nextUrl.clone();
+        url.pathname = FAVORITE_TEAM_ROUTE;
+        if (pathname !== "/") {
+          url.searchParams.set("next", pathname);
+        }
+        return NextResponse.redirect(url);
+      }
+    }
+  }
+
   return supabaseResponse;
+}
+
+async function fallbackFavoriteTeamSelectionOpen(
+  supabase: ReturnType<typeof createServerClient>,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("matches")
+    .select("kickoff_at")
+    .not("status", "in", "(cancelled,postponed)")
+    .order("kickoff_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data?.kickoff_at) return true;
+  return new Date(String(data.kickoff_at)).getTime() > Date.now();
 }

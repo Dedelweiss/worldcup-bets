@@ -28,6 +28,7 @@ interface DashboardBentoProps {
   teams: TournamentTeam[];
   favorite: ProfileFavoriteTeam | null;
   tournamentConfig: TournamentConfig;
+  selectionOpen?: boolean;
   isDemo?: boolean;
   upcomingMatches: MatchWithTeams[];
   betStatuses: Record<number, UserMatchBetStatus>;
@@ -42,6 +43,7 @@ export function DashboardBento({
   teams,
   favorite,
   tournamentConfig,
+  selectionOpen,
   isDemo,
   upcomingMatches,
   betStatuses,
@@ -60,6 +62,7 @@ export function DashboardBento({
           teams={teams}
           favorite={favorite}
           tournamentConfig={tournamentConfig}
+          selectionOpen={selectionOpen}
           isDemo={isDemo}
         />
       </MotionReveal>
@@ -72,6 +75,7 @@ export function DashboardBento({
             teams={teams}
             favorite={favorite}
             tournamentConfig={tournamentConfig}
+            selectionOpen={selectionOpen}
             isDemo={isDemo}
           />
         </div>

@@ -2,6 +2,7 @@ import { hasSupabaseConfig } from "@/lib/auth-server";
 import { normalizeMatch, MATCH_SELECT } from "@/lib/matches";
 import { syncLiveMatches } from "@/lib/matches/sync-live";
 import { enrichBracketSlotsWithKnockoutMatches } from "@/lib/tournament/bracket-slots";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type {
   BracketSlotWithMatch,
@@ -10,6 +11,57 @@ import type {
   TournamentGroup,
   TournamentTeam,
 } from "@/types/database";
+
+const TOURNAMENT_TEAMS_SELECT =
+  "id, name, code, logo_url, tournament_group_id, group_position, tournament_group:tournament_groups (id, letter, name)" as const;
+
+function mapTournamentTeamRows(rows: unknown[]): TournamentTeam[] {
+  return rows.map((row) => {
+    const r = row as Record<string, unknown>;
+    const g = r.tournament_group;
+    return {
+      ...r,
+      tournament_group: Array.isArray(g) ? g[0] : g,
+    } as TournamentTeam;
+  });
+}
+
+async function queryAllTournamentTeams(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<TournamentTeam[]> {
+  const { data, error } = await supabase
+    .from("teams")
+    .select(TOURNAMENT_TEAMS_SELECT)
+    .not("tournament_group_id", "is", null)
+    .order("tournament_group_id")
+    .order("group_position");
+
+  if (error) throw error;
+  return mapTournamentTeamRows(data ?? []);
+}
+
+export async function getAllTournamentTeams(): Promise<TournamentTeam[]> {
+  if (!hasSupabaseConfig) return [];
+
+  const supabase = await createClient();
+  try {
+    return await queryAllTournamentTeams(supabase);
+  } catch {
+    return [];
+  }
+}
+
+/** Équipes pour /signup (visiteur non connecté — RLS bloque le client anon). */
+export async function getAllTournamentTeamsForSignup(): Promise<TournamentTeam[]> {
+  if (!hasSupabaseConfig) return [];
+
+  try {
+    const supabase = createAdminClient();
+    return await queryAllTournamentTeams(supabase);
+  } catch {
+    return getAllTournamentTeams();
+  }
+}
 
 export async function getTournamentGroups(): Promise<TournamentGroup[]> {
   if (!hasSupabaseConfig) return [];
@@ -40,31 +92,6 @@ export async function getTeamsByTournamentGroup(
 
   if (error) return [];
   return data as TournamentTeam[];
-}
-
-export async function getAllTournamentTeams(): Promise<TournamentTeam[]> {
-  if (!hasSupabaseConfig) return [];
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("teams")
-    .select(
-      "id, name, code, logo_url, tournament_group_id, group_position, tournament_group:tournament_groups (id, letter, name)",
-    )
-    .not("tournament_group_id", "is", null)
-    .order("tournament_group_id")
-    .order("group_position");
-
-  if (error) return [];
-
-  return (data ?? []).map((row) => {
-    const r = row as Record<string, unknown>;
-    const g = r.tournament_group;
-    return {
-      ...r,
-      tournament_group: Array.isArray(g) ? g[0] : g,
-    } as TournamentTeam;
-  });
 }
 
 export type MatchListFilter = "all" | "group" | "knockout";

@@ -1,13 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Heart, Lock, Trophy } from "lucide-react";
 import { setFavoriteTeamAction } from "@/app/(app)/dashboard/favorite-team-actions";
+import { FavoriteTeamPicker } from "@/components/profile/favorite-team-picker";
 import { TeamFlag } from "@/components/shared/team-flag";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { formatPoints } from "@/lib/format";
 import type { ProfileFavoriteTeam } from "@/lib/profile/favorite-team";
 import type { TournamentConfig } from "@/lib/tournament/config";
@@ -17,6 +16,7 @@ interface FavoriteTeamSectionProps {
   teams: TournamentTeam[];
   favorite: ProfileFavoriteTeam | null;
   config: TournamentConfig;
+  selectionOpen?: boolean;
   isDemo?: boolean;
 }
 
@@ -24,27 +24,16 @@ export function FavoriteTeamSection({
   teams,
   favorite,
   config,
+  selectionOpen = true,
   isDemo,
 }: FavoriteTeamSectionProps) {
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string>("");
+  const [selectedId, setSelectedId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const bonusPts = config.favoriteTeamBonusPoints;
-
-  const filteredTeams = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return teams;
-    return teams.filter(
-      (t) =>
-        t.name.toLowerCase().includes(q) ||
-        t.code?.toLowerCase().includes(q),
-    );
-  }, [teams, query]);
-
   const selectedTeam = teams.find((t) => t.id === Number(selectedId));
 
   async function handleConfirm() {
@@ -112,10 +101,13 @@ export function FavoriteTeamSection({
     );
   }
 
-  if (config.favoriteBonusSettled) {
+  if (config.favoriteBonusSettled || !selectionOpen) {
     return (
       <div className="flex h-full min-h-[120px] items-center justify-center rounded-xl border border-dashed border-border/60 bg-muted/10 px-4 text-center text-sm text-muted-foreground">
-        Choix d&apos;équipe favorite fermés.
+        Choix d&apos;équipe favorite fermé
+        {!selectionOpen && !config.favoriteBonusSettled
+          ? " (premier match commencé)."
+          : "."}
       </div>
     );
   }
@@ -140,33 +132,15 @@ export function FavoriteTeamSection({
 
       {!confirmOpen ? (
         <div className="mt-3 flex flex-1 flex-col gap-2">
-          <Input
-            type="search"
-            placeholder="Rechercher…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="h-8 text-sm"
-            aria-label="Rechercher une équipe"
-          />
-          <Select
+          <FavoriteTeamPicker
+            teams={teams}
             value={selectedId}
-            onChange={(e) => {
-              setSelectedId(e.target.value);
+            onChange={(id) => {
+              setSelectedId(id);
               setError(null);
             }}
-            className="bg-background"
-            aria-label="Choisir une équipe"
-          >
-            <option value="">— Sélectionner —</option>
-            {filteredTeams.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-                {t.tournament_group?.letter
-                  ? ` (Groupe ${t.tournament_group.letter})`
-                  : ""}
-              </option>
-            ))}
-          </Select>
+            disabled={loading}
+          />
           <Button
             type="button"
             size="sm"
