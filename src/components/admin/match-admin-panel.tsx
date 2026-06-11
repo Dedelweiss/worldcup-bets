@@ -722,6 +722,8 @@ export function MatchAdminPanel({
                           setClockForm((prev) => ({
                             ...prev,
                             minute: e.target.value,
+                            // Nouvelle minute → ancrer sur maintenant (évite une vieille ancre 1re MT).
+                            anchorAt: "",
                           }))
                         }
                         placeholder="ex. 67"
@@ -778,11 +780,42 @@ export function MatchAdminPanel({
                       }
                     />
                     <p className="text-xs text-muted-foreground">
-                      Utile si le match a commencé en retard : indiquez
-                      l&apos;heure réelle du coup d&apos;envoi, sans minute.
-                      Avec une minute saisie, laissez vide pour ancrer sur
-                      maintenant.
+                      Optionnel. Laissez vide quand vous recalibrez la minute
+                      (2e mi-temps, etc.) — l&apos;ancre sera « maintenant ».
+                      Renseignez seulement si le match a commencé en retard sans
+                      changer la minute.
                     </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setClockForm((prev) => ({
+                          ...prev,
+                          minute: "46",
+                          anchorAt: "",
+                        }))
+                      }
+                    >
+                      46&apos; (2e MT)
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setClockForm((prev) => ({
+                          ...prev,
+                          minute: "45",
+                          anchorAt: "",
+                        }))
+                      }
+                    >
+                      45&apos; (mi-temps)
+                    </Button>
                   </div>
 
                   <div className="flex flex-wrap gap-2">

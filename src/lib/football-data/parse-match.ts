@@ -148,7 +148,19 @@ export function resolveManualLiveMinute(
   anchorAt: string,
   now = Date.now(),
 ): number | null {
-  return estimateLiveMinute(syntheticKickoffFromAnchor(baseMinute, anchorAt), now);
+  const anchorMs = new Date(anchorAt).getTime();
+  const elapsedMin = Math.floor((now - anchorMs) / 60_000);
+  if (elapsedMin < 0) return baseMinute;
+
+  // 2e période (ou prolong.) : avance linéaire depuis l'ancre, sans re-simuler la pause.
+  if (baseMinute >= 46) {
+    return Math.min(120, baseMinute + elapsedMin);
+  }
+
+  return estimateLiveMinute(
+    syntheticKickoffFromAnchor(baseMinute, anchorAt),
+    now,
+  );
 }
 
 /** Estime la minute de jeu à partir du coup d'envoi (pause ~15 min). */
@@ -186,28 +198,34 @@ export function resolveLiveClock(options: {
   const now = options.now ?? Date.now();
   const { kickoffAt, minute, injuryTime, clockAnchorAt, clockManual } = options;
 
-  if (clockManual && clockAnchorAt) {
+  const manualActive = Boolean(clockManual && clockAnchorAt);
+
+  if (manualActive && clockAnchorAt) {
     if (minute != null && minute >= 0) {
-      const syntheticKickoff = syntheticKickoffFromAnchor(minute, clockAnchorAt);
-      if (isHalfTimeWindow(syntheticKickoff, now)) {
-        return {
-          minute: 45,
-          injuryTime: null,
-          phase: "half_time",
-          phaseLabel: "Mi-temps",
-          displayMinute: 45,
-          isStoppageTime: false,
-          isEstimated: false,
-        };
+      if (minute <= 45) {
+        const syntheticKickoff = syntheticKickoffFromAnchor(
+          minute,
+          clockAnchorAt,
+        );
+        if (isHalfTimeWindow(syntheticKickoff, now)) {
+          return {
+            minute: 45,
+            injuryTime: null,
+            phase: "half_time",
+            phaseLabel: "Mi-temps",
+            displayMinute: 45,
+            isStoppageTime: false,
+            isEstimated: false,
+          };
+        }
       }
+
       const currentMinute = resolveManualLiveMinute(minute, clockAnchorAt, now);
       if (currentMinute != null) {
         const parts = parseLiveClock(currentMinute, injuryTime);
         if (parts) return { ...parts, isEstimated: false };
       }
-    }
-
-    if (isHalfTimeWindow(clockAnchorAt, now)) {
+    } else if (isHalfTimeWindow(clockAnchorAt, now)) {
       return {
         minute: 45,
         injuryTime: null,
@@ -217,13 +235,15 @@ export function resolveLiveClock(options: {
         isStoppageTime: false,
         isEstimated: true,
       };
+    } else {
+      const estimated = estimateLiveMinute(clockAnchorAt, now);
+      if (estimated != null) {
+        const parts = parseLiveClock(estimated, null);
+        if (parts) return { ...parts, isEstimated: true };
+      }
     }
 
-    const estimated = estimateLiveMinute(clockAnchorAt, now);
-    if (estimated != null) {
-      const parts = parseLiveClock(estimated, null);
-      if (parts) return { ...parts, isEstimated: true };
-    }
+    return null;
   }
 
   if (minute != null && minute >= 0) {

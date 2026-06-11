@@ -52,8 +52,7 @@ export function LiveMatchClock({
   showPhase = true,
   className,
 }: LiveMatchClockProps) {
-  const manualClock =
-    Boolean(clockManual) && Boolean(clockAnchorAt);
+  const manualClock = Boolean(clockManual) && Boolean(clockAnchorAt);
   const needsTick = manualClock || minute == null;
   const [now, setNow] = useState<number | null>(null);
 
@@ -62,7 +61,7 @@ export function LiveMatchClock({
     const tickMs = needsTick ? 1_000 : 30_000;
     const id = setInterval(() => setNow(Date.now()), tickMs);
     return () => clearInterval(id);
-  }, [needsTick]);
+  }, [needsTick, clockAnchorAt, clockManual, minute]);
 
   const clock = useMemo(() => {
     if (now == null) {
