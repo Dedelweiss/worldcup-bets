@@ -17,7 +17,11 @@ const CHAT_LLM_OPTIONS = { temperature: 0.92, maxTokens: 160 };
 const CHAT_PERSONA = `Tu es L'IA (pseudo ia_prono), le pote relou du pool de paris entre potes.
 Tu écris sur le mur des chambrages pendant le match.
 Ton : familier, trash, drôle — comme des mates au bar. Tutoiement, argot, gros mots légers OK.
-Jamais méchant, haineux ni discriminatoire. Pas de guillemets autour du message. Français uniquement.`;
+Jamais méchant, haineux ni discriminatoire. Pas de guillemets autour du message. Français uniquement.
+
+FORME OBLIGATOIRE : une réplique de chat brute, comme sur WhatsApp.
+INTERDIT de commencer par "pseudo :", "@pseudo :", "Joueur :" ou de recopier le format du fil.
+Pour parler à quelqu'un, intègre son prénom/pseudo DANS la phrase ("T'inquiète Lucas…", "Ah toi tu y crois encore") — optionnel, pas systématique.`;
 
 function formatAiBetLine(ctx: AiChatContext): string | null {
   if (ctx.aiBetHome == null || ctx.aiBetAway == null) return null;
@@ -60,6 +64,41 @@ function describePronoVsScore(ctx: AiChatContext): string | null {
   return `Score live ${homeScore}-${awayScore}, ton prono ${aiBetHome}-${aiBetAway} : ça ne colle pas trop — adapte ta réplique au contexte.`;
 }
 
+function chatFirstName(author: string): string {
+  const base = author.split("@")[0]?.trim() || author;
+  if (!base) return author;
+  return base.charAt(0).toUpperCase() + base.slice(1);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Retire les préfixes "pseudo :" que le modèle recopie parfois du fil. */
+function sanitizeChatMessage(
+  text: string,
+  knownAuthors: string[],
+): string {
+  let out = text.trim();
+  const names = new Set<string>();
+  for (const author of knownAuthors) {
+    names.add(author);
+    const base = author.split("@")[0]?.trim();
+    if (base) {
+      names.add(base);
+      names.add(chatFirstName(base));
+    }
+  }
+  names.add("ia_prono");
+
+  for (const name of names) {
+    const re = new RegExp(`^${escapeRegExp(name)}\\s*:\\s*`, "i");
+    out = out.replace(re, "");
+  }
+
+  return out.trim();
+}
+
 function formatConversationForPrompt(
   messages: AiChatContext["recentMessages"],
 ): string {
@@ -70,17 +109,17 @@ function formatConversationForPrompt(
 
   const thread = humans
     .slice(-6)
-    .map((m) => `• ${m.author} : ${m.message}`)
+    .map((m) => `• ${chatFirstName(m.author)} a dit : « ${m.message} »`)
     .join("\n");
 
   const replyBlock = lastHuman
-    ? `>>> RÉPONDS EN PRIORITÉ À CE MESSAGE (cite le pseudo, rebondis sur le fond) :
-${lastHuman.author} : ${lastHuman.message}`
+    ? `>>> Réponds naturellement à ${chatFirstName(lastHuman.author)} (rebondis sur le fond, sans préfixer ta réplique par son pseudo) :
+« ${lastHuman.message} »`
     : "";
 
   const avoidBlock = lastAi
-    ? `\n>>> NE RECOPIE PAS ton message précédent :
-ia_prono : ${lastAi.message}`
+    ? `\n>>> Ne recopie pas ta réplique précédente :
+« ${lastAi.message} »`
     : "";
 
   return `${replyBlock}\n\nFil récent (du plus ancien au plus récent) :\n${thread}${avoidBlock}`;
@@ -114,36 +153,36 @@ function kickoffFallback(ctx: AiChatContext): string {
 
 function ambientFallback(ctx: AiChatContext): string {
   const { lastHuman } = splitMessages(ctx.recentMessages);
-  const author = lastHuman?.author?.split("@")[0] ?? "là";
+  const name = lastHuman ? chatFirstName(lastHuman.author) : null;
   const msg = lastHuman?.message?.toLowerCase() ?? "";
 
-  if (lastHuman) {
+  if (lastHuman && name) {
     if (msg.includes("?")) {
       return pickFallback(
         [
-          `@${author} bonne question… dommage que ta réflexion arrive après ton prono foireux.`,
-          `${author} tu demandes ça maintenant ? T'aurais dû réfléchir avant de parier.`,
+          `Bonne question… dommage d'y penser après ton prono foireux.`,
+          `Tu demandes ça maintenant ${name} ? T'aurais dû réfléchir avant de parier.`,
         ],
-        `${author}-question-${msg.slice(0, 24)}`,
+        `${name}-question-${msg.slice(0, 24)}`,
       );
     }
     if (/goal|but|banger|dingue|fou|incroyable/i.test(msg)) {
       return pickFallback(
         [
-          `${author} ouais c'était chaud — moi je reste zen sur mon prono.`,
-          `Le but t'a excité ${author} ? Respire, le match est loin d'être plié.`,
+          `Ouais c'était chaud — moi je reste zen sur mon prono.`,
+          `Le but t'a excité ? Respire ${name}, le match est loin d'être plié.`,
         ],
-        `${author}-goal-${ctx.homeScore}-${ctx.awayScore}`,
+        `${name}-goal-${ctx.homeScore}-${ctx.awayScore}`,
       );
     }
     return pickFallback(
       [
-        `${author} j'ai lu — maintenant explique-moi comment ton prono tient encore.`,
-        `@${author} message reçu. La qualité, par contre, on repassera.`,
-        `${author} tu parles fort pour quelqu'un qui doit suer devant le score.`,
-        `Ok ${author}, note prise. Moi je commente le match, toi tu commentes ta lose.`,
+        `J'ai lu ${name} — maintenant explique-moi comment ton prono tient encore.`,
+        `Message reçu. La qualité du prono, par contre, on repassera.`,
+        `Tu parles fort pour quelqu'un qui doit suer devant le score.`,
+        `Ok, note prise — moi je commente le match, toi tu gères ta lose.`,
       ],
-      `${author}-${msg.slice(0, 32)}-${ctx.homeScore}`,
+      `${name}-${msg.slice(0, 32)}-${ctx.homeScore}`,
     );
   }
 
@@ -196,11 +235,11 @@ Annonce ton score exact UNE fois, avec une touche perso (vanne sur le match ou l
 Tu interviens dans une conversation EN DIRECT. Écris 1 à 2 phrases (max 200 caractères).
 
 Règles :
-- Réponds d'abord au DERNIER message humain : pseudo + rebond sur ce qu'il a dit (question, vanne, réaction au but, plainte…).
-- Utilise le fil pour le contexte, pas pour tout reciter.
-- Ne répète pas ton prono/score à chaque message — seulement si c'est pertinent par rapport à ce qu'on te dit.
-- Varie le style (taquinerie, fausse compassion, dérision, fausse expertise).
-- Ne recopie pas ton message précédent ni une formule que tu as déjà sortie.
+- Réponds au dernier message humain en rebondissant sur le fond (question, vanne, but, plainte…).
+- Parle comme dans un groupe WhatsApp : pas de "pseudo :" au début, pas de narration.
+- Tu peux interpeller la personne par son prénom dans la phrase, mais ce n'est pas obligatoire.
+- Ne répète pas ton prono/score à chaque message — seulement si pertinent.
+- Varie le style. Ne recopie pas ta réplique précédente.
 - Ton prono officiel ne change jamais.`,
     user: `Match : ${ctx.matchLabel} (${ctx.status})
 ${scoreLine}${betBlock}${pronoBlock}
@@ -221,9 +260,16 @@ export async function generateAiChatMessage(ctx: AiChatContext): Promise<string>
 
   const { system, user } = buildChatPrompt(ctx);
 
+  const authorNames = ctx.recentMessages
+    .filter((m) => !m.is_ai)
+    .map((m) => m.author);
+
   try {
     const raw = await generateMatchSummaryText(system, user, CHAT_LLM_OPTIONS);
-    const text = raw.replace(/^["'«]+|["'»]+$/g, "").trim();
+    const text = sanitizeChatMessage(
+      raw.replace(/^["'«]+|["'»]+$/g, "").trim(),
+      authorNames,
+    );
     if (text.length >= 8 && text.length <= 500) return text;
   } catch {
     // fallback
