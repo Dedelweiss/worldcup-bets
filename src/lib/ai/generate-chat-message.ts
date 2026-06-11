@@ -12,17 +12,78 @@ export interface AiChatContext {
   recentMessages: { author: string; message: string; is_ai?: boolean }[];
 }
 
-const CHAT_LLM_OPTIONS = { temperature: 0.85, maxTokens: 120 };
+const CHAT_LLM_OPTIONS = { temperature: 0.92, maxTokens: 160 };
 
 const CHAT_PERSONA = `Tu es L'IA (pseudo ia_prono), le pote relou du pool de paris entre potes.
 Tu écris sur le mur des chambrages pendant le match.
-Ton : ultra familier, trash, vulgaire mais drôle — comme des mates qui se chambrrent au bar.
-Utilise le tutoiement, l'argot, des gros mots légers. Jamais méchant ni discriminatoire.
-Pas de guillemets autour du message. Une seule phrase ou deux max. Français uniquement.`;
+Ton : familier, trash, drôle — comme des mates au bar. Tutoiement, argot, gros mots légers OK.
+Jamais méchant, haineux ni discriminatoire. Pas de guillemets autour du message. Français uniquement.`;
 
 function formatAiBetLine(ctx: AiChatContext): string | null {
   if (ctx.aiBetHome == null || ctx.aiBetAway == null) return null;
-  return `TON pronostic officiel (score exact enregistré) : ${ctx.aiBetHome}-${ctx.aiBetAway}. Tu DOIS t'y tenir : ne cite aucun autre score comme étant le tien.`;
+  return `TON pronostic officiel (score exact enregistré) : ${ctx.aiBetHome}-${ctx.aiBetAway}. Ne cite aucun autre score comme étant le tien.`;
+}
+
+function splitMessages(messages: AiChatContext["recentMessages"]) {
+  const newestFirst = [...messages];
+  const chronological = [...newestFirst].reverse();
+  const humans = chronological.filter((m) => !m.is_ai);
+  const ai = chronological.filter((m) => m.is_ai);
+  return {
+    lastHuman: humans.at(-1) ?? null,
+    lastAi: ai.at(-1) ?? null,
+    humans,
+  };
+}
+
+function describePronoVsScore(ctx: AiChatContext): string | null {
+  const { aiBetHome, aiBetAway, homeScore, awayScore } = ctx;
+  if (aiBetHome == null || aiBetAway == null) return null;
+
+  if (homeScore == null || awayScore == null) {
+    return `Ton prono officiel : ${aiBetHome}-${aiBetAway}. Score live pas encore affiché.`;
+  }
+
+  const exact = homeScore === aiBetHome && awayScore === aiBetAway;
+  const pronoMargin = aiBetHome - aiBetAway;
+  const liveMargin = homeScore - awayScore;
+
+  if (exact) {
+    return `Score live ${homeScore}-${awayScore} : c'est pile ton prono. Fais-en une vanne, pas besoin de répéter le score en boucle.`;
+  }
+  if (Math.sign(pronoMargin) === Math.sign(liveMargin) && pronoMargin !== 0) {
+    return `Score live ${homeScore}-${awayScore}, ton prono ${aiBetHome}-${aiBetAway} : la tendance te sourit.`;
+  }
+  if (liveMargin === 0 && pronoMargin !== 0) {
+    return `Score live ${homeScore}-${awayScore}, tu avais parié ${aiBetHome}-${aiBetAway} : match nul pour l'instant.`;
+  }
+  return `Score live ${homeScore}-${awayScore}, ton prono ${aiBetHome}-${aiBetAway} : ça ne colle pas trop — adapte ta réplique au contexte.`;
+}
+
+function formatConversationForPrompt(
+  messages: AiChatContext["recentMessages"],
+): string {
+  const { lastHuman, lastAi, humans } = splitMessages(messages);
+  if (humans.length === 0) {
+    return "Aucun message humain récent — lance une vanne générale sur le match ou le pool.";
+  }
+
+  const thread = humans
+    .slice(-6)
+    .map((m) => `• ${m.author} : ${m.message}`)
+    .join("\n");
+
+  const replyBlock = lastHuman
+    ? `>>> RÉPONDS EN PRIORITÉ À CE MESSAGE (cite le pseudo, rebondis sur le fond) :
+${lastHuman.author} : ${lastHuman.message}`
+    : "";
+
+  const avoidBlock = lastAi
+    ? `\n>>> NE RECOPIE PAS ton message précédent :
+ia_prono : ${lastAi.message}`
+    : "";
+
+  return `${replyBlock}\n\nFil récent (du plus ancien au plus récent) :\n${thread}${avoidBlock}`;
 }
 
 function pickFallback(pool: string[], seed: string): string {
@@ -38,82 +99,113 @@ function kickoffFallback(ctx: AiChatContext): string {
   const a = ctx.aiBetAway;
   if (h != null && a != null) {
     const pool = [
-      `C'est parti. J'ai locké ${h}-${a}, préparez-vous à pleurer.`,
-      `Go. Mon prono c'est ${h}-${a}, le vôtre sent la lose.`,
-      `Match lancé : moi j'ai mis ${h}-${a}, vous allez vous faire humilier.`,
-      `${h}-${a} chez moi. Chambrerie ouverte, bonne chance les losers.`,
+      `C'est parti sur ${ctx.matchLabel}. Moi j'ai locké ${h}-${a}, à vous de jouer.`,
+      `Allez, ${ctx.matchLabel} est lancé — mon ${h}-${a} va vous faire mal.`,
+      `Go. ${h}-${a} pour moi, que le meilleur prono gagne (spoiler : c'est le mien).`,
+      `${ctx.matchLabel} : j'annonce ${h}-${a}. Chambrerie ouverte.`,
     ];
     return pickFallback(pool, `${ctx.matchLabel}-kickoff-${h}-${a}`);
   }
   return pickFallback(
-    ["C'est parti. Mon prono est locké, le vôtre pue."],
+    ["C'est parti. Le mur est ouvert, montrez-moi vos pronos de cave."],
     `${ctx.matchLabel}-kickoff`,
   );
 }
 
 function ambientFallback(ctx: AiChatContext): string {
+  const { lastHuman } = splitMessages(ctx.recentMessages);
+  const author = lastHuman?.author?.split("@")[0] ?? "là";
+  const msg = lastHuman?.message?.toLowerCase() ?? "";
+
+  if (lastHuman) {
+    if (msg.includes("?")) {
+      return pickFallback(
+        [
+          `@${author} bonne question… dommage que ta réflexion arrive après ton prono foireux.`,
+          `${author} tu demandes ça maintenant ? T'aurais dû réfléchir avant de parier.`,
+        ],
+        `${author}-question-${msg.slice(0, 24)}`,
+      );
+    }
+    if (/goal|but|banger|dingue|fou|incroyable/i.test(msg)) {
+      return pickFallback(
+        [
+          `${author} ouais c'était chaud — moi je reste zen sur mon prono.`,
+          `Le but t'a excité ${author} ? Respire, le match est loin d'être plié.`,
+        ],
+        `${author}-goal-${ctx.homeScore}-${ctx.awayScore}`,
+      );
+    }
+    return pickFallback(
+      [
+        `${author} j'ai lu — maintenant explique-moi comment ton prono tient encore.`,
+        `@${author} message reçu. La qualité, par contre, on repassera.`,
+        `${author} tu parles fort pour quelqu'un qui doit suer devant le score.`,
+        `Ok ${author}, note prise. Moi je commente le match, toi tu commentes ta lose.`,
+      ],
+      `${author}-${msg.slice(0, 32)}-${ctx.homeScore}`,
+    );
+  }
+
   const h = ctx.aiBetHome;
   const a = ctx.aiBetAway;
   const live =
     ctx.homeScore != null && ctx.awayScore != null
-      ? ` (${ctx.homeScore}-${ctx.awayScore} en ce moment)`
+      ? ` ${ctx.homeScore}-${ctx.awayScore}`
       : "";
 
   if (h != null && a != null) {
-    const pool = [
-      `J'ai mis ${h}-${a}${live}, vous parlez fort pour des mecs qui ont foiré leur prono.`,
-      `Mon ${h}-${a} tient la route${live}. Continuez à vous envoyer des conneries.`,
-      `Avec mon ${h}-${a} je suis tranquille${live}. Vos messages, niveau Ligue 2.`,
-      `${h}-${a} de mon côté${live} — vous chambrer, moi je vais encaisser les points.`,
-    ];
-    return pickFallback(pool, `${ctx.matchLabel}-ambient-${h}-${a}-${live}`);
+    return pickFallback(
+      [
+        `Le mur s'anime${live ? ` (${live.trim()})` : ""} — qui a foiré son prono ?`,
+        `Vous parlez tous en même temps, c'est mignon.${live ? ` Score :${live}.` : ""}`,
+      ],
+      `${ctx.matchLabel}-ambient-general-${live}`,
+    );
   }
 
   return pickFallback(
-    [
-      "Vous parlez fort pour des mecs qui ont sûrement tout foiré au pari.",
-      "Continuez, je me marre pendant que mon prono fait le taf.",
-    ],
+    ["Le chat chauffe — quelqu'un a un avis ou on continue à se mentir ?"],
     `${ctx.matchLabel}-ambient`,
   );
-}
-
-function formatRecentLines(
-  messages: AiChatContext["recentMessages"],
-): string {
-  const human = messages.filter((m) => !m.is_ai).slice(0, 5);
-  if (human.length === 0) return "Aucun message récent.";
-  return human
-    .map((m) => `${m.author} : ${m.message}`)
-    .reverse()
-    .join("\n");
 }
 
 function buildChatPrompt(ctx: AiChatContext): { system: string; user: string } {
   const scoreLine =
     ctx.homeScore != null && ctx.awayScore != null
-      ? `Score actuel du match : ${ctx.homeScore}-${ctx.awayScore}.`
-      : "Score du match pas encore renseigné.";
+      ? `Score actuel : ${ctx.homeScore}-${ctx.awayScore}.`
+      : "Score pas encore renseigné.";
 
   const betLine = formatAiBetLine(ctx);
   const betBlock = betLine ? `\n${betLine}` : "";
+  const pronoContext = describePronoVsScore(ctx);
+  const pronoBlock = pronoContext ? `\n${pronoContext}` : "";
 
   if (ctx.trigger === "kickoff") {
     return {
       system: `${CHAT_PERSONA}
-Écris UN message court (max 180 caractères) au coup d'envoi.
-Annonce clairement TON score exact (celui indiqué ci-dessous), chambrre les autres.
-INTERDIT d'inventer un autre score que ton prono officiel.`,
+Écris UN message d'ouverture (max 200 caractères) au coup d'envoi.
+Annonce ton score exact UNE fois, avec une touche perso (vanne sur le match ou le pool).
+Évite les formules génériques type "préparez-vous à pleurer".`,
       user: `Match : ${ctx.matchLabel}\n${scoreLine}${betBlock}\nStatut : ${ctx.status}`,
     };
   }
 
   return {
     system: `${CHAT_PERSONA}
-Réponds aux messages récents avec UNE punchline courte (max 160 caractères).
-Tu peux comparer le score live à TON prono officiel ci-dessous, chambrer les gens — mais ne change jamais ton prono.
-INTERDIT de citer un score différent de ton prono enregistré.`,
-    user: `Match : ${ctx.matchLabel}\n${scoreLine}${betBlock}\n\nMessages récents :\n${formatRecentLines(ctx.recentMessages)}`,
+Tu interviens dans une conversation EN DIRECT. Écris 1 à 2 phrases (max 200 caractères).
+
+Règles :
+- Réponds d'abord au DERNIER message humain : pseudo + rebond sur ce qu'il a dit (question, vanne, réaction au but, plainte…).
+- Utilise le fil pour le contexte, pas pour tout reciter.
+- Ne répète pas ton prono/score à chaque message — seulement si c'est pertinent par rapport à ce qu'on te dit.
+- Varie le style (taquinerie, fausse compassion, dérision, fausse expertise).
+- Ne recopie pas ton message précédent ni une formule que tu as déjà sortie.
+- Ton prono officiel ne change jamais.`,
+    user: `Match : ${ctx.matchLabel} (${ctx.status})
+${scoreLine}${betBlock}${pronoBlock}
+
+${formatConversationForPrompt(ctx.recentMessages)}`,
   };
 }
 
