@@ -241,43 +241,56 @@ export class FutCardShareCancelledError extends Error {
   }
 }
 
+let shareInFlight = false;
+
+/**
+ * Partage ou télécharge une image PNG.
+ * Ne passe que `files` au share natif : title/text provoquent un double collage
+ * (image + texte) sur macOS/iOS quand l'utilisateur choisit « Copier ».
+ */
 export async function shareOrDownloadFutCard(
   blob: Blob,
   filename: string,
 ): Promise<FutCardShareResult> {
-  const file = new File([blob], filename, { type: "image/png" });
-
-  if (
-    typeof navigator !== "undefined" &&
-    "share" in navigator &&
-    typeof navigator.canShare === "function" &&
-    navigator.canShare({ files: [file] })
-  ) {
-    try {
-      await navigator.share({
-        files: [file],
-        title: "Ma carte pronostiqueur WC2026",
-        text: "Mon profil Ultimate Team — WC2026 Pool",
-      });
-      return "shared";
-    } catch (error) {
-      if (
-        error instanceof DOMException &&
-        (error.name === "AbortError" || error.name === "NotAllowedError")
-      ) {
-        throw new FutCardShareCancelledError();
-      }
-      throw error;
-    }
+  if (shareInFlight) {
+    throw new FutCardShareCancelledError();
   }
 
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
-  return "downloaded";
+  shareInFlight = true;
+
+  try {
+    const file = new File([blob], filename, { type: "image/png" });
+
+    if (
+      typeof navigator !== "undefined" &&
+      "share" in navigator &&
+      typeof navigator.canShare === "function" &&
+      navigator.canShare({ files: [file] })
+    ) {
+      try {
+        await navigator.share({ files: [file] });
+        return "shared";
+      } catch (error) {
+        if (
+          error instanceof DOMException &&
+          (error.name === "AbortError" || error.name === "NotAllowedError")
+        ) {
+          throw new FutCardShareCancelledError();
+        }
+        throw error;
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    return "downloaded";
+  } finally {
+    shareInFlight = false;
+  }
 }
 
 function waitNextFrame(frames = 1): Promise<void> {

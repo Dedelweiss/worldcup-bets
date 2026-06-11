@@ -10,7 +10,7 @@ export const hasSupabaseConfig =
   Boolean(getSupabaseUrl()) && Boolean(getSupabaseAnonKey());
 
 const PROFILE_SELECT =
-  "id, username, display_name, avatar_id, avatar_url, points, boosts_available, favorite_team_id, role" as const;
+  "id, username, display_name, avatar_id, avatar_url, points, boosts_available, favorite_team_id, role, on_fire, heat_streak" as const;
 
 function enrichProfile(row: Profile): Profile {
   const resolved = resolveAvatarUrl(row, row.id);

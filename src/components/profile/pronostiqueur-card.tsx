@@ -42,6 +42,7 @@ export function PronostiqueurCard({
   embedded = false,
 }: PronostiqueurCardProps) {
   const exportRef = useRef<HTMLDivElement>(null);
+  const exportingRef = useRef(false);
   const [imageFailed, setImageFailed] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const showAvatar = Boolean(avatarUrl?.trim()) && !imageFailed;
@@ -49,8 +50,9 @@ export function PronostiqueurCard({
 
   async function handleShare() {
     const node = exportRef.current;
-    if (!node || isExporting) return;
+    if (!node || exportingRef.current) return;
 
+    exportingRef.current = true;
     setIsExporting(true);
     try {
       const blob = await captureFutCardImage(node);
@@ -69,6 +71,7 @@ export function PronostiqueurCard({
       }
       toast.error("Impossible d'exporter la carte. Réessayez dans un instant.");
     } finally {
+      exportingRef.current = false;
       setIsExporting(false);
     }
   }

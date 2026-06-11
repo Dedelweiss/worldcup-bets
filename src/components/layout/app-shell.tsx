@@ -2,9 +2,14 @@ import { AppHeader } from "@/components/layout/app-header";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { getProfile, hasSupabaseConfig } from "@/lib/auth-server";
+import { getLiveBetsSnapshot } from "@/lib/live-bets/live-bet-snapshot";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const profile = hasSupabaseConfig ? await getProfile() : null;
+  const livePendingCount =
+    profile != null
+      ? (await getLiveBetsSnapshot(profile.id)).livePendingCount
+      : 0;
 
   return (
     <div className="min-h-full bg-zinc-950">
@@ -17,6 +22,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <BottomNav
         showAdmin={profile?.role === "admin"}
+        livePendingCount={livePendingCount}
         profile={
           profile
             ? {

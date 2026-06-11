@@ -1,11 +1,12 @@
 import type { MouseEventHandler } from "react";
 
-export type HapticStyle = "light" | "selection" | "medium";
+export type HapticStyle = "light" | "selection" | "medium" | "celebration";
 
 const VIBRATION_MS: Record<HapticStyle, number | number[]> = {
   light: 6,
   selection: 10,
   medium: 16,
+  celebration: [12, 40, 18, 50, 24],
 };
 
 function canVibrate(): boolean {

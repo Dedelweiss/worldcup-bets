@@ -4,7 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { LayoutGroup, motion } from "framer-motion";
-import { Home, ListTodo, Shield, Trophy, User, type LucideIcon } from "lucide-react";
+import {
+  Home,
+  ListTodo,
+  Radio,
+  Shield,
+  Trophy,
+  User,
+  type LucideIcon,
+} from "lucide-react";
 import { bindHapticClick } from "@/lib/haptics";
 import {
   getPlayerInitials,
@@ -69,6 +77,8 @@ interface BottomNavProfile {
 interface BottomNavProps {
   showAdmin?: boolean;
   profile?: BottomNavProfile | null;
+  /** Paris pending sur matchs live — pastille + raccourci En direct. */
+  livePendingCount?: number;
 }
 
 function NavProfileAvatar({
@@ -148,9 +158,28 @@ function NavTabIcon({
   );
 }
 
-export function BottomNav({ showAdmin, profile = null }: BottomNavProps) {
+function resolveTabHref(
+  href: string,
+  livePendingCount: number,
+): { href: string; ariaLabel: string } {
+  if (href === "/matches" && livePendingCount > 0) {
+    return {
+      href: "/bets?live=1",
+      ariaLabel: `En direct · ${livePendingCount} pari${livePendingCount > 1 ? "s" : ""}`,
+    };
+  }
+  const tab = tabsBase.find((t) => t.href === href);
+  return { href, ariaLabel: tab?.label ?? href };
+}
+
+export function BottomNav({
+  showAdmin,
+  profile = null,
+  livePendingCount = 0,
+}: BottomNavProps) {
   const pathname = usePathname();
   const tabs: NavTab[] = showAdmin ? [...tabsBase, adminTab] : [...tabsBase];
+  const hasLiveShortcut = livePendingCount > 0;
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.625rem,env(safe-area-inset-bottom))] md:hidden">
@@ -168,7 +197,11 @@ export function BottomNav({ showAdmin, profile = null }: BottomNavProps) {
           <ul className="relative flex items-stretch justify-around px-1 py-1">
             {tabs.map((tab) => {
               const { href, label } = tab;
-              const active = isActive(pathname, href);
+              const isLiveShortcut = href === "/matches" && hasLiveShortcut;
+              const resolved = resolveTabHref(href, livePendingCount);
+              const active =
+                isActive(pathname, href) ||
+                (isLiveShortcut && pathname.startsWith("/bets"));
               const isAdmin = href === "/admin";
 
               return (
@@ -187,8 +220,8 @@ export function BottomNav({ showAdmin, profile = null }: BottomNavProps) {
                   )}
 
                   <Link
-                    href={href}
-                    aria-label={label}
+                    href={resolved.href}
+                    aria-label={isLiveShortcut ? resolved.ariaLabel : label}
                     aria-current={active ? "page" : undefined}
                     onClick={bindHapticClick(undefined, "selection")}
                     className={cn(
@@ -197,14 +230,31 @@ export function BottomNav({ showAdmin, profile = null }: BottomNavProps) {
                         ? "text-lime-300"
                         : "text-zinc-500 hover:text-zinc-300",
                       isAdmin && !active && "text-lime-400/70 hover:text-lime-300",
+                      isLiveShortcut && !active && "text-lime-400/80",
                     )}
                   >
                     <motion.span
-                      className="flex items-center justify-center"
+                      className="relative flex items-center justify-center"
                       animate={{ scale: active ? 1.08 : 1 }}
                       transition={{ duration: 0.22, ease: "easeOut" }}
                     >
-                      <NavTabIcon tab={tab} active={active} profile={profile} />
+                      {isLiveShortcut ? (
+                        <Radio
+                          className={cn(
+                            "size-6 shrink-0",
+                            active &&
+                              "drop-shadow-[0_0_10px_rgba(163,230,53,0.55)]",
+                          )}
+                          aria-hidden
+                        />
+                      ) : (
+                        <NavTabIcon tab={tab} active={active} profile={profile} />
+                      )}
+                      {isLiveShortcut && (
+                        <span className="absolute -right-1.5 -top-1 flex min-w-[1rem] items-center justify-center rounded-full bg-lime-400 px-0.5 text-[9px] font-bold text-black shadow-md">
+                          {livePendingCount > 9 ? "9+" : livePendingCount}
+                        </span>
+                      )}
                     </motion.span>
                   </Link>
                 </li>

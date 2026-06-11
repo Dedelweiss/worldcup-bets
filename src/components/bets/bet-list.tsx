@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Radio, Star } from "lucide-react";
 import { BetCancelButton } from "@/components/bets/bet-cancel-button";
 import { Badge } from "@/components/ui/badge";
@@ -401,8 +402,16 @@ interface BetListProps {
 }
 
 export function BetList({ bets }: BetListProps) {
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState<BetsTab>("pending");
   const [liveFilter, setLiveFilter] = useState<MatchLiveFilter>("all");
+
+  useEffect(() => {
+    if (searchParams.get("live") === "1") {
+      setTab("pending");
+      setLiveFilter("live");
+    }
+  }, [searchParams]);
 
   const pendingBets = useMemo(
     () => bets.filter((b) => b.status === "pending"),
