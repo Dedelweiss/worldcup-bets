@@ -3,24 +3,30 @@
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
+import { markBetCelebrated } from "@/lib/bets/bet-celebration";
 import type { BetStatus } from "@/types/database";
 
 interface BetResultAnimationProps {
   status: BetStatus;
+  betId?: string;
+  celebrate?: boolean;
   children: React.ReactNode;
   className?: string;
 }
 
 export function BetResultAnimation({
   status,
+  betId,
+  celebrate = false,
   children,
   className,
 }: BetResultAnimationProps) {
   const fired = useRef(false);
 
   useEffect(() => {
-    if (status !== "won" || fired.current) return;
+    if (status !== "won" || !celebrate || !betId || fired.current) return;
     fired.current = true;
+    markBetCelebrated(betId);
 
     const duration = 2000;
     const end = Date.now() + duration;
@@ -43,7 +49,7 @@ export function BetResultAnimation({
       if (Date.now() < end) requestAnimationFrame(frame);
     };
     frame();
-  }, [status]);
+  }, [status, celebrate, betId]);
 
   if (status === "won") {
     return (

@@ -20,6 +20,7 @@ import { MATCH_RESULT_OUTCOME } from "@/lib/bets/match-result-copy";
 import { formatKickoff, formatOdd, formatPoints } from "@/lib/format";
 import { goldenMatchCardClass } from "@/lib/golden-match";
 import { canCancelPendingBet } from "@/lib/bets/can-cancel-bet";
+import { shouldCelebrateWin } from "@/lib/bets/bet-celebration";
 import { betDisplayPayout } from "@/lib/points";
 import { cn } from "@/lib/utils";
 import type { BetRow, BetStatus } from "@/types/database";
@@ -50,6 +51,16 @@ const SELECTION_LABEL: Record<string, string> = {
   yes: "Oui",
   no: "Non",
 };
+
+function betStatusLabel(bet: BetRow): string {
+  if (bet.status === "pending" && bet.match?.status === "finished") {
+    return "En attente de clôture";
+  }
+  if (bet.status === "won" && bet.score_precision) {
+    return scorePrecisionLabel(bet.score_precision);
+  }
+  return STATUS_LABEL[bet.status];
+}
 
 function betLabel(bet: BetRow): string {
   if (bet.bet_type === "exact_score") {
@@ -198,9 +209,7 @@ function BetCard({ bet }: { bet: BetRow }) {
                   "border-emerald-500/50 bg-emerald-500/20 text-emerald-900 dark:text-emerald-100",
               )}
             >
-              {bet.status === "won" && bet.score_precision
-                ? scorePrecisionLabel(bet.score_precision)
-                : STATUS_LABEL[bet.status]}
+              {betStatusLabel(bet)}
             </Badge>
           )}
         </div>
@@ -301,13 +310,20 @@ function BetCard({ bet }: { bet: BetRow }) {
   );
 }
 
-function renderBetItem(bet: BetRow) {
+function renderBetItem(bet: BetRow, latestWinId: string | null) {
   const settled = bet.status === "won" || bet.status === "lost";
   const card = <BetCard bet={bet} />;
 
   if (settled) {
+    const celebrate =
+      bet.status === "won" && shouldCelebrateWin(bet.id, latestWinId);
     return (
-      <BetResultAnimation key={bet.id} status={bet.status}>
+      <BetResultAnimation
+        key={bet.id}
+        betId={bet.id}
+        status={bet.status}
+        celebrate={celebrate}
+      >
         {card}
       </BetResultAnimation>
     );
@@ -323,10 +339,15 @@ function isBetOnLiveMatch(bet: BetRow): boolean {
   return bet.match?.status === "live";
 }
 
+function isBetOnUpcomingMatch(bet: BetRow): boolean {
+  const status = bet.match?.status;
+  return status !== "live" && status !== "finished";
+}
+
 function matchesLiveFilter(bet: BetRow, filter: MatchLiveFilter): boolean {
   if (filter === "all") return true;
   if (filter === "live") return isBetOnLiveMatch(bet);
-  return !isBetOnLiveMatch(bet);
+  return isBetOnUpcomingMatch(bet);
 }
 
 function EmptyTabMessage({
@@ -363,18 +384,38 @@ function EmptyTabMessage({
   );
 }
 
+function findLatestWinId(bets: BetRow[]): string | null {
+  let latest: { id: string; at: number } | null = null;
+
+  for (const bet of bets) {
+    if (bet.status !== "won" || !bet.settled_at) continue;
+    const at = new Date(bet.settled_at).getTime();
+    if (!latest || at > latest.at) {
+      latest = { id: bet.id, at };
+    }
+  }
+
+  return latest?.id ?? null;
+}
+
 function BetListContent({
   bets,
   liveFilter,
+  latestWinId,
 }: {
   bets: BetRow[];
   liveFilter: MatchLiveFilter;
+  latestWinId: string | null;
 }) {
   const liveBets = bets.filter(isBetOnLiveMatch);
   const otherBets = bets.filter((b) => !isBetOnLiveMatch(b));
 
   if (liveFilter !== "all") {
-    return <div className="space-y-3">{bets.map(renderBetItem)}</div>;
+    return (
+      <div className="space-y-3">
+        {bets.map((bet) => renderBetItem(bet, latestWinId))}
+      </div>
+    );
   }
 
   return (
@@ -387,7 +428,7 @@ function BetListContent({
               En direct maintenant
             </h2>
           </div>
-          {liveBets.map(renderBetItem)}
+          {liveBets.map((bet) => renderBetItem(bet, latestWinId))}
         </section>
       )}
 
@@ -400,7 +441,7 @@ function BetListContent({
                 : "Historique"}
             </h2>
           )}
-          {otherBets.map(renderBetItem)}
+          {otherBets.map((bet) => renderBetItem(bet, latestWinId))}
         </section>
       )}
     </div>
@@ -432,11 +473,16 @@ export function BetList({ bets }: BetListProps) {
     [bets],
   );
 
+  const latestWinId = useMemo(
+    () => findLatestWinId(settledBets),
+    [settledBets],
+  );
+
   const liveMatchCounts = useMemo(
     () => ({
       all: pendingBets.length,
       live: pendingBets.filter(isBetOnLiveMatch).length,
-      upcoming: pendingBets.filter((b) => !isBetOnLiveMatch(b)).length,
+      upcoming: pendingBets.filter(isBetOnUpcomingMatch).length,
     }),
     [pendingBets],
   );
@@ -557,7 +603,11 @@ export function BetList({ bets }: BetListProps) {
       {visibleBets.length === 0 ? (
         <EmptyTabMessage tab={tab} liveFilter={liveFilter} />
       ) : (
-        <BetListContent bets={visibleBets} liveFilter={liveFilter} />
+        <BetListContent
+          bets={visibleBets}
+          liveFilter={liveFilter}
+          latestWinId={latestWinId}
+        />
       )}
     </div>
   );

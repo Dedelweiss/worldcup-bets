@@ -46,6 +46,8 @@ interface DbMatch {
   away_team_id: number;
   kickoff_at: string;
   status: MatchStatus;
+  home_score: number | null;
+  away_score: number | null;
   settled_at: string | null;
   suppress_auto_live: boolean | null;
   live_clock_manual: boolean | null;
@@ -56,6 +58,7 @@ export interface SyncFootballDataResult {
   ok: boolean;
   updated: number;
   oddsUpdated: number;
+  settled: number;
   linkedTeams: number;
   linkedMatches: number;
   apiMatches: number;
@@ -307,6 +310,7 @@ export async function syncFootballDataWc2026(options?: {
     ok: false,
     updated: 0,
     oddsUpdated: 0,
+    settled: 0,
     linkedTeams: 0,
     linkedMatches: 0,
     apiMatches: 0,
@@ -376,7 +380,7 @@ export async function syncFootballDataWc2026(options?: {
     const { data: dbMatches } = await supabase
       .from("matches")
       .select(
-        "id, home_team_id, away_team_id, kickoff_at, status, settled_at, suppress_auto_live, live_clock_manual, football_data_id",
+        "id, home_team_id, away_team_id, kickoff_at, status, home_score, away_score, settled_at, suppress_auto_live, live_clock_manual, football_data_id",
       )
       .eq("season", 2026);
 
@@ -389,6 +393,7 @@ export async function syncFootballDataWc2026(options?: {
 
     let updated = 0;
     let oddsUpdated = 0;
+    let settled = 0;
     let linkedMatches = 0;
 
     for (const fd of fdList) {
@@ -497,16 +502,60 @@ export async function syncFootballDataWc2026(options?: {
         .update(patch)
         .eq("id", local.id);
 
-      if (!error) updated++;
+      if (!error) {
+        updated++;
+
+        const nextHome =
+          patch.home_score !== undefined
+            ? (patch.home_score as number | null)
+            : local.home_score;
+        const nextAway =
+          patch.away_score !== undefined
+            ? (patch.away_score as number | null)
+            : local.away_score;
+        const willBeFinished =
+          patch.status === "finished" ||
+          local.status === "finished" ||
+          apiFinished;
+
+        if (
+          willBeFinished &&
+          nextHome != null &&
+          nextAway != null &&
+          !local.settled_at
+        ) {
+          const { data: settleData, error: settleError } = await supabase.rpc(
+            "auto_settle_match",
+            { p_match_id: local.id },
+          );
+
+          if (settleError) {
+            logAppEvent({
+              level: "warn",
+              source: "sync.football-data",
+              message: `Auto-settle failed for match ${local.id}`,
+              metadata: { matchId: local.id, error: settleError.message },
+            });
+          } else if (
+            settleData &&
+            typeof settleData === "object" &&
+            "ok" in settleData &&
+            (settleData as { ok: boolean }).ok
+          ) {
+            settled += 1;
+          }
+        }
+      }
     }
 
     logAppEvent({
       level: "info",
       source: "sync.football-data",
-      message: `Sync football-data OK (${updated} match(s), ${oddsUpdated} cote(s))`,
+      message: `Sync football-data OK (${updated} match(s), ${oddsUpdated} cote(s), ${settled} clôture(s))`,
       metadata: {
         updated,
         oddsUpdated,
+        settled,
         linkedTeams,
         linkedMatches,
         apiMatches: fdList.length,
@@ -518,6 +567,7 @@ export async function syncFootballDataWc2026(options?: {
       ok: true,
       updated,
       oddsUpdated,
+      settled,
       linkedTeams,
       linkedMatches,
       apiMatches: fdList.length,

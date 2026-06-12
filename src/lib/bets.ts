@@ -10,7 +10,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 const BET_BASE_FIELDS = `
   id, match_id, market_id, fun_market_id, bet_type, selection, odd_at_placement,
-  stake, potential_payout, is_boosted, status, placed_at
+  stake, potential_payout, is_boosted, status, placed_at, settled_at
 `;
 
 const MATCH_EMBED_BASE = `

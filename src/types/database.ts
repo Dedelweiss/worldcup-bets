@@ -221,6 +221,7 @@ export interface BetRow {
   score_precision?: ScorePrecision | null;
   status: BetStatus;
   placed_at: string;
+  settled_at?: string | null;
   match: Pick<
     MatchWithTeams,
     | "id"
