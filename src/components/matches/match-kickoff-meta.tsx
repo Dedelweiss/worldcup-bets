@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 interface MatchKickoffMetaProps {
   kickoffAt: string;
-  align?: "start" | "end";
+  align?: "start" | "center" | "end";
   className?: string;
 }
 
@@ -18,7 +18,11 @@ export function MatchKickoffMeta({
     <div
       className={cn(
         "flex shrink-0 flex-col gap-0.5",
-        align === "end" ? "items-end text-right" : "items-start text-left",
+        align === "end"
+          ? "items-end text-right"
+          : align === "center"
+            ? "items-center text-center"
+            : "items-start text-left",
         className,
       )}
     >

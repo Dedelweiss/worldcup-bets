@@ -67,7 +67,7 @@ export function PreMatchAssistant({
         </p>
       </div>
 
-      <div className="grid gap-3 p-3 sm:grid-cols-3">
+      <div className="grid gap-3 p-3 lg:grid-cols-3">
         <div className="space-y-2 rounded-xl border border-white/10 bg-black/20 p-3">
           <div className="flex items-center gap-2">
             <Users className="size-4 shrink-0 text-lime-400" aria-hidden />

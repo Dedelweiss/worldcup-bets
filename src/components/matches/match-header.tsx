@@ -29,7 +29,7 @@ export function MatchHeader({ match, adminEditHref }: MatchHeaderProps) {
   const isGolden = match.is_golden ?? false;
 
   return (
-    <div className={cn("space-y-3", goldenMatchHeaderClass(isGolden))}>
+    <div className={cn("space-y-3 md:space-y-4", goldenMatchHeaderClass(isGolden))}>
       <div className="flex items-center justify-between gap-3">
         <Link
           href="/dashboard"
@@ -47,13 +47,13 @@ export function MatchHeader({ match, adminEditHref }: MatchHeaderProps) {
             )}
           >
             <Pencil className="size-3.5" />
-            Modifier
+            <span className="hidden sm:inline">Modifier</span>
           </Link>
         )}
       </div>
 
-      <div>
-        <h1 className="text-xl font-bold leading-tight">
+      <div className="min-w-0">
+        <h1 className="text-xl font-bold leading-tight md:text-2xl lg:text-3xl">
           {tbdTeamDisplayName(match.home_team)}{" "}
           <span className="font-normal text-muted-foreground">vs</span>{" "}
           {tbdTeamDisplayName(match.away_team)}
@@ -75,23 +75,30 @@ export function MatchHeader({ match, adminEditHref }: MatchHeaderProps) {
           {match.round && (
             <span className="text-sm text-muted-foreground">{match.round}</span>
           )}
+          {isGolden && (
+            <span className="hidden text-sm font-medium text-amber-700 md:inline dark:text-amber-300">
+              · Gains doublés
+            </span>
+          )}
         </div>
       </div>
 
       {isGolden && (
-        <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
+        <p className="text-sm font-medium text-amber-700 md:hidden dark:text-amber-300">
           Match en or — gains doublés sur cette affiche.
         </p>
       )}
 
-      <MatchKickoffMeta
-        kickoffAt={match.kickoff_at}
-        align="start"
-        className="rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 sm:inline-flex"
-      />
-      {match.venue ? (
-        <p className="text-xs text-muted-foreground">{match.venue}</p>
-      ) : null}
+      <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center md:gap-3">
+        <MatchKickoffMeta
+          kickoffAt={match.kickoff_at}
+          align="start"
+          className="rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 sm:inline-flex"
+        />
+        {match.venue ? (
+          <p className="text-xs text-muted-foreground md:text-sm">{match.venue}</p>
+        ) : null}
+      </div>
 
       {match.bet_scope_note && match.stage && match.stage !== "group" && (
         <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100/90">

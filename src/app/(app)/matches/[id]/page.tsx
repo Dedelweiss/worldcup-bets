@@ -6,11 +6,10 @@ import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
 import { MatchChat } from "@/components/matches/match-chat";
 import { MatchGazette } from "@/components/matches/match-gazette";
 import { HashAnchorScroller } from "@/components/layout/hash-anchor-scroller";
-import { MatchHeader } from "@/components/matches/match-header";
+import { MatchPageHero } from "@/components/matches/match-page-hero";
 import { MatchParticipation } from "@/components/matches/match-participation";
 import { MatchFinishedPronos } from "@/components/matches/match-finished-pronos";
 import { MatchLivePronos } from "@/components/matches/match-live-pronos";
-import { MatchScoreboard } from "@/components/matches/match-scoreboard";
 import { requireAuth } from "@/lib/auth-server";
 import { canRevealPlayerBets } from "@/lib/bets/can-reveal-player-bets";
 import { getMatchBettingParticipation } from "@/lib/bets/match-participation";
@@ -57,6 +56,7 @@ export default async function MatchBetPage({
   const isFinished = match.status === "finished";
   const isLive = match.status === "live";
   const showPronosBoard = canReveal && (isFinished || isLive);
+  const isPreMatch = match.status === "scheduled" && !kickoffStarted;
 
   const adminEditHref =
     profile.role === "admin" ? `/admin/matches/${matchId}` : undefined;
@@ -79,40 +79,42 @@ export default async function MatchBetPage({
 
   const hasFunSection = funMarkets.length > 0;
 
-  return (
-    <div className="mx-auto max-w-lg space-y-6">
-      <HashAnchorScroller />
-      <MarkFunBetsSeen matchId={matchId} />
-      {(match.status === "live" || kickoffStarted) && <LiveStatusPoller />}
+  const betSlip = (
+    <BetSlip
+      match={match}
+      points={profile.points}
+      boostsAvailable={profile.boosts_available ?? 0}
+      pending={pendingBets}
+      currentUserId={profile.id}
+      participation={participation.bettors}
+      tackleState={tackleState}
+      preMatchInsights={preMatchInsights}
+      layout={isPreMatch ? "prominent" : "default"}
+    />
+  );
 
-      <MatchHeader match={match} adminEditHref={adminEditHref} />
-
-      <section id="score" className="scroll-mt-20">
-        <MatchScoreboard match={match} />
-      </section>
-
-      <section id="mon-pronostic" className="scroll-mt-20">
-        <BetSlip
-          match={match}
-          points={profile.points}
-          boostsAvailable={profile.boosts_available ?? 0}
-          pending={pendingBets}
+  const participationSection =
+    !canReveal ? (
+      <section id="participation" className="scroll-mt-20 md:scroll-mt-24">
+        <MatchParticipation
+          bettors={participation.bettors}
+          pending={participation.pending}
           currentUserId={profile.id}
-          participation={participation.bettors}
-          tackleState={tackleState}
-          preMatchInsights={preMatchInsights}
         />
       </section>
+    ) : null;
 
+  const matchStream = (
+    <>
       {hasFunSection && (
-        <section id="paris-fun" className="scroll-mt-20 space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold">Paris fun</h2>
-            <p className="text-sm text-muted-foreground">
+        <section id="paris-fun" className="scroll-mt-20 md:scroll-mt-24">
+          <div className="mb-5">
+            <h2 className="text-lg font-semibold tracking-tight">Paris fun</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
               Ouverts pendant le match jusqu&apos;à clôture par l&apos;admin
             </p>
           </div>
-          <div className="space-y-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             {funMarkets.map((market) => (
               <FunBetSlip
                 key={market.id}
@@ -125,24 +127,14 @@ export default async function MatchBetPage({
         </section>
       )}
 
-      {!canReveal && (
-        <section id="participation" className="scroll-mt-20">
-          <MatchParticipation
-            bettors={participation.bettors}
-            pending={participation.pending}
-            currentUserId={profile.id}
-          />
-        </section>
-      )}
-
       {match.ai_summary && (
-        <section id="gazette" className="scroll-mt-20">
+        <section id="gazette" className="scroll-mt-20 md:scroll-mt-24">
           <MatchGazette summary={match.ai_summary} />
         </section>
       )}
 
       {showPronosBoard && isFinished && (
-        <section id="pronostics-joueurs" className="scroll-mt-20">
+        <section id="pronostics-joueurs" className="scroll-mt-20 md:scroll-mt-24">
           <MatchFinishedPronos
             bets={revealedBets}
             currentUserId={profile.id}
@@ -157,7 +149,7 @@ export default async function MatchBetPage({
       )}
 
       {showPronosBoard && isLive && (
-        <section id="pronostics-joueurs" className="scroll-mt-20">
+        <section id="pronostics-joueurs" className="scroll-mt-20 md:scroll-mt-24">
           <MatchLivePronos
             bets={revealedBets}
             currentUserId={profile.id}
@@ -172,13 +164,53 @@ export default async function MatchBetPage({
       )}
 
       {!isFinished && (kickoffStarted || canReveal) && (
-        <section id="chambrages" className="scroll-mt-20">
+        <section id="chambrages" className="scroll-mt-20 md:scroll-mt-24">
           <MatchChat
             matchId={matchId}
             currentUserId={profile.id}
             initialComments={comments}
           />
         </section>
+      )}
+    </>
+  );
+
+  return (
+    <div className="w-full space-y-8 md:space-y-10">
+      <HashAnchorScroller />
+      <MarkFunBetsSeen matchId={matchId} />
+      {(match.status === "live" || kickoffStarted) && <LiveStatusPoller />}
+
+      <MatchPageHero match={match} adminEditHref={adminEditHref} />
+
+      {isPreMatch ? (
+        <div className="space-y-8 lg:grid lg:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)] lg:items-start lg:gap-8 xl:gap-10">
+          <section
+            id="mon-pronostic"
+            className="scroll-mt-20 min-w-0 md:scroll-mt-24"
+          >
+            {betSlip}
+          </section>
+          {participationSection ? (
+            <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+              {participationSection}
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <div className="space-y-8 md:space-y-10">
+          <section
+            id="mon-pronostic"
+            className="scroll-mt-20 mx-auto w-full max-w-2xl md:scroll-mt-24"
+          >
+            {betSlip}
+          </section>
+
+          <div className="space-y-8 md:space-y-10">
+            {!canReveal && participationSection}
+            {matchStream}
+          </div>
+        </div>
       )}
     </div>
   );

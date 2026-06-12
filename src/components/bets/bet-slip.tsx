@@ -56,6 +56,8 @@ interface BetSlipProps {
   participation?: MatchParticipationPlayer[];
   tackleState?: MatchTackleState;
   preMatchInsights?: PreMatchInsights | null;
+  /** Pleine largeur desktop avant le match — plus d’air pour 1N2 et score exact. */
+  layout?: "default" | "prominent";
 }
 
 export function BetSlip({
@@ -72,7 +74,9 @@ export function BetSlip({
   participation = [],
   tackleState,
   preMatchInsights,
+  layout = "default",
 }: BetSlipProps) {
+  const isProminent = layout === "prominent";
   const router = useRouter();
   const searchParams = useSearchParams();
   const bettingOpen = useClassicBettingOpen(match);
@@ -415,15 +419,27 @@ export function BetSlip({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <Card className={cn(goldenMatchCardClass(isGolden), "overflow-visible")}>
-            <CardHeader className="space-y-3">
+      <Card
+        className={cn(
+          goldenMatchCardClass(isGolden),
+          "overflow-visible",
+          isProminent && "lg:border-primary/20 lg:shadow-md",
+        )}
+      >
+            <CardHeader
+              className={cn("space-y-3", isProminent && "md:space-y-4 md:px-6 md:pt-6")}
+            >
               {isGolden && (
                 <div className="flex justify-center">
                   <GoldenMatchBadge />
                 </div>
               )}
               <div>
-                <CardTitle className="text-base">Mon pronostic</CardTitle>
+                <CardTitle
+                  className={cn("text-base", isProminent && "md:text-lg")}
+                >
+                  Mon pronostic
+                </CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {hasClassicBet && canEditClassic
                     ? MATCH_RESULT_COPY.modifyHint
@@ -475,9 +491,15 @@ export function BetSlip({
               )}
             </CardHeader>
 
-            <CardContent>
+            <CardContent className={cn(isProminent && "md:px-6 md:pb-6")}>
               {mode === "1n2" ? (
-                <form onSubmit={handleSubmit1n2} className="space-y-5">
+                <form
+                  onSubmit={handleSubmit1n2}
+                  className={cn(
+                    "space-y-5",
+                    isProminent && "md:space-y-6",
+                  )}
+                >
                   {!bettingOpen && !pending.hasMatchResult && (
                     <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                       {MATCH_RESULT_COPY.kickoffClosed}
@@ -507,7 +529,12 @@ export function BetSlip({
                       </Label>
                       <MatchOddsSourceBadge match={match} className="text-[10px]" />
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div
+                      className={cn(
+                        "grid grid-cols-3 gap-2",
+                        isProminent && "md:gap-3",
+                      )}
+                    >
                       {outcomes.map((outcome) => {
                         const base = pointsFromOdd(outcome.odd!);
                         const display = goldenMatchPoints(
@@ -526,6 +553,7 @@ export function BetSlip({
                             }}
                             className={cn(
                               "flex flex-col items-center rounded-lg border py-3 transition-colors",
+                              isProminent && "lg:min-h-[6.5rem] lg:justify-center lg:px-2 lg:py-4",
                               !canEditClassic && "cursor-default opacity-60",
                               isChosen
                                 ? "border-primary bg-primary/15 ring-2 ring-primary"
@@ -534,16 +562,36 @@ export function BetSlip({
                                   : "border-border bg-muted/20 hover:border-primary/50",
                             )}
                           >
-                            <span className="text-[10px] font-medium text-muted-foreground">
+                            <span
+                              className={cn(
+                                "text-[10px] font-medium text-muted-foreground",
+                                isProminent && "md:text-xs",
+                              )}
+                            >
                               {outcome.label}
                             </span>
-                            <span className="mt-0.5 max-w-full truncate px-1 text-xs font-medium">
+                            <span
+                              className={cn(
+                                "mt-0.5 max-w-full truncate px-1 text-xs font-medium",
+                                isProminent && "md:text-sm",
+                              )}
+                            >
                               {outcome.name}
                             </span>
-                            <span className="mt-1 text-sm font-bold tabular-nums text-primary">
+                            <span
+                              className={cn(
+                                "mt-1 text-sm font-bold tabular-nums text-primary",
+                                isProminent && "md:text-base",
+                              )}
+                            >
                               {formatOdd(outcome.odd!)}
                             </span>
-                            <span className="mt-0.5 text-[10px] text-muted-foreground">
+                            <span
+                              className={cn(
+                                "mt-0.5 text-[10px] text-muted-foreground",
+                                isProminent && "md:text-xs",
+                              )}
+                            >
                               +{formatPoints(display)} pts
                             </span>
                           </button>
@@ -623,6 +671,7 @@ export function BetSlip({
                     <PreMatchAssistant
                       match={match}
                       insights={preMatchInsights}
+                      className={isProminent ? "md:mt-2" : undefined}
                     />
                   )}
 
@@ -634,7 +683,7 @@ export function BetSlip({
                   ) : (
                     <Button
                       type="submit"
-                      className="w-full"
+                      className={cn("w-full", isProminent && "md:h-11 md:text-base")}
                       disabled={
                         loading ||
                         !selection ||
@@ -651,7 +700,13 @@ export function BetSlip({
                   )}
                 </form>
               ) : (
-                <form onSubmit={handleSubmitExact} className="space-y-5">
+                <form
+                  onSubmit={handleSubmitExact}
+                  className={cn(
+                    "space-y-5",
+                    isProminent && "md:space-y-6",
+                  )}
+                >
                   {!bettingOpen && !pending.hasExactScore && (
                     <p className="rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
                       Coup d&apos;envoi passé — plus de score exact possible sur ce
@@ -806,6 +861,7 @@ export function BetSlip({
                     <PreMatchAssistant
                       match={match}
                       insights={preMatchInsights}
+                      className={isProminent ? "md:mt-2" : undefined}
                     />
                   )}
 
@@ -818,7 +874,7 @@ export function BetSlip({
                     <Button
                       type="submit"
                       variant="secondary"
-                      className="w-full"
+                      className={cn("w-full", isProminent && "md:h-11 md:text-base")}
                       disabled={
                         loading ||
                         !parsedScore ||
