@@ -10,6 +10,7 @@ import {
 } from "@/app/(app)/matches/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   displayPlayerName,
   type MatchTackleState,
@@ -93,6 +94,7 @@ export function TacklePicker({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -136,11 +138,8 @@ export function TacklePicker({
     router.refresh();
   }
 
-  async function handleCancel() {
+  async function performCancel() {
     if (!existing) return;
-    if (!confirm("Annuler ton Tacle Glissé ? Tu pourras en choisir un autre.")) {
-      return;
-    }
 
     setLoading(true);
     setError(null);
@@ -153,6 +152,7 @@ export function TacklePicker({
     }
 
     setEditing(false);
+    setCancelConfirmOpen(false);
     router.refresh();
   }
 
@@ -163,7 +163,8 @@ export function TacklePicker({
     );
 
     return (
-      <div className="space-y-2">
+      <>
+      <div className="relative z-10 space-y-2">
         <div className="rounded-lg border border-lime-400/30 bg-lime-400/5 px-3 py-2.5">
           <div className="flex items-center gap-2 text-sm">
             <Swords className="size-4 shrink-0 text-lime-400" />
@@ -211,11 +212,14 @@ export function TacklePicker({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="gap-1 text-muted-foreground hover:text-destructive"
+                className="min-h-11 min-w-[5.5rem] shrink-0 gap-1 touch-manipulation text-muted-foreground hover:text-destructive"
                 disabled={loading}
-                onClick={handleCancel}
+                onClick={() => {
+                  setError(null);
+                  setCancelConfirmOpen(true);
+                }}
               >
-                <X className="size-3.5" />
+                <X className="size-3.5" aria-hidden />
                 Annuler
               </Button>
             </div>
@@ -239,6 +243,21 @@ export function TacklePicker({
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={cancelConfirmOpen}
+        title="Annuler le Tacle Glissé ?"
+        description="Tu pourras en choisir un autre tant que le match n'a pas commencé."
+        confirmLabel="Oui, annuler"
+        cancelLabel="Garder"
+        destructive
+        loading={loading}
+        onConfirm={() => void performCancel()}
+        onCancel={() => {
+          if (!loading) setCancelConfirmOpen(false);
+        }}
+      />
+      </>
     );
   }
 
