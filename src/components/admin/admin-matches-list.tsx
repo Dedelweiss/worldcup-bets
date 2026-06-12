@@ -39,6 +39,29 @@ function formatOddsLine(match: MatchWithTeams): string {
   return "—";
 }
 
+function OddsStack({ match }: { match: MatchWithTeams }) {
+  if (!match.odd_home || !match.odd_draw || !match.odd_away) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+
+  const source = hasApiSyncedOdds(match) ? "API" : "défaut";
+
+  return (
+    <div className="space-y-0.5 text-xs leading-tight tabular-nums">
+      <p>
+        <span className="text-muted-foreground">1</span> {formatOdd(match.odd_home)}
+      </p>
+      <p>
+        <span className="text-muted-foreground">N</span> {formatOdd(match.odd_draw)}
+      </p>
+      <p>
+        <span className="text-muted-foreground">2</span> {formatOdd(match.odd_away)}
+      </p>
+      <p className="text-[10px] text-muted-foreground">({source})</p>
+    </div>
+  );
+}
+
 function formatScoreLine(match: MatchWithTeams): string {
   if (match.home_score !== null && match.away_score !== null) {
     return `${match.home_score} – ${match.away_score}`;
@@ -128,11 +151,11 @@ export function AdminMatchesList({
         ))}
       </ul>
 
-      <div className="hidden overflow-hidden rounded-xl border border-border md:block">
-        <table className="w-full text-sm">
+      <div className="hidden overflow-x-auto rounded-xl border border-border md:block">
+        <table className="w-full min-w-[56rem] text-sm">
           <thead className="bg-muted/40 text-left text-muted-foreground">
             <tr>
-              <th className="px-4 py-3 font-medium text-muted-foreground">
+              <th className="min-w-[12rem] px-4 py-3 font-medium text-muted-foreground">
                 Match
               </th>
               <AdminMatchSortHeader
@@ -141,10 +164,10 @@ export function AdminMatchesList({
                 sortField={sortField}
                 sortOrder={sortOrder}
               />
-              <th className="px-4 py-3 font-medium text-muted-foreground">
-                Cotes résultat
+              <th className="min-w-[5.5rem] px-4 py-3 font-medium text-muted-foreground">
+                Cotes
               </th>
-              <th className="px-4 py-3 font-medium text-muted-foreground">
+              <th className="min-w-[4rem] px-4 py-3 font-medium text-muted-foreground">
                 Score
               </th>
               <AdminMatchSortHeader
@@ -153,7 +176,7 @@ export function AdminMatchesList({
                 sortField={sortField}
                 sortOrder={sortOrder}
               />
-              <th className="px-4 py-3" />
+              <th className="w-20 px-4 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -168,13 +191,13 @@ export function AdminMatchesList({
                 <td className="px-4 py-3 font-medium">
                   {m.home_team.name} vs {m.away_team.name}
                 </td>
-                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
                   {formatKickoff(m.kickoff_at)}
                 </td>
-                <td className="px-4 py-3 tabular-nums text-xs">
-                  {formatOddsLine(m)}
+                <td className="px-4 py-3 align-top">
+                  <OddsStack match={m} />
                 </td>
-                <td className="px-4 py-3 tabular-nums font-medium">
+                <td className="whitespace-nowrap px-4 py-3 tabular-nums font-medium">
                   {formatScoreLine(m)}
                 </td>
                 <td className="px-4 py-3">
@@ -182,7 +205,7 @@ export function AdminMatchesList({
                     {STATUS_LABEL[m.status]}
                   </Badge>
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="whitespace-nowrap px-4 py-3 text-right">
                   <Link
                     href={`/admin/matches/${m.id}`}
                     className="text-primary hover:underline"

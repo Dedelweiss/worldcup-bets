@@ -6,6 +6,7 @@ import { getProfile, requireAdmin } from "@/lib/auth-server";
 
 const adminNav = [
   { href: "/admin", label: "Matchs" },
+  { href: "/admin/pronos", label: "Pronos" },
   { href: "/admin/leagues", label: "Ligues" },
   { href: "/admin/teams", label: "Équipes" },
   { href: "/admin/matches/new", label: "Créateur" },
@@ -24,7 +25,7 @@ export default async function AdminLayout({
   return (
     <div className="min-h-full bg-zinc-950">
       <AppHeader profile={profile} />
-      <div className="mx-auto max-w-5xl px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-6">
+      <div className="mx-auto max-w-6xl px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-6">
         <div className="mb-6 flex items-center gap-2 text-primary">
           <Shield className="size-5" />
           <span className="font-semibold">Administration</span>

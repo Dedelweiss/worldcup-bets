@@ -631,8 +631,8 @@ export function MatchAdminPanel({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-2">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="min-w-0 space-y-2">
                     <Label htmlFor="oddHome">Cote 1</Label>
                     <Input
                       id="oddHome"
@@ -646,7 +646,7 @@ export function MatchAdminPanel({
                       }
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="min-w-0 space-y-2">
                     <Label htmlFor="oddDraw">Cote N</Label>
                     <Input
                       id="oddDraw"
@@ -660,7 +660,7 @@ export function MatchAdminPanel({
                       }
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="min-w-0 space-y-2">
                     <Label htmlFor="oddAway">Cote 2</Label>
                     <Input
                       id="oddAway"

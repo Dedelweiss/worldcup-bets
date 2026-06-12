@@ -3,6 +3,7 @@ import {
   resolveFunMarketId,
 } from "@/lib/bets/fun-market-lookup";
 import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   BetStatus,
   BetType,
@@ -32,23 +33,64 @@ export interface MatchLiveBetRow {
   fun_question: string | null;
 }
 
-/** Paris du match visibles après le coup d'envoi (tous les joueurs). */
-export async function getMatchRevealedBets(
+function mapMatchBetRows(
+  data: Record<string, unknown>[],
+  funById: Map<string, { question: string }>,
+): MatchLiveBetRow[] {
+  return data.map((row) => {
+    const r = row;
+    const profile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+    const p = profile as {
+      display_name?: string;
+      username?: string;
+      avatar_url?: string;
+    } | null;
+
+    const funId = resolveFunMarketId({
+      bet_type: r.bet_type as string,
+      market_id: r.market_id as string | null,
+      fun_market_id: r.fun_market_id as string | null,
+      selection: r.selection,
+    });
+    const funSnippet = funId ? funById.get(funId) : undefined;
+
+    return {
+      id: r.id as string,
+      user_id: r.user_id as string,
+      display_name: p?.display_name ?? null,
+      username: p?.username ?? null,
+      avatar_url: (p?.avatar_url as string | null) ?? null,
+      bet_type: r.bet_type as BetType,
+      selection: r.selection as MatchLiveBetRow["selection"],
+      odd_at_placement: Number(r.odd_at_placement),
+      potential_payout: Number(r.potential_payout),
+      is_boosted: Boolean(r.is_boosted),
+      status: r.status as BetStatus,
+      score_precision: (r.score_precision as ScorePrecision | null) ?? null,
+      placed_at: r.placed_at as string,
+      fun_question: funSnippet?.question ?? null,
+    };
+  });
+}
+
+async function fetchMatchBets(
+  supabase: SupabaseClient,
   matchId: number,
+  options?: { requireKickoffPassed?: boolean },
 ): Promise<MatchLiveBetRow[]> {
-  const supabase = await createClient();
+  if (options?.requireKickoffPassed !== false) {
+    const { data: match } = await supabase
+      .from("matches")
+      .select("kickoff_at")
+      .eq("id", matchId)
+      .maybeSingle();
 
-  const { data: match } = await supabase
-    .from("matches")
-    .select("kickoff_at")
-    .eq("id", matchId)
-    .maybeSingle();
+    if (!match) return [];
 
-  if (!match) return [];
-
-  const kickoff = new Date(match.kickoff_at as string).getTime();
-  if (Number.isNaN(kickoff) || kickoff > Date.now()) {
-    return [];
+    const kickoff = new Date(match.kickoff_at as string).getTime();
+    if (Number.isNaN(kickoff) || kickoff > Date.now()) {
+      return [];
+    }
   }
 
   const { data, error } = await supabase
@@ -89,40 +131,23 @@ export async function getMatchRevealedBets(
 
   const funById = await fetchFunMarketSnippets(supabase, funIds);
 
-  return data.map((row) => {
-    const r = row as Record<string, unknown>;
-    const profile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
-    const p = profile as {
-      display_name?: string;
-      username?: string;
-      avatar_url?: string;
-    } | null;
+  return mapMatchBetRows(data as Record<string, unknown>[], funById);
+}
 
-    const funId = resolveFunMarketId({
-      bet_type: r.bet_type as string,
-      market_id: r.market_id as string | null,
-      fun_market_id: r.fun_market_id as string | null,
-      selection: r.selection,
-    });
-    const funSnippet = funId ? funById.get(funId) : undefined;
+/** Paris du match visibles après le coup d'envoi (joueurs connectés, RLS). */
+export async function getMatchRevealedBets(
+  matchId: number,
+): Promise<MatchLiveBetRow[]> {
+  const supabase = await createClient();
+  return fetchMatchBets(supabase, matchId, { requireKickoffPassed: true });
+}
 
-    return {
-      id: r.id as string,
-      user_id: r.user_id as string,
-      display_name: p?.display_name ?? null,
-      username: p?.username ?? null,
-      avatar_url: (p?.avatar_url as string | null) ?? null,
-      bet_type: r.bet_type as BetType,
-      selection: r.selection as MatchLiveBetRow["selection"],
-      odd_at_placement: Number(r.odd_at_placement),
-      potential_payout: Number(r.potential_payout),
-      is_boosted: Boolean(r.is_boosted),
-      status: r.status as BetStatus,
-      score_precision: (r.score_precision as ScorePrecision | null) ?? null,
-      placed_at: r.placed_at as string,
-      fun_question: funSnippet?.question ?? null,
-    };
-  });
+/** Tous les paris d'un match — service role, sans garde coup d'envoi (admin). */
+export async function fetchAdminMatchBets(
+  supabase: SupabaseClient,
+  matchId: number,
+): Promise<MatchLiveBetRow[]> {
+  return fetchMatchBets(supabase, matchId, { requireKickoffPassed: false });
 }
 
 /** @deprecated Alias — utiliser getMatchRevealedBets */

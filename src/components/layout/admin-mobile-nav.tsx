@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutGroup, motion } from "framer-motion";
 import {
+  ClipboardList,
   Flag,
   Home,
   LayoutGrid,
@@ -23,6 +24,7 @@ const tabs: {
   exit?: boolean;
 }[] = [
   { href: "/admin", label: "Matchs", icon: LayoutGrid },
+  { href: "/admin/pronos", label: "Pronos", icon: ClipboardList },
   { href: "/admin/leagues", label: "Ligues", icon: Trophy },
   { href: "/admin/teams", label: "Équipes", icon: Flag },
   { href: "/admin/matches/new", label: "Créateur", icon: PlusCircle },
