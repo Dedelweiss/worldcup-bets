@@ -81,15 +81,18 @@ async function fetchMatchBets(
   if (options?.requireKickoffPassed !== false) {
     const { data: match } = await supabase
       .from("matches")
-      .select("kickoff_at")
+      .select("kickoff_at, status")
       .eq("id", matchId)
       .maybeSingle();
 
     if (!match) return [];
 
-    const kickoff = new Date(match.kickoff_at as string).getTime();
-    if (Number.isNaN(kickoff) || kickoff > Date.now()) {
-      return [];
+    const isLive = match.status === "live";
+    if (!isLive) {
+      const kickoff = new Date(match.kickoff_at as string).getTime();
+      if (Number.isNaN(kickoff) || kickoff > Date.now()) {
+        return [];
+      }
     }
   }
 
@@ -134,7 +137,7 @@ async function fetchMatchBets(
   return mapMatchBetRows(data as Record<string, unknown>[], funById);
 }
 
-/** Paris du match visibles après le coup d'envoi (joueurs connectés, RLS). */
+/** Paris du match visibles en direct (RLS : statut live) ou après coup d'envoi si terminé. */
 export async function getMatchRevealedBets(
   matchId: number,
 ): Promise<MatchLiveBetRow[]> {

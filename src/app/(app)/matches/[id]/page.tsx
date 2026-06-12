@@ -56,7 +56,9 @@ export default async function MatchBetPage({
   const canReveal = canRevealPlayerBets(match);
   const isFinished = match.status === "finished";
   const isLive = match.status === "live";
-  const showPronosBoard = canReveal && (isFinished || isLive);
+  const showLivePronosBoard = isLive && canReveal;
+  const showFinishedPronosBoard =
+    isFinished && canReveal && profile.role === "admin";
   const isPreMatch = match.status === "scheduled" && !kickoffStarted;
 
   const adminEditHref =
@@ -75,7 +77,9 @@ export default async function MatchBetPage({
       !kickoffStarted && match.status === "scheduled"
         ? getPreMatchInsights(match, profile.id)
         : Promise.resolve(null),
-      showPronosBoard ? getMatchRevealedBets(matchId) : Promise.resolve([]),
+      showLivePronosBoard || showFinishedPronosBoard
+        ? getMatchRevealedBets(matchId)
+        : Promise.resolve([]),
     ]);
 
   const hasFunSection = funMarkets.length > 0;
@@ -140,7 +144,7 @@ export default async function MatchBetPage({
         </section>
       )}
 
-      {showPronosBoard && isFinished && (
+      {showFinishedPronosBoard && (
         <section id="pronostics-joueurs" className="scroll-mt-20 md:scroll-mt-24">
           <MatchFinishedPronos
             bets={revealedBets}
@@ -155,7 +159,7 @@ export default async function MatchBetPage({
         </section>
       )}
 
-      {showPronosBoard && isLive && (
+      {showLivePronosBoard && (
         <section id="pronostics-joueurs" className="scroll-mt-20 md:scroll-mt-24">
           <MatchLivePronos
             bets={revealedBets}
