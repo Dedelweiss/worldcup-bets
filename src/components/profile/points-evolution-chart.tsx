@@ -35,6 +35,27 @@ function formatTooltipDate(iso: string): string {
   return format(new Date(iso), "EEE d MMM · HH:mm", { locale: fr });
 }
 
+/** Évite que le tooltip soit rogné aux bords du graphique (surtout le dernier point). */
+function tooltipPosition(
+  index: number,
+  count: number,
+): { left: string; transform: string } {
+  if (count <= 1) {
+    return { left: "50%", transform: "translateX(-50%)" };
+  }
+
+  const ratio = index / (count - 1);
+  const left = `${ratio * 100}%`;
+
+  if (ratio >= 0.72) {
+    return { left, transform: "translateX(-100%)" };
+  }
+  if (ratio <= 0.28) {
+    return { left, transform: "translateX(0)" };
+  }
+  return { left, transform: "translateX(-50%)" };
+}
+
 export function PointsEvolutionChart({
   points,
   currentPoints,
@@ -116,17 +137,22 @@ export function PointsEvolutionChart({
     );
   }
 
+  const tooltipStyle =
+    activeIndex != null
+      ? tooltipPosition(activeIndex, points.length)
+      : null;
+
   return (
-    <Card>
+    <Card className="overflow-visible">
       <CardHeader>
         <CardTitle className="text-base">Évolution des points</CardTitle>
         <CardDescription>
           Cumul après chaque match réglé · survolez un point pour le détail
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 overflow-visible">
         <div
-          className="relative w-full"
+          className="relative w-full overflow-visible"
           onMouseLeave={() => setActiveIndex(null)}
         >
           <svg
@@ -211,13 +237,10 @@ export function PointsEvolutionChart({
             ))}
           </svg>
 
-          {active && activeIndex != null && (
+          {active && tooltipStyle && (
             <div
               className="pointer-events-none absolute top-0 z-10 max-w-[min(100%,16rem)] rounded-lg border bg-popover px-3 py-2 text-popover-foreground shadow-md"
-              style={{
-                left: `${(activeIndex / Math.max(points.length - 1, 1)) * 100}%`,
-                transform: "translateX(-50%)",
-              }}
+              style={tooltipStyle}
             >
               <p className="text-xs text-muted-foreground">
                 {formatTooltipDate(active.at)}
