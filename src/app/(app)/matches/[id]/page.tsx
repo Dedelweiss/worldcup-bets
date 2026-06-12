@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { BetSlip } from "@/components/bets/bet-slip";
+import { TackleIncomingAlert } from "@/components/bets/tackle-incoming-alert";
 import { FunBetSlip } from "@/components/bets/fun-bet-slip";
 import { MarkFunBetsSeen } from "@/components/fun-bets/mark-fun-bets-seen";
 import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
@@ -78,6 +79,12 @@ export default async function MatchBetPage({
     ]);
 
   const hasFunSection = funMarkets.length > 0;
+  const incomingTackles = tackleState.incomingTackles;
+
+  const incomingTackleAlert =
+    incomingTackles.length > 0 ? (
+      <TackleIncomingAlert tackles={incomingTackles} />
+    ) : null;
 
   const betSlip = (
     <BetSlip
@@ -187,8 +194,9 @@ export default async function MatchBetPage({
         <div className="space-y-8 lg:grid lg:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)] lg:items-start lg:gap-8 xl:gap-10">
           <section
             id="mon-pronostic"
-            className="scroll-mt-20 min-w-0 md:scroll-mt-24"
+            className="scroll-mt-20 min-w-0 space-y-4 md:scroll-mt-24"
           >
+            {incomingTackleAlert}
             {betSlip}
           </section>
           {participationSection ? (
@@ -201,8 +209,9 @@ export default async function MatchBetPage({
         <div className="space-y-8 md:space-y-10">
           <section
             id="mon-pronostic"
-            className="scroll-mt-20 mx-auto w-full max-w-2xl md:scroll-mt-24"
+            className="scroll-mt-20 mx-auto w-full max-w-2xl space-y-4 md:scroll-mt-24"
           >
+            {incomingTackleAlert}
             {betSlip}
           </section>
 

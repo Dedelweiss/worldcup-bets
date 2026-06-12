@@ -18,8 +18,23 @@ export interface UserTackleQuota {
   usedMatchId: number | null;
 }
 
+/** Tacle reçu sur ce match (on est la cible). */
+export interface IncomingTackleOnMatch {
+  id: string;
+  attacker_id: string;
+  attacker_username: string | null;
+  attacker_display_name: string | null;
+  attacker_avatar_url: string | null;
+  phase: TacklePhase;
+  is_resolved: boolean;
+  attacker_won: boolean | null;
+  attacker_delta: number | null;
+  target_delta: number | null;
+}
+
 export interface MatchTackleState {
   matchTackle: UserTackleOnMatch | null;
+  incomingTackles: IncomingTackleOnMatch[];
   quotas: UserTackleQuota[];
   phase: TacklePhase;
 }
