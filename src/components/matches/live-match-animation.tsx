@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { HeroTeamEmblem } from "@/components/matches/hero-team-emblem";
+import { HeroTeamBlock } from "@/components/matches/hero-team-block";
 import { TeamFlag } from "@/components/shared/team-flag";
 import { cn } from "@/lib/utils";
 import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
@@ -18,7 +18,7 @@ function TeamBadge({ team }: { team: Team }) {
         logoUrl={team.logo_url}
         teamId={team.id}
         size={40}
-        className="border-2 border-white/15 shadow-sm"
+        className="rounded-md ring-1 ring-white/10"
       />
       <span className="max-w-[72px] truncate text-[10px] font-medium text-muted-foreground">
         {name}
@@ -44,34 +44,30 @@ export function LiveMatchAnimation({
   className,
 }: LiveMatchAnimationProps) {
   const isHero = variant === "hero";
-  const homeName = tbdTeamDisplayName(homeTeam);
-  const awayName = tbdTeamDisplayName(awayTeam);
 
   return (
     <div
-      className={cn(
-        "w-full",
-        isHero && "flex max-w-4xl flex-col gap-2 sm:gap-4",
-        className,
-      )}
+      className={cn("w-full", isHero && "max-w-3xl", className)}
       aria-label="Match en direct, en attente du premier but"
     >
       <div
         className={cn(
-          "flex w-full items-center",
-          isHero ? "gap-1.5 sm:gap-8" : "gap-2",
+          "grid w-full items-center",
+          isHero
+            ? "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 sm:gap-8"
+            : "flex gap-2",
         )}
       >
         {isHero ? (
-          <HeroTeamEmblem team={homeTeam} className="flex-1" />
+          <HeroTeamBlock team={homeTeam} side="home" />
         ) : (
           <TeamBadge team={homeTeam} />
         )}
 
         <div
           className={cn(
-            "relative flex-1",
-            isHero ? "h-16 min-w-[56px] sm:h-24 sm:min-w-[120px]" : "h-14 min-w-[100px]",
+            "relative",
+            isHero ? "h-14 w-16 sm:h-20 sm:w-28" : "h-14 min-w-[100px] flex-1",
           )}
         >
           <div
@@ -82,11 +78,11 @@ export function LiveMatchAnimation({
           <motion.span
             className={cn(
               "absolute bottom-2 left-0 z-10 block leading-none drop-shadow-md will-change-transform",
-              isHero ? "text-2xl sm:text-4xl" : "text-2xl",
+              isHero ? "text-2xl sm:text-3xl" : "text-2xl",
             )}
             animate={{
               left: ["0%", "100%"],
-              y: [0, isHero ? -36 : -34, 0],
+              y: [0, isHero ? -28 : -34, 0],
             }}
             transition={{
               duration: BOUNCE_DURATION,
@@ -102,18 +98,11 @@ export function LiveMatchAnimation({
         </div>
 
         {isHero ? (
-          <HeroTeamEmblem team={awayTeam} className="flex-1" />
+          <HeroTeamBlock team={awayTeam} side="away" />
         ) : (
           <TeamBadge team={awayTeam} />
         )}
       </div>
-
-      {isHero ? (
-        <div className="grid grid-cols-2 gap-2 px-1 text-center sm:hidden">
-          <p className="truncate text-xs font-semibold leading-tight">{homeName}</p>
-          <p className="truncate text-xs font-semibold leading-tight">{awayName}</p>
-        </div>
-      ) : null}
     </div>
   );
 }

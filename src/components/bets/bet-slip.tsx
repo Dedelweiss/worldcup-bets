@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, Target, Zap, Dices } from "lucide-react";
+import { Lock, Target, Zap, Dices, ChevronDown } from "lucide-react";
 import {
   placeBetAction,
   placeExactScoreBetAction,
@@ -34,12 +34,10 @@ import { randomClassicScore } from "@/lib/bets/random-score";
 import type { MatchUserPendingBets } from "@/lib/bets/match-user-bets";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { MatchOddsSourceBadge } from "@/components/matches/match-odds-source-badge";
-import { PreMatchAssistant } from "@/components/matches/pre-match-assistant";
 import { TacklePicker } from "@/components/bets/tackle-picker";
 import { goldenMatchCardClass, goldenMatchPoints } from "@/lib/golden-match";
 import { betDisplayPayout, pointsFromOdd, pointsIfWin } from "@/lib/points";
 import type { MatchParticipationPlayer } from "@/lib/bets/match-participation";
-import type { PreMatchInsights } from "@/lib/bets/pre-match-insights";
 import type { MatchTackleState } from "@/lib/bets/match-tackle-utils";
 import { tackleEligibleRivals } from "@/lib/bets/match-tackle-utils";
 import { cn } from "@/lib/utils";
@@ -55,8 +53,7 @@ interface BetSlipProps {
   currentUserId: string;
   participation?: MatchParticipationPlayer[];
   tackleState?: MatchTackleState;
-  preMatchInsights?: PreMatchInsights | null;
-  /** Pleine largeur desktop avant le match — plus d’air pour 1N2 et score exact. */
+  /** Pleine largeur desktop avant le match — plus d'air pour 1N2 et score exact. */
   layout?: "default" | "prominent";
 }
 
@@ -73,7 +70,6 @@ export function BetSlip({
   currentUserId,
   participation = [],
   tackleState,
-  preMatchInsights,
   layout = "default",
 }: BetSlipProps) {
   const isProminent = layout === "prominent";
@@ -117,6 +113,11 @@ export function BetSlip({
   const [error, setError] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
   const [classicBetConfirmed, setClassicBetConfirmed] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(
+    () =>
+      pending.hasMatchResult ||
+      pending.hasExactScore,
+  );
 
   useEffect(() => {
     if (
@@ -240,6 +241,11 @@ export function BetSlip({
   const hasClassicBet =
     pending.hasMatchResult || pending.hasExactScore || classicBetConfirmed;
   const tackleRivals = tackleEligibleRivals(participation, currentUserId);
+  const showAdvancedOptions =
+    advancedOpen || !canEditClassic || hasClassicBet;
+  const canCollapseAdvanced =
+    canEditClassic && !hasClassicBet && bettingOpen;
+  const activeMode: BetMode = showAdvancedOptions ? mode : "1n2";
 
   const has1n2Change =
     selection != null &&
@@ -258,6 +264,9 @@ export function BetSlip({
     if (!canEditClassic) {
       if (pending.hasMatchResult && next === "exact") return;
       if (pending.hasExactScore && next === "1n2") return;
+    }
+    if (next === "exact") {
+      setAdvancedOpen(true);
     }
     setMode(next);
     setSavedNotice(null);
@@ -464,7 +473,7 @@ export function BetSlip({
                 </p>
               </div>
 
-              {(!hasClassicBet || canEditClassic) && (
+              {showAdvancedOptions && (!hasClassicBet || canEditClassic) && (
                 <div
                   className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1"
                   role="tablist"
@@ -503,7 +512,7 @@ export function BetSlip({
             </CardHeader>
 
             <CardContent className={cn(isProminent && "md:px-6 md:pb-6")}>
-              {canShowBoost && (
+              {showAdvancedOptions && canShowBoost && (
                 <div className="mb-5 flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-3">
                   <div className="flex min-w-0 items-start gap-2">
                     <Zap className="mt-0.5 size-4 shrink-0 text-amber-500" />
@@ -528,7 +537,7 @@ export function BetSlip({
                 </div>
               )}
 
-              {mode === "1n2" ? (
+              {activeMode === "1n2" ? (
                 <form
                   onSubmit={handleSubmit1n2}
                   className={cn(
@@ -678,12 +687,15 @@ export function BetSlip({
                     </p>
                   )}
 
-                  {preMatchInsights && bettingOpen && (
-                    <PreMatchAssistant
-                      match={match}
-                      insights={preMatchInsights}
-                      className={isProminent ? "md:mt-2" : undefined}
-                    />
+                  {canCollapseAdvanced && !showAdvancedOptions && (
+                    <button
+                      type="button"
+                      onClick={() => setAdvancedOpen(true)}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/10 py-2.5 text-sm text-muted-foreground transition-colors hover:border-white/20 hover:text-foreground"
+                    >
+                      Score exact, boost et tacle
+                      <ChevronDown className="size-4" aria-hidden />
+                    </button>
                   )}
 
                   {!canEditClassic && pending.hasMatchResult ? (
@@ -882,12 +894,15 @@ export function BetSlip({
                     </p>
                   )}
 
-                  {preMatchInsights && bettingOpen && (
-                    <PreMatchAssistant
-                      match={match}
-                      insights={preMatchInsights}
-                      className={isProminent ? "md:mt-2" : undefined}
-                    />
+                  {canCollapseAdvanced && !showAdvancedOptions && (
+                    <button
+                      type="button"
+                      onClick={() => setAdvancedOpen(true)}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/10 py-2.5 text-sm text-muted-foreground transition-colors hover:border-white/20 hover:text-foreground"
+                    >
+                      Score exact, boost et tacle
+                      <ChevronDown className="size-4" aria-hidden />
+                    </button>
                   )}
 
                   {!canEditClassic && pending.hasExactScore ? (
@@ -918,7 +933,7 @@ export function BetSlip({
                 </form>
               )}
             </CardContent>
-            {tackleState && (
+            {tackleState && showAdvancedOptions && (
               <CardContent className="border-t border-border/50 pt-4">
                 {classicBetConfirmed && (
                   <p className="mb-3 rounded-lg border border-lime-400/30 bg-lime-400/10 px-3 py-2 text-sm text-lime-200">

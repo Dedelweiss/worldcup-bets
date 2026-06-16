@@ -36,7 +36,7 @@ export function MatchFunBetsSection({
   return (
     <section
       id="paris-fun"
-      className={cn("scroll-mt-20 md:scroll-mt-24", className)}
+      className={cn("scroll-mt-28 md:scroll-mt-32", className)}
     >
       <div
         className={cn(

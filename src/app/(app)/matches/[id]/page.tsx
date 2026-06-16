@@ -8,7 +8,9 @@ import { MatchGazette } from "@/components/matches/match-gazette";
 import { HashAnchorScroller } from "@/components/layout/hash-anchor-scroller";
 import { MatchFunBetsSection } from "@/components/matches/match-fun-bets-section";
 import { MatchPageHero } from "@/components/matches/match-page-hero";
+import { MatchPageNav, type MatchPageNavTab } from "@/components/matches/match-page-nav";
 import { MatchParticipation } from "@/components/matches/match-participation";
+import { PreMatchAssistant } from "@/components/matches/pre-match-assistant";
 import { MatchFinishedPronos } from "@/components/matches/match-finished-pronos";
 import { MatchLivePronos } from "@/components/matches/match-live-pronos";
 import { requireAuth } from "@/lib/auth-server";
@@ -23,6 +25,7 @@ import { hasKickoffStarted } from "@/lib/format";
 import { getFunMarketsByMatch } from "@/lib/fun-markets";
 import { getMatchComments } from "@/lib/match-comments";
 import { getMatchById } from "@/lib/matches";
+import { cn } from "@/lib/utils";
 
 export async function generateMetadata({
   params,
@@ -83,7 +86,52 @@ export default async function MatchBetPage({
     ]);
 
   const hasFunSection = funMarkets.length > 0;
+  const hasClassicBet =
+    pendingBets.hasMatchResult || pendingBets.hasExactScore;
+  const openFunCount = funMarkets.filter((m) => m.status === "open").length;
+  const unplayedOpenFun = funMarkets.filter(
+    (m) => m.status === "open" && !funBetsByMarket.has(m.id),
+  ).length;
   const incomingTackles = tackleState.incomingTackles;
+
+  const sectionScrollClass = "scroll-mt-28 md:scroll-mt-32";
+
+  const navTabs: MatchPageNavTab[] = [];
+
+  if (showLivePronosBoard || showFinishedPronosBoard) {
+    navTabs.push({ id: "pronostics-joueurs", label: "Pronos" });
+  }
+
+  if (!isFinished && (kickoffStarted || canReveal)) {
+    navTabs.push({ id: "chambrages", label: "Chambrage" });
+  }
+
+  navTabs.push({
+    id: "mon-pronostic",
+    label: "Mon pronostic",
+    dot: isPreMatch && !hasClassicBet,
+  });
+
+  if (hasFunSection) {
+    navTabs.push({
+      id: "paris-fun",
+      label: "Paris fun",
+      badge: unplayedOpenFun > 0 ? unplayedOpenFun : openFunCount || undefined,
+      pulse: unplayedOpenFun > 0,
+    });
+  }
+
+  if (!canReveal && (participation.bettors.length > 0 || participation.pending.length > 0)) {
+    navTabs.push({ id: "participation", label: "Qui a parié ?" });
+  }
+
+  if (preMatchInsights) {
+    navTabs.push({ id: "assistant", label: "Assistant" });
+  }
+
+  if (match.ai_summary) {
+    navTabs.push({ id: "gazette", label: "Gazette" });
+  }
 
   const incomingTackleAlert =
     incomingTackles.length > 0 ? (
@@ -99,20 +147,33 @@ export default async function MatchBetPage({
       currentUserId={profile.id}
       participation={participation.bettors}
       tackleState={tackleState}
-      preMatchInsights={preMatchInsights}
       layout={isPreMatch ? "prominent" : "default"}
     />
   );
 
   const participationSection =
     !canReveal ? (
-      <section id="participation" className="scroll-mt-20 md:scroll-mt-24">
+      <section id="participation" className={sectionScrollClass}>
         <MatchParticipation
           bettors={participation.bettors}
           pending={participation.pending}
           currentUserId={profile.id}
         />
       </section>
+    ) : null;
+
+  const assistantSection = preMatchInsights ? (
+    <section id="assistant" className={sectionScrollClass}>
+      <PreMatchAssistant match={match} insights={preMatchInsights} />
+    </section>
+  ) : null;
+
+  const sidebarRail =
+    participationSection || assistantSection ? (
+      <div className="min-w-0 space-y-4 lg:sticky lg:top-28 lg:self-start">
+        {participationSection}
+        {assistantSection}
+      </div>
     ) : null;
 
   const funBetsSection = hasFunSection ? (
@@ -126,13 +187,13 @@ export default async function MatchBetPage({
   const matchStream = (
     <>
       {match.ai_summary && (
-        <section id="gazette" className="scroll-mt-20 md:scroll-mt-24">
+        <section id="gazette" className={sectionScrollClass}>
           <MatchGazette summary={match.ai_summary} />
         </section>
       )}
 
       {showFinishedPronosBoard && (
-        <section id="pronostics-joueurs" className="scroll-mt-20 md:scroll-mt-24">
+        <section id="pronostics-joueurs" className={sectionScrollClass}>
           <MatchFinishedPronos
             bets={revealedBets}
             currentUserId={profile.id}
@@ -147,7 +208,7 @@ export default async function MatchBetPage({
       )}
 
       {showLivePronosBoard && (
-        <section id="pronostics-joueurs" className="scroll-mt-20 md:scroll-mt-24">
+        <section id="pronostics-joueurs" className={sectionScrollClass}>
           <MatchLivePronos
             bets={revealedBets}
             currentUserId={profile.id}
@@ -162,7 +223,7 @@ export default async function MatchBetPage({
       )}
 
       {!isFinished && (kickoffStarted || canReveal) && (
-        <section id="chambrages" className="scroll-mt-20 md:scroll-mt-24">
+        <section id="chambrages" className={sectionScrollClass}>
           <MatchChat
             matchId={matchId}
             currentUserId={profile.id}
@@ -174,36 +235,42 @@ export default async function MatchBetPage({
   );
 
   return (
-    <div className="w-full space-y-8 md:space-y-10">
+    <div className="flex w-full flex-col gap-6">
       <HashAnchorScroller />
       <MarkFunBetsSeen matchId={matchId} />
       {(match.status === "live" || kickoffStarted) && <LiveStatusPoller />}
 
-      <MatchPageHero match={match} adminEditHref={adminEditHref} />
+      <MatchPageHero
+        match={match}
+        adminEditHref={adminEditHref}
+        showBetCta={isPreMatch && !hasClassicBet}
+        showCountdown={isPreMatch}
+      />
+
+      <MatchPageNav tabs={navTabs} />
 
       {isPreMatch ? (
-        <div className="space-y-8">
-          <div className="lg:grid lg:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)] lg:items-start lg:gap-8 xl:gap-10">
+        <div className="flex flex-col gap-6">
+          <div className="lg:grid lg:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)] lg:items-start lg:gap-6 xl:gap-8">
             <section
               id="mon-pronostic"
-              className="scroll-mt-20 min-w-0 space-y-4 md:scroll-mt-24"
+              className={cn(sectionScrollClass, "min-w-0 space-y-4")}
             >
               {incomingTackleAlert}
               {betSlip}
             </section>
-            {participationSection ? (
-              <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-                {participationSection}
-              </div>
-            ) : null}
+            {sidebarRail}
           </div>
           {funBetsSection}
         </div>
       ) : (
-        <div className="space-y-8 md:space-y-10">
+        <div className="flex flex-col gap-6">
           <section
             id="mon-pronostic"
-            className="scroll-mt-20 mx-auto w-full max-w-2xl space-y-4 md:scroll-mt-24"
+            className={cn(
+              sectionScrollClass,
+              "mx-auto w-full max-w-2xl space-y-4",
+            )}
           >
             {incomingTackleAlert}
             {betSlip}
@@ -211,8 +278,8 @@ export default async function MatchBetPage({
 
           {funBetsSection}
 
-          <div className="space-y-8 md:space-y-10">
-            {!canReveal && participationSection}
+          <div className="flex flex-col gap-6">
+            {!canReveal && sidebarRail}
             {matchStream}
           </div>
         </div>
