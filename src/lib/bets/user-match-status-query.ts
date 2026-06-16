@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { parseExactScoreSelection } from "@/lib/exact-score";
 import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
 
 function emptyStatus(): UserMatchBetStatus {
@@ -56,6 +57,12 @@ export async function getUserMatchBetStatuses(
     if (bet.bet_type === "exact_score") {
       status.hasClassicBet = true;
       status.hasExactScore = true;
+      const parsed = parseExactScoreSelection(
+        bet.selection as { home?: number; away?: number },
+      );
+      if (parsed) {
+        status.exactScore = parsed;
+      }
     }
     if (bet.bet_type === "fun") {
       const funId =

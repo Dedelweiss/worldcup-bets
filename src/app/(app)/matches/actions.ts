@@ -129,6 +129,8 @@ export async function placeExactScoreBetAction(
   }
 
   revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/matches");
+  revalidatePath("/matches/quick");
   revalidatePath("/dashboard");
   revalidatePath("/bets");
   revalidatePath("/leaderboard");

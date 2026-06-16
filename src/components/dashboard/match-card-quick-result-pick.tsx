@@ -37,11 +37,8 @@ export function MatchCardQuickResultPick({
     setSelected(betStatus?.matchResultSelection ?? null);
   }, [betStatus?.matchResultSelection]);
 
-  const hasExactScore = betStatus?.hasExactScore ?? false;
-
   if (
     !bettingOpen ||
-    hasExactScore ||
     !match.odd_home ||
     !match.odd_draw ||
     !match.odd_away
@@ -77,7 +74,9 @@ export function MatchCardQuickResultPick({
     toast.success(
       betStatus?.hasMatchResult
         ? `Pronostic mis à jour : ${label}`
-        : `Pronostic enregistré : ${label}`,
+        : betStatus?.hasExactScore
+          ? `Pronostic résultat enregistré : ${label}`
+          : `Pronostic enregistré : ${label}`,
     );
     router.refresh();
   }

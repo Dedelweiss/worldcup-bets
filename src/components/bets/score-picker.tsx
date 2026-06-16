@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 const MAX_GOALS = 20;
 
 /** Scores fréquents en phase de poules / matchs serrés */
-const QUICK_SCORES: { home: number; away: number; label: string }[] = [
+export const QUICK_SCORES: { home: number; away: number; label: string }[] = [
   { home: 0, away: 0, label: "0-0" },
   { home: 1, away: 0, label: "1-0" },
   { home: 0, away: 1, label: "0-1" },

@@ -9,7 +9,7 @@ import { MatchScoreInline } from "@/components/matches/match-score-inline";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { MatchOddsSourceBadge } from "@/components/matches/match-odds-source-badge";
 import { MATCH_RESULT_COPY } from "@/lib/bets/match-result-copy";
-import { MatchCardQuickResultPick } from "@/components/dashboard/match-card-quick-result-pick";
+import { MatchCardQuickBet } from "@/components/dashboard/match-card-quick-bet";
 import { MatchTimingBanner } from "@/components/matches/match-timing-banner";
 import { MatchCardStatusBadges } from "@/components/dashboard/match-card-status-badges";
 import { goldenMatchCardClass } from "@/lib/golden-match";
@@ -51,7 +51,7 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
     hasClassicBet && (betStatus?.pendingFunToPlay ?? 0) > 0;
   const { allowed: bettingOpen } = canPlaceBetOnMatch(match);
   const showQuickPick =
-    !hasScore && !isLive && bettingOpen && !betStatus?.hasExactScore;
+    !hasScore && !isLive && bettingOpen;
 
   const ctaLabel = isLive
     ? hasFunToPlay
@@ -154,24 +154,13 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
                 match.odd_away && (
                   <>
                     <MatchOddsSourceBadge match={match} className="text-[10px]" />
-                    <MatchCardQuickResultPick
+                    <MatchCardQuickBet
                       match={match}
                       betStatus={betStatus}
                       bettingOpen={bettingOpen}
                     />
                   </>
                 )}
-              {betStatus?.hasExactScore && (
-                <p className="text-center text-[11px] text-muted-foreground">
-                  Score exact déjà posé —{" "}
-                  <Link
-                    href={`/matches/${match.id}#mon-pronostic`}
-                    className="text-primary underline-offset-2 hover:underline"
-                  >
-                    voir le détail
-                  </Link>
-                </p>
-              )}
             </div>
           )}
 

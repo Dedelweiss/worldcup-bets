@@ -7,6 +7,8 @@ export interface UserMatchBetStatus {
   hasExactScore: boolean;
   /** Choix 1N2 en attente (pour surligner le calendrier). */
   matchResultSelection?: MatchResultSelection | null;
+  /** Score exact en attente (pour surligner le calendrier). */
+  exactScore?: { home: number; away: number } | null;
   /** Marchés fun ouverts sur ce match. */
   openFunCount: number;
   /** Marchés fun ouverts sur lesquels le joueur n'a pas encore parié. */
