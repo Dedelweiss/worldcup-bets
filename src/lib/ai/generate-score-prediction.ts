@@ -208,9 +208,9 @@ function buildScorePrompt(input: ScorePredictionInput): {
   user: string;
 } {
   const oddsLine = [
-    input.oddHome != null ? `domicile ${input.oddHome}` : null,
+    input.oddHome != null ? `${input.homeTeam} ${input.oddHome}` : null,
     input.oddDraw != null ? `nul ${input.oddDraw}` : null,
-    input.oddAway != null ? `extérieur ${input.oddAway}` : null,
+    input.oddAway != null ? `${input.awayTeam} ${input.oddAway}` : null,
   ]
     .filter(Boolean)
     .join(", ");

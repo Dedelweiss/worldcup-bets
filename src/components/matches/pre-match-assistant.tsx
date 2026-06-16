@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Brain, History, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { TeamFlag } from "@/components/shared/team-flag";
+import { MATCH_RESULT_COPY } from "@/lib/bets/match-result-copy";
 import type { PreMatchInsights } from "@/lib/bets/pre-match-insights";
 import { cn } from "@/lib/utils";
 import type { MatchWithTeams } from "@/types/database";
@@ -92,7 +93,7 @@ export function PreMatchAssistant({
                     teamId={match.home_team.id}
                     size={14}
                   />
-                  {match.home_team.code ?? "Dom."}
+                  {match.home_team.code ?? MATCH_RESULT_COPY.team1}
                 </>
               }
               pct={crowd.home}
@@ -109,7 +110,7 @@ export function PreMatchAssistant({
                     teamId={match.away_team.id}
                     size={14}
                   />
-                  {match.away_team.code ?? "Ext."}
+                  {match.away_team.code ?? MATCH_RESULT_COPY.team2}
                 </>
               }
               pct={crowd.away}

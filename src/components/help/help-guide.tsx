@@ -175,9 +175,9 @@ export function HelpGuide() {
         description={MATCH_RESULT_COPY.label}
       >
         <p>
-          Choisissez <strong>Domicile</strong>, <strong>Nul</strong> ou{" "}
-          <strong>Extérieur</strong> avant le coup d&apos;envoi. Les points
-          gagnés dépendent de la cote affichée : environ{" "}
+          Choisissez la victoire de l&apos;une des deux équipes ou un{" "}
+          <strong>nul</strong> avant le coup d&apos;envoi. Les points gagnés
+          dépendent de la cote affichée : environ{" "}
           <strong>
             cote × {POINTS_ODD_MULTIPLIER}
           </strong>{" "}

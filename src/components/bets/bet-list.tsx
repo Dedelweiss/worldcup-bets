@@ -16,7 +16,11 @@ import {
   parseExactScoreSelection,
   scorePrecisionLabel,
 } from "@/lib/exact-score";
-import { MATCH_RESULT_OUTCOME } from "@/lib/bets/match-result-copy";
+import {
+  MATCH_RESULT_OUTCOME,
+  matchResultSelectionLabelLong,
+  selectionLabel,
+} from "@/lib/bets/match-result-copy";
 import { formatKickoff, formatOdd, formatPoints } from "@/lib/format";
 import { goldenMatchCardClass } from "@/lib/golden-match";
 import { canCancelPendingBet } from "@/lib/bets/can-cancel-bet";
@@ -45,12 +49,23 @@ const STATUS_VARIANT: Record<
 };
 
 const SELECTION_LABEL: Record<string, string> = {
-  home: `Victoire à domicile`,
   draw: MATCH_RESULT_OUTCOME.draw,
-  away: `Victoire à l'extérieur`,
   yes: "Oui",
   no: "Non",
 };
+
+function classicResultLabel(bet: BetRow): string {
+  const sel = bet.selection?.selection;
+  if (sel !== "home" && sel !== "draw" && sel !== "away") {
+    return sel ?? "";
+  }
+  const home = bet.match?.home_team?.name;
+  const away = bet.match?.away_team?.name;
+  if (home && away) {
+    return matchResultSelectionLabelLong(sel, home, away);
+  }
+  return selectionLabel(sel);
+}
 
 function betStatusLabel(bet: BetRow): string {
   if (bet.status === "pending" && bet.match?.status === "finished") {
@@ -75,7 +90,7 @@ function betLabel(bet: BetRow): string {
     return `${bet.fun_market.question} — ${SELECTION_LABEL[out] ?? out}`;
   }
   const sel = bet.selection?.selection ?? "";
-  return SELECTION_LABEL[sel] ?? sel;
+  return classicResultLabel(bet) || sel;
 }
 
 function cardSurfaceClass(bet: BetRow, isLive: boolean): string {

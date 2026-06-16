@@ -1,3 +1,4 @@
+import { MATCH_RESULT_COPY } from "@/lib/bets/match-result-copy";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeMatch } from "@/lib/matches";
 
@@ -45,8 +46,8 @@ export async function getLiveBetsSnapshot(
     if (!match) continue;
 
     const normalized = normalizeMatch(match);
-    const home = normalized.home_team?.name ?? "Domicile";
-    const away = normalized.away_team?.name ?? "Extérieur";
+    const home = normalized.home_team?.name ?? MATCH_RESULT_COPY.team1;
+    const away = normalized.away_team?.name ?? MATCH_RESULT_COPY.team2;
 
     items.push({
       matchId: row.match_id as number,

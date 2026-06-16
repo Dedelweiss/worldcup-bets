@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MATCH_RESULT_COPY, MATCH_RESULT_ODDS_FIELDS } from "@/lib/bets/match-result-copy";
 
 export function CreateMatchForm() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export function CreateMatchForm() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="homeTeam">Équipe domicile (A)</Label>
+              <Label htmlFor="homeTeam">Équipe 1 (A)</Label>
               <Input
                 id="homeTeam"
                 name="homeTeam"
@@ -56,7 +57,7 @@ export function CreateMatchForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="awayTeam">Équipe extérieur (B)</Label>
+              <Label htmlFor="awayTeam">Équipe 2 (B)</Label>
               <Input
                 id="awayTeam"
                 name="awayTeam"
@@ -95,44 +96,28 @@ export function CreateMatchForm() {
           </div>
 
           <div>
-            <p className="mb-3 text-sm font-medium">Cotes du résultat</p>
+            <p className="mb-3 text-sm font-medium">{MATCH_RESULT_COPY.oddsHeading}</p>
             <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="oddHome">Domicile</Label>
-                <Input
-                  id="oddHome"
-                  name="oddHome"
-                  type="number"
-                  step="0.01"
-                  min="1.01"
-                  required
-                  defaultValue="2.10"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="oddDraw">Nul</Label>
-                <Input
-                  id="oddDraw"
-                  name="oddDraw"
-                  type="number"
-                  step="0.01"
-                  min="1.01"
-                  required
-                  defaultValue="3.20"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="oddAway">Extérieur</Label>
-                <Input
-                  id="oddAway"
-                  name="oddAway"
-                  type="number"
-                  step="0.01"
-                  min="1.01"
-                  required
-                  defaultValue="3.50"
-                />
-              </div>
+              {MATCH_RESULT_ODDS_FIELDS.map(([name, label]) => (
+                <div key={name} className="space-y-2">
+                  <Label htmlFor={name}>{label}</Label>
+                  <Input
+                    id={name}
+                    name={name}
+                    type="number"
+                    step="0.01"
+                    min="1.01"
+                    required
+                    defaultValue={
+                      name === "oddHome"
+                        ? "2.10"
+                        : name === "oddDraw"
+                          ? "3.20"
+                          : "3.50"
+                    }
+                  />
+                </div>
+              ))}
             </div>
           </div>
 

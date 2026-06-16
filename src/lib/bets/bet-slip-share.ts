@@ -1,6 +1,6 @@
 import { formatOdd, formatPoints } from "@/lib/format";
 import { betDisplayPayout } from "@/lib/points";
-import { MATCH_RESULT_OUTCOME } from "@/lib/bets/match-result-copy";
+import { MATCH_RESULT_COPY, matchResultSelectionLabelLong } from "@/lib/bets/match-result-copy";
 import {
   formatExactScoreSelection,
   parseExactScoreSelection,
@@ -17,9 +17,7 @@ export interface BetSlipShareLine {
 }
 
 const RESULT_LABEL: Record<string, string> = {
-  home: "Victoire dom.",
-  draw: MATCH_RESULT_OUTCOME.draw,
-  away: "Victoire ext.",
+  draw: "Match nul",
 };
 
 function betPickLabel(bet: BetRow): string {
@@ -35,6 +33,11 @@ function betPickLabel(bet: BetRow): string {
     return `${bet.fun_market.question} — ${out === "yes" ? "Oui" : out === "no" ? "Non" : out}`;
   }
   const sel = bet.selection?.selection ?? "";
+  const home = bet.match?.home_team?.name;
+  const away = bet.match?.away_team?.name;
+  if ((sel === "home" || sel === "draw" || sel === "away") && home && away) {
+    return matchResultSelectionLabelLong(sel, home, away);
+  }
   return RESULT_LABEL[sel] ?? String(sel);
 }
 
@@ -77,8 +80,8 @@ export function selectBetsForSlipShare(bets: BetRow[]): BetRow[] {
 export function mapBetsToShareLines(bets: BetRow[]): BetSlipShareLine[] {
   return bets.map((bet) => {
     const match = bet.match!;
-    const home = match.home_team?.name ?? "Domicile";
-    const away = match.away_team?.name ?? "Extérieur";
+    const home = match.home_team?.name ?? MATCH_RESULT_COPY.team1;
+    const away = match.away_team?.name ?? MATCH_RESULT_COPY.team2;
 
     return {
       id: bet.id,

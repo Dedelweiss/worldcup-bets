@@ -1,12 +1,12 @@
 import type { MatchResultSelection, MatchWithTeams } from "@/types/database";
 
-/** Libellés accessibles pour le pari « résultat du match » (domicile / nul / extérieur). */
+/** Libellés pour le pari « résultat » — ordre d’affichage, pas domicile/extérieur (CDM neutre). */
 export const MATCH_RESULT_COPY = {
   label: "Résultat du match",
   labelShort: "Résultat",
   tabQuick: "Résultat simple",
   oddsHeading: "Cotes du résultat",
-  oddsHeadingCompact: "Dom. · Nul · Ext.",
+  oddsHeadingCompact: "1 · N · 2",
   knockoutBetNote:
     "Paris sur le résultat à la fin du temps réglementaire uniquement (prolongations et tirs au but exclus).",
   pronosticSaved: "Pronostic enregistré",
@@ -31,19 +31,51 @@ export const MATCH_RESULT_COPY = {
     `${n} pari(s) en attente sur ce match (résultat). Saisissez`,
   equivalentOdd: "cote équivalente au résultat",
   sameAsResult: "même barème que le résultat",
+  team1: "Équipe 1",
+  team2: "Équipe 2",
 } as const;
 
+/** Abrégés 1 / N / 2 quand les noms d’équipes ne sont pas disponibles. */
 export const MATCH_RESULT_OUTCOME = {
-  home: "Domicile",
+  home: "1",
   draw: "Nul",
-  away: "Extérieur",
+  away: "2",
 } as const;
+
+export function teamSlotLabel(
+  slot: "home" | "away",
+  team?: { name: string; code?: string | null },
+): string {
+  const fallback = slot === "home" ? MATCH_RESULT_COPY.team1 : MATCH_RESULT_COPY.team2;
+  if (!team) return fallback;
+  return team.code?.trim() || team.name;
+}
+
+export function matchResultSelectionLabel(
+  side: MatchResultSelection,
+  homeTeam: string,
+  awayTeam: string,
+): string {
+  if (side === "draw") return "Nul";
+  if (side === "home") return homeTeam;
+  return awayTeam;
+}
+
+export function matchResultSelectionLabelLong(
+  side: MatchResultSelection,
+  homeTeam: string,
+  awayTeam: string,
+): string {
+  if (side === "draw") return "Match nul";
+  if (side === "home") return `Victoire ${homeTeam}`;
+  return `Victoire ${awayTeam}`;
+}
 
 export function buildMatchResultOutcomes(match: MatchWithTeams) {
   return [
     {
       key: "home" as const,
-      label: MATCH_RESULT_OUTCOME.home,
+      label: teamSlotLabel("home", match.home_team),
       name: match.home_team.name,
       odd: match.odd_home,
     },
@@ -55,7 +87,7 @@ export function buildMatchResultOutcomes(match: MatchWithTeams) {
     },
     {
       key: "away" as const,
-      label: MATCH_RESULT_OUTCOME.away,
+      label: teamSlotLabel("away", match.away_team),
       name: match.away_team.name,
       odd: match.odd_away,
     },
@@ -64,9 +96,9 @@ export function buildMatchResultOutcomes(match: MatchWithTeams) {
 
 /** Champs formulaire admin : nom du champ → libellé affiché */
 export const MATCH_RESULT_ODDS_FIELDS = [
-  ["oddHome", MATCH_RESULT_OUTCOME.home],
+  ["oddHome", MATCH_RESULT_COPY.team1],
   ["oddDraw", MATCH_RESULT_OUTCOME.draw],
-  ["oddAway", MATCH_RESULT_OUTCOME.away],
+  ["oddAway", MATCH_RESULT_COPY.team2],
 ] as const;
 
 export function selectionLabel(selection: string): string {

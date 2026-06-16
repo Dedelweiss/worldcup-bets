@@ -1,5 +1,8 @@
 import { requireAdmin } from "@/lib/auth-server";
 import {
+  matchResultSelectionLabelLong,
+} from "@/lib/bets/match-result-copy";
+import {
   fetchFunMarketSnippets,
   resolveFunMarketId,
 } from "@/lib/bets/fun-market-lookup";
@@ -40,6 +43,8 @@ function betSelectionLabel(
   betType: BetType,
   selection: Record<string, unknown>,
   funQuestion: string | null,
+  homeTeamName: string,
+  awayTeamName: string,
 ): string {
   if (betType === "exact_score") {
     const home = selection.home;
@@ -52,9 +57,6 @@ function betSelectionLabel(
   if (betType === "fun") {
     const out = String(selection.outcome ?? "");
     const labels: Record<string, string> = {
-      home: "Domicile",
-      draw: "Nul",
-      away: "Extérieur",
       yes: "Oui",
       no: "Non",
     };
@@ -62,9 +64,9 @@ function betSelectionLabel(
     return funQuestion ? `${funQuestion} — ${pick}` : `Fun — ${pick}`;
   }
   const sel = selection.selection;
-  if (sel === "home") return "Victoire domicile";
-  if (sel === "draw") return "Match nul";
-  if (sel === "away") return "Victoire extérieur";
+  if (sel === "home" || sel === "draw" || sel === "away") {
+    return matchResultSelectionLabelLong(sel, homeTeamName, awayTeamName);
+  }
   return String(sel ?? "—");
 }
 
@@ -172,6 +174,8 @@ export async function getFinishedPronosByPlayer(): Promise<
         r.bet_type as BetType,
         (r.selection as Record<string, unknown>) ?? {},
         funQuestion,
+        match.home_team.name,
+        match.away_team.name,
       ),
       odd: Number(r.odd_at_placement),
       potentialPayout: Number(r.potential_payout),

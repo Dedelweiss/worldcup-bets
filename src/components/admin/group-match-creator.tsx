@@ -138,14 +138,14 @@ export function GroupMatchCreator({ groups, teamsByGroup }: GroupMatchCreatorPro
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               <TeamSelectField
-                label="Équipe 1 (domicile)"
+                label="Équipe 1"
                 teams={groupTeams}
                 value={homeId}
                 onChange={(id) => form.setValue("homeTeamId", id)}
                 error={form.formState.errors.homeTeamId?.message}
               />
               <TeamSelectField
-                label="Équipe 2 (extérieur)"
+                label="Équipe 2"
                 teams={awayOptions}
                 value={awayId}
                 onChange={(id) => form.setValue("awayTeamId", id)}

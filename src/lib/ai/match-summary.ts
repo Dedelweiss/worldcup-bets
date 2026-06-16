@@ -1,4 +1,5 @@
 import type { MatchResultSelection } from "@/types/database";
+import { matchResultSelectionLabelLong } from "@/lib/bets/match-result-copy";
 
 export interface SummaryBetRow {
   username: string | null;
@@ -7,21 +8,21 @@ export interface SummaryBetRow {
   selection: Record<string, unknown>;
 }
 
-const RESULT_LABEL: Record<MatchResultSelection, string> = {
-  home: "victoire domicile",
-  draw: "match nul",
-  away: "victoire extérieur",
-};
-
 export function playerLabel(row: SummaryBetRow): string {
   return row.username ?? row.display_name ?? "Joueur anonyme";
 }
 
-export function formatBetForSummary(row: SummaryBetRow): string {
+export function formatBetForSummary(
+  row: SummaryBetRow,
+  teams?: { home: string; away: string },
+): string {
   const name = playerLabel(row);
   if (row.bet_type === "match_result") {
     const sel = row.selection.selection as MatchResultSelection | undefined;
-    const label = sel ? RESULT_LABEL[sel] ?? sel : "inconnu";
+    if (sel && teams) {
+      return `${name} : ${matchResultSelectionLabelLong(sel, teams.home, teams.away).toLowerCase()}`;
+    }
+    const label = sel === "draw" ? "match nul" : sel ?? "inconnu";
     return `${name} : ${label}`;
   }
   const home = row.selection.home;
@@ -32,8 +33,9 @@ export function formatBetForSummary(row: SummaryBetRow): string {
 export function buildSummaryPrompt(
   matchLabel: string,
   bets: SummaryBetRow[],
+  teams?: { home: string; away: string },
 ): { system: string; user: string } {
-  const lines = bets.map(formatBetForSummary).join("\n");
+  const lines = bets.map((b) => formatBetForSummary(b, teams)).join("\n");
 
   return {
     system:

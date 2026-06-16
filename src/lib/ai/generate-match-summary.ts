@@ -41,7 +41,10 @@ export async function generateAndSaveMatchSummary(
 
   const bets = (betsRaw ?? []) as SummaryBetRow[];
   const matchLabel = `${tbdTeamDisplayName(match.home_team)} vs ${tbdTeamDisplayName(match.away_team)}`;
-  const { system, user } = buildSummaryPrompt(matchLabel, bets);
+  const { system, user } = buildSummaryPrompt(matchLabel, bets, {
+    home: tbdTeamDisplayName(match.home_team),
+    away: tbdTeamDisplayName(match.away_team),
+  });
 
   let summary: string;
   try {

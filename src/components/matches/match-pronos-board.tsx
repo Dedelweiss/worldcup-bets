@@ -20,7 +20,11 @@ import {
   type PendingPlayerRow,
   type PlayerPronoGroup,
 } from "@/lib/bets/match-pronos-groups";
-import { MATCH_RESULT_OUTCOME } from "@/lib/bets/match-result-copy";
+import {
+  MATCH_RESULT_COPY,
+  matchResultSelectionLabel,
+  matchResultSelectionLabelLong,
+} from "@/lib/bets/match-result-copy";
 import {
   formatExactScoreSelection,
   parseExactScoreSelection,
@@ -33,12 +37,6 @@ import {
 } from "@/lib/profile/player-label";
 import { cn } from "@/lib/utils";
 import type { BetStatus, MatchResultSelection, MatchStatus } from "@/types/database";
-
-const OUTCOME_LABEL: Record<MatchResultSelection, string> = {
-  home: MATCH_RESULT_OUTCOME.home,
-  draw: MATCH_RESULT_OUTCOME.draw,
-  away: MATCH_RESULT_OUTCOME.away,
-};
 
 const OUTCOME_BAR_CLASS: Record<MatchResultSelection, string> = {
   home: "bg-sky-500",
@@ -59,7 +57,11 @@ export interface MatchPronosBoardProps {
   pendingPlayers?: PendingPlayerRow[];
 }
 
-function betChoiceDisplay(bet: MatchLiveBetRow): string {
+function betChoiceDisplay(
+  bet: MatchLiveBetRow,
+  homeTeamName: string,
+  awayTeamName: string,
+): string {
   if (bet.bet_type === "exact_score") {
     const parsed = parseExactScoreSelection(bet.selection);
     if (parsed) {
@@ -70,7 +72,7 @@ function betChoiceDisplay(bet: MatchLiveBetRow): string {
   if (bet.bet_type === "match_result") {
     const sel = bet.selection?.selection;
     if (sel === "home" || sel === "draw" || sel === "away") {
-      return OUTCOME_LABEL[sel];
+      return matchResultSelectionLabel(sel, homeTeamName, awayTeamName);
     }
   }
   if (bet.bet_type === "fun") {
@@ -195,6 +197,8 @@ function PlayerPronoCard({
   currentUserId,
   isGoldenMatch,
   matchStatus,
+  homeTeamName,
+  awayTeamName,
   homeScore,
   awayScore,
   mode,
@@ -203,6 +207,8 @@ function PlayerPronoCard({
   currentUserId: string;
   isGoldenMatch: boolean;
   matchStatus: MatchStatus;
+  homeTeamName: string;
+  awayTeamName: string;
   homeScore: number | null;
   awayScore: number | null;
   mode: "live" | "finished";
@@ -343,7 +349,7 @@ function PlayerPronoCard({
                       "text-lime-700 dark:text-lime-300",
                   )}
                 >
-                  {betChoiceDisplay(primary)}
+                  {betChoiceDisplay(primary, homeTeamName, awayTeamName)}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   Cote {formatOdd(primary.odd_at_placement)}
@@ -408,7 +414,7 @@ function PlayerPronoCard({
                       <span className="min-w-0 truncate text-muted-foreground">
                         {bet.fun_question ?? "Fun"} —{" "}
                         <span className="font-medium text-foreground">
-                          {betChoiceDisplay(bet)}
+                          {betChoiceDisplay(bet, homeTeamName, awayTeamName)}
                         </span>
                       </span>
                       <span className="shrink-0 tabular-nums font-medium">
@@ -608,6 +614,8 @@ export function MatchPronosBoard({
                 currentUserId={currentUserId}
                 isGoldenMatch={isGoldenMatch}
                 matchStatus={matchStatus}
+                homeTeamName={homeTeamName}
+                awayTeamName={awayTeamName}
                 homeScore={homeScore}
                 awayScore={awayScore}
                 mode={mode}

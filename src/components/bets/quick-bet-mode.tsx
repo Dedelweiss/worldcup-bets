@@ -13,6 +13,7 @@ import {
   type SwipeChoice,
 } from "@/components/bets/quick-bet-swipe-card";
 import { buttonVariants } from "@/components/ui/button";
+import { MATCH_RESULT_COPY } from "@/lib/bets/match-result-copy";
 import { cn } from "@/lib/utils";
 import type { MatchWithTeams } from "@/types/database";
 
@@ -107,7 +108,7 @@ export function QuickBetMode({ initialMatches, isDemo }: QuickBetModeProps) {
         <ul className="mb-5 flex justify-center gap-4 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           <li className="flex flex-col items-center gap-1">
             <ArrowLeft className="size-4 text-lime-400" aria-hidden />
-            <span>Domicile</span>
+            <span>{current?.home_team.code ?? current?.home_team.name ?? MATCH_RESULT_COPY.team1}</span>
           </li>
           <li className="flex flex-col items-center gap-1">
             <Minus className="size-4 text-fuchsia-400" aria-hidden />
@@ -115,7 +116,7 @@ export function QuickBetMode({ initialMatches, isDemo }: QuickBetModeProps) {
           </li>
           <li className="flex flex-col items-center gap-1">
             <ArrowRight className="size-4 text-sky-400" aria-hidden />
-            <span>Extérieur</span>
+            <span>{current?.away_team.code ?? current?.away_team.name ?? MATCH_RESULT_COPY.team2}</span>
           </li>
         </ul>
 

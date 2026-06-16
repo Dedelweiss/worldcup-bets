@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { placeBetAction } from "@/app/(app)/matches/actions";
 import {
   MATCH_RESULT_OUTCOME,
+  teamSlotLabel,
 } from "@/lib/bets/match-result-copy";
 import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
 import { formatOdd } from "@/lib/format";
@@ -49,9 +50,9 @@ export function MatchCardQuickResultPick({
   }
 
   const outcomes = [
-    { key: "home" as const, label: MATCH_RESULT_OUTCOME.home, odd: match.odd_home },
+    { key: "home" as const, label: teamSlotLabel("home", match.home_team), odd: match.odd_home },
     { key: "draw" as const, label: MATCH_RESULT_OUTCOME.draw, odd: match.odd_draw },
-    { key: "away" as const, label: MATCH_RESULT_OUTCOME.away, odd: match.odd_away },
+    { key: "away" as const, label: teamSlotLabel("away", match.away_team), odd: match.odd_away },
   ];
 
   async function handlePick(key: MatchResultSelection) {
