@@ -226,14 +226,14 @@ export function HelpGuide() {
           items={[
             <>
               <strong>Boost ×2</strong> — une fois par tournoi sur un pari{" "}
-              <em>résultat simple</em> : double les points si vous gagnez.{" "}
-              {MATCH_RESULT_COPY.boostHint}
+              <em>résultat simple</em> ou <em>score exact</em> : double les
+              points gagnés (tendance ou tout pile). {MATCH_RESULT_COPY.boostHint}
             </>,
             <>
               <strong>Golden Match</strong> — match mis en avant par
               l&apos;organisateur : tous les gains classiques sur ce match sont
               multipliés par <strong>{GOLDEN_MATCH_MULTIPLIER}</strong> à la
-              clôture (cumulable avec le boost sur un pari résultat).
+              clôture (cumulable avec le boost).
             </>,
           ]}
         />

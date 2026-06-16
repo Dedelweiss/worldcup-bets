@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { BetStatus, FunOutcome } from "@/types/database";
 
 export interface MatchUserFunBet {
+  id: string;
   marketId: string;
   outcome: FunOutcome;
   odd_at_placement: number;
@@ -18,7 +19,7 @@ export async function getMatchUserFunBets(
   const { data } = await supabase
     .from("bets")
     .select(
-      "fun_market_id, market_id, selection, odd_at_placement, potential_payout, status",
+      "id, fun_market_id, market_id, selection, odd_at_placement, potential_payout, status",
     )
     .eq("match_id", matchId)
     .eq("user_id", userId)
@@ -40,6 +41,7 @@ export async function getMatchUserFunBets(
     if (!marketId) continue;
 
     byMarket.set(marketId, {
+      id: row.id as string,
       marketId,
       outcome,
       odd_at_placement: Number(row.odd_at_placement),

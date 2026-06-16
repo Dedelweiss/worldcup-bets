@@ -108,7 +108,10 @@ export function BetSlip({
     pending.exactScore != null ? String(pending.exactScore.away) : "",
   );
   const [useBoost, setUseBoost] = useState(
-    () => pending.matchResult?.is_boosted ?? false,
+    () =>
+      pending.matchResult?.is_boosted ??
+      pending.exactScore?.is_boosted ??
+      false,
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,7 +140,7 @@ export function BetSlip({
     });
   }, [pickFromUrl, bettingOpen, pending.hasMatchResult]);
 
-  const canUseBoost = boostsAvailable > 0;
+  const canEditClassic = bettingOpen;
   const isGolden = match.is_golden ?? false;
 
   const outcomes = useMemo(() => buildMatchResultOutcomes(match), [match]);
@@ -151,7 +154,12 @@ export function BetSlip({
           ? match.odd_away
           : null;
 
-  const boosted = useBoost && canUseBoost && mode === "1n2";
+  const hasBoostOnPendingBet =
+    pending.matchResult?.is_boosted || pending.exactScore?.is_boosted;
+  const canShowBoost =
+    canEditClassic && (boostsAvailable > 0 || hasBoostOnPendingBet);
+  const boosted =
+    useBoost && (boostsAvailable > 0 || hasBoostOnPendingBet);
   const pointsIfWinValue =
     selectedOdd != null ? pointsIfWin(selectedOdd, boosted, isGolden) : 0;
   const basePointsIfWin =
@@ -167,16 +175,15 @@ export function BetSlip({
 
   const tendancePts =
     impliedOdd != null
-      ? goldenMatchPoints(exactScorePointsTendance(impliedOdd), isGolden)
+      ? betDisplayPayout(exactScorePointsTendance(impliedOdd), boosted, isGolden)
       : null;
   const perfectPts =
     impliedOdd != null
-      ? goldenMatchPoints(exactScorePointsPerfect(impliedOdd), isGolden)
+      ? betDisplayPayout(exactScorePointsPerfect(impliedOdd), boosted, isGolden)
       : null;
 
   const locked1n2 = pending.matchResult;
   const lockedExact = pending.exactScore;
-  const canEditClassic = bettingOpen;
 
   /** En édition, l’UI suit l’état local ; après coup d’envoi, les valeurs figées du pari. */
   const active1n2Selection = canEditClassic
@@ -207,15 +214,17 @@ export function BetSlip({
       : null;
   const previewTendancePts =
     previewImpliedOdd != null
-      ? goldenMatchPoints(
+      ? betDisplayPayout(
           exactScorePointsTendance(previewImpliedOdd),
+          boosted,
           isGolden,
         )
       : null;
   const previewPerfectPts =
     previewImpliedOdd != null
-      ? goldenMatchPoints(
+      ? betDisplayPayout(
           exactScorePointsPerfect(previewImpliedOdd),
+          boosted,
           isGolden,
         )
       : null;
@@ -242,7 +251,8 @@ export function BetSlip({
     parsedScore != null &&
     (pending.exactScore == null ||
       parsedScore.home !== pending.exactScore.home ||
-      parsedScore.away !== pending.exactScore.away);
+      parsedScore.away !== pending.exactScore.away ||
+      useBoost !== pending.exactScore.is_boosted);
 
   function switchMode(next: BetMode) {
     if (!canEditClassic) {
@@ -259,7 +269,6 @@ export function BetSlip({
         setUseBoost(pending.matchResult.is_boosted);
       } else if (!pending.hasExactScore) {
         setSelection(null);
-        setUseBoost(false);
       }
       if (!canEditClassic && !pending.hasExactScore) {
         setHomeScore("");
@@ -270,13 +279,13 @@ export function BetSlip({
       if (scoresEmpty && pending.exactScore) {
         setHomeScore(String(pending.exactScore.home));
         setAwayScore(String(pending.exactScore.away));
+        setUseBoost(pending.exactScore.is_boosted);
       } else if (!pending.hasMatchResult && scoresEmpty) {
         setHomeScore("");
         setAwayScore("");
       }
       if (!pending.hasMatchResult) {
         setSelection(null);
-        setUseBoost(false);
       }
     }
   }
@@ -350,6 +359,7 @@ export function BetSlip({
       match.id,
       parsedScore.home,
       parsedScore.away,
+      boosted,
     );
     setLoading(false);
 
@@ -379,6 +389,7 @@ export function BetSlip({
       match.id,
       score.home,
       score.away,
+      boosted,
     );
     setLoading(false);
 
@@ -492,6 +503,31 @@ export function BetSlip({
             </CardHeader>
 
             <CardContent className={cn(isProminent && "md:px-6 md:pb-6")}>
+              {canShowBoost && (
+                <div className="mb-5 flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-3">
+                  <div className="flex min-w-0 items-start gap-2">
+                    <Zap className="mt-0.5 size-4 shrink-0 text-amber-500" />
+                    <div>
+                      <Label
+                        htmlFor="boost-switch"
+                        className="cursor-pointer font-medium"
+                      >
+                        Boost x2
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Un seul joker — résultat simple ou score exact
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="boost-switch"
+                    checked={useBoost}
+                    onCheckedChange={setUseBoost}
+                    disabled={!boostsAvailable && !useBoost}
+                  />
+                </div>
+              )}
+
               {mode === "1n2" ? (
                 <form
                   onSubmit={handleSubmit1n2}
@@ -600,31 +636,6 @@ export function BetSlip({
                     </div>
                   </div>
 
-                  {canUseBoost && canEditClassic && (
-                    <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-3">
-                      <div className="flex min-w-0 items-start gap-2">
-                        <Zap className="mt-0.5 size-4 shrink-0 text-amber-500" />
-                        <div>
-                          <Label
-                            htmlFor="boost-switch"
-                            className="cursor-pointer font-medium"
-                          >
-                            Boost x2
-                          </Label>
-                          <p className="text-xs text-muted-foreground">
-                            Un seul joker pour le tournoi
-                          </p>
-                        </div>
-                      </div>
-                      <Switch
-                        id="boost-switch"
-                        checked={useBoost}
-                        onCheckedChange={setUseBoost}
-                        disabled={!selection}
-                      />
-                    </div>
-                  )}
-
                   {pending.hasMatchResult && locked1n2 && locked1n2Points != null && (
                     <div className="space-y-2 rounded-lg bg-muted/40 p-3 text-sm">
                       <div className="flex justify-between gap-2">
@@ -715,9 +726,19 @@ export function BetSlip({
                   )}
 
                   {pending.hasExactScore && lockedExact && !canEditClassic && (
-                    <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
-                      <Lock className="size-4 shrink-0" aria-hidden />
-                      <span>Score exact enregistré — non modifiable</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
+                        <Lock className="size-4 shrink-0" aria-hidden />
+                        <span>Score exact enregistré — non modifiable</span>
+                      </div>
+                      {lockedExact.is_boosted && (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-500/40 text-amber-600 dark:text-amber-400"
+                        >
+                          Boost x2 actif
+                        </Badge>
+                      )}
                     </div>
                   )}
                   {savedNotice && mode === "exact" && (
@@ -837,13 +858,17 @@ export function BetSlip({
                         <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
                           <span className="text-emerald-600 dark:text-emerald-400">
                             Tendance : +{formatPoints(previewTendancePts)} pts
-                            {isGolden
-                              ? " (×2 Golden)"
-                              : ` (${MATCH_RESULT_COPY.sameAsResult})`}
+                            {boosted
+                              ? " (×2 Boost)"
+                              : isGolden
+                                ? " (×2 Golden)"
+                                : ` (${MATCH_RESULT_COPY.sameAsResult})`}
                           </span>
                           <span className="text-amber-600 dark:text-amber-400">
                             Tout pile : +{formatPoints(previewPerfectPts)} pts
-                            {previewPerfectPts > previewTendancePts &&
+                            {boosted && " (×2 Boost)"}
+                            {!boosted &&
+                              previewPerfectPts > previewTendancePts &&
                               ` (×${Math.round(previewPerfectPts / previewTendancePts)})`}
                           </span>
                         </p>

@@ -74,9 +74,8 @@ function pendingExactScoreMaxPoints(
   bet: BetForPointsDisplay,
   isGoldenMatch: boolean,
 ): number {
-  const golden = Boolean(isGoldenMatch);
   const base = exactScorePointsForOdd(bet.odd_at_placement, "exact");
-  return golden ? base * 2 : base;
+  return betDisplayPayout(base, bet.is_boosted, Boolean(isGoldenMatch));
 }
 
 function projectedClassicPayout(
@@ -103,14 +102,18 @@ function projectedClassicPayout(
   const away = match.away_score!;
 
   if (pred.home === home && pred.away === away) {
-    return golden
-      ? exactScorePointsForOdd(bet.odd_at_placement, "exact") * 2
-      : exactScorePointsForOdd(bet.odd_at_placement, "exact");
+    return betDisplayPayout(
+      exactScorePointsForOdd(bet.odd_at_placement, "exact"),
+      bet.is_boosted,
+      golden,
+    );
   }
 
-  return golden
-    ? exactScorePointsForOdd(bet.odd_at_placement, "tendance") * 2
-    : exactScorePointsForOdd(bet.odd_at_placement, "tendance");
+  return betDisplayPayout(
+    exactScorePointsForOdd(bet.odd_at_placement, "tendance"),
+    bet.is_boosted,
+    golden,
+  );
 }
 
 /**

@@ -3,7 +3,6 @@ import {
   impliedMatchResult,
   parseExactScoreSelection,
 } from "@/lib/exact-score";
-import { goldenMatchPoints } from "@/lib/golden-match";
 import { betDisplayPayout } from "@/lib/points";
 import type { BetStatus, BetType, MatchResultSelection, MatchStatus } from "@/types/database";
 
@@ -26,10 +25,6 @@ export type LiveProvisionalBet = {
   odd_at_placement: number;
   is_boosted?: boolean | null;
 };
-
-function withGolden(base: number, isGolden: boolean): number {
-  return goldenMatchPoints(base, isGolden);
-}
 
 /** Points provisoires pour un pari pending sur un match live (hors bonus On Fire). */
 export function computeLiveProvisionalBetPayout(
@@ -57,15 +52,17 @@ export function computeLiveProvisionalBetPayout(
     if (!pred) return 0;
 
     if (pred.home === match.home_score && pred.away === match.away_score) {
-      return withGolden(
+      return betDisplayPayout(
         exactScorePointsForOdd(bet.odd_at_placement, "exact"),
+        Boolean(bet.is_boosted),
         golden,
       );
     }
 
     if (impliedMatchResult(pred.home, pred.away) === liveSide) {
-      return withGolden(
+      return betDisplayPayout(
         exactScorePointsForOdd(bet.odd_at_placement, "tendance"),
+        Boolean(bet.is_boosted),
         golden,
       );
     }

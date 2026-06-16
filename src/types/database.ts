@@ -124,6 +124,7 @@ export interface FunMarket {
   odd_no: number;
   status: FunMarketStatus;
   winning_outcome: FunOutcome | null;
+  created_by?: string | null;
   created_at: string;
 }
 

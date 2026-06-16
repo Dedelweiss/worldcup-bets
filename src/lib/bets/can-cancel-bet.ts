@@ -17,24 +17,22 @@ export function canCancelPendingBet(bet: BetRow): boolean {
   if (isBetSettled(bet.status)) return false;
   if (bet.status !== "pending") return false;
 
-  const match = bet.match;
-  if (!match || match.status !== "scheduled") return false;
-  if (hasKickoffStarted(match.kickoff_at)) return false;
-
   if (bet.bet_type === "fun") {
     return bet.fun_market?.status === "open";
   }
 
+  const match = bet.match;
+  if (!match || match.status !== "scheduled") return false;
+  if (hasKickoffStarted(match.kickoff_at)) return false;
+
   return bet.bet_type === "match_result" || bet.bet_type === "exact_score";
 }
 
-/** Pari en attente sur un match qui n'est pas en direct. */
-export function isPendingBetOnNonLiveMatch(bet: BetRow): boolean {
-  return bet.status === "pending" && bet.match?.status !== "live";
-}
-
-/** Annulable via « Supprimer tous mes paris » (hors matchs en direct). */
+/** Annulable via « Supprimer tous mes paris » (hors matchs en direct, sauf fun ouverts). */
 export function canBulkCancelPendingBet(bet: BetRow): boolean {
+  if (bet.bet_type === "fun") {
+    return canCancelPendingBet(bet);
+  }
   if (bet.match?.status === "live") return false;
   return canCancelPendingBet(bet);
 }

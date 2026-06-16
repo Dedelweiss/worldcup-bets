@@ -15,7 +15,7 @@ export async function getFunMarketsByMatch(
   const { data } = await supabase
     .from("fun_markets")
     .select(
-      "id, match_id, question, odd_yes, odd_no, status, winning_outcome, created_at",
+      "id, match_id, question, odd_yes, odd_no, status, winning_outcome, created_by, created_at",
     )
     .eq("match_id", matchId)
     .order("created_at", { ascending: true });

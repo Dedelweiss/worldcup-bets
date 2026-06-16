@@ -98,7 +98,7 @@ export function DashboardSummary({
             {(profile.boosts_available ?? 0) > 0 && (
               <p className="mt-3 flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
                 <Zap className="size-3.5 shrink-0" aria-hidden />
-                Boost x2 disponible sur un pari sur le résultat du match
+                Boost x2 disponible sur un pari résultat simple ou score exact
               </p>
             )}
           </div>

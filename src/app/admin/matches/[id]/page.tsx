@@ -2,7 +2,9 @@ import { notFound } from "next/navigation";
 import { AdminMatchBetsPanel } from "@/components/admin/admin-match-bets-panel";
 import { FunMarketsAdmin } from "@/components/admin/fun-markets-admin";
 import { MatchAdminPanel } from "@/components/admin/match-admin-panel";
+import { requireAdmin } from "@/lib/auth-server";
 import { getAdminMatchBets } from "@/lib/admin/match-bets";
+import { getFunMarketBetsForAdmin } from "@/lib/admin/fun-market-bets";
 import { getAdminMatch, getPendingBetsCount, getPendingClassicBetsCount } from "@/lib/admin/matches";
 import { getFunMarketsForAdmin } from "@/lib/fun-markets";
 
@@ -20,16 +22,21 @@ export default async function AdminMatchPage({
   const match = await getAdminMatch(matchId);
   if (!match) notFound();
 
-  const showBets =
-    match.status === "live" || match.status === "finished";
+  const admin = await requireAdmin();
 
-  const [pendingBetsCount, pendingClassicBetsCount, funMarkets, bets] =
+  const [pendingBetsCount, pendingClassicBetsCount, funMarkets, bets, funMarketBets] =
     await Promise.all([
       getPendingBetsCount(matchId),
       getPendingClassicBetsCount(matchId),
       getFunMarketsForAdmin(matchId),
-      showBets ? getAdminMatchBets(matchId) : Promise.resolve([]),
+      getAdminMatchBets(matchId),
+      getFunMarketBetsForAdmin(matchId),
     ]);
+
+  const showBets =
+    match.status === "live" ||
+    match.status === "finished" ||
+    bets.length > 0;
 
   return (
     <div className="space-y-8">
@@ -48,7 +55,12 @@ export default async function AdminMatchPage({
           bets={bets}
         />
       )}
-      <FunMarketsAdmin matchId={matchId} markets={funMarkets} />
+      <FunMarketsAdmin
+        matchId={matchId}
+        markets={funMarkets}
+        betsByMarket={funMarketBets}
+        currentAdminId={admin.id}
+      />
     </div>
   );
 }

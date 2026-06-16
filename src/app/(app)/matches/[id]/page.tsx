@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import { BetSlip } from "@/components/bets/bet-slip";
 import { TackleIncomingAlert } from "@/components/bets/tackle-incoming-alert";
-import { FunBetSlip } from "@/components/bets/fun-bet-slip";
 import { MarkFunBetsSeen } from "@/components/fun-bets/mark-fun-bets-seen";
 import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
 import { MatchChat } from "@/components/matches/match-chat";
 import { MatchGazette } from "@/components/matches/match-gazette";
 import { HashAnchorScroller } from "@/components/layout/hash-anchor-scroller";
+import { MatchFunBetsSection } from "@/components/matches/match-fun-bets-section";
 import { MatchPageHero } from "@/components/matches/match-page-hero";
 import { MatchParticipation } from "@/components/matches/match-participation";
 import { MatchFinishedPronos } from "@/components/matches/match-finished-pronos";
@@ -115,29 +115,16 @@ export default async function MatchBetPage({
       </section>
     ) : null;
 
+  const funBetsSection = hasFunSection ? (
+    <MatchFunBetsSection
+      markets={funMarkets}
+      funBetsByMarket={funBetsByMarket}
+      isGoldenMatch={match.is_golden ?? false}
+    />
+  ) : null;
+
   const matchStream = (
     <>
-      {hasFunSection && (
-        <section id="paris-fun" className="scroll-mt-20 md:scroll-mt-24">
-          <div className="mb-5">
-            <h2 className="text-lg font-semibold tracking-tight">Paris fun</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Ouverts pendant le match jusqu&apos;à clôture par l&apos;admin
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {funMarkets.map((market) => (
-              <FunBetSlip
-                key={market.id}
-                market={market}
-                isGoldenMatch={match.is_golden ?? false}
-                userBet={funBetsByMarket.get(market.id) ?? null}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
       {match.ai_summary && (
         <section id="gazette" className="scroll-mt-20 md:scroll-mt-24">
           <MatchGazette summary={match.ai_summary} />
@@ -195,19 +182,22 @@ export default async function MatchBetPage({
       <MatchPageHero match={match} adminEditHref={adminEditHref} />
 
       {isPreMatch ? (
-        <div className="space-y-8 lg:grid lg:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)] lg:items-start lg:gap-8 xl:gap-10">
-          <section
-            id="mon-pronostic"
-            className="scroll-mt-20 min-w-0 space-y-4 md:scroll-mt-24"
-          >
-            {incomingTackleAlert}
-            {betSlip}
-          </section>
-          {participationSection ? (
-            <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-              {participationSection}
-            </div>
-          ) : null}
+        <div className="space-y-8">
+          <div className="lg:grid lg:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)] lg:items-start lg:gap-8 xl:gap-10">
+            <section
+              id="mon-pronostic"
+              className="scroll-mt-20 min-w-0 space-y-4 md:scroll-mt-24"
+            >
+              {incomingTackleAlert}
+              {betSlip}
+            </section>
+            {participationSection ? (
+              <div className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+                {participationSection}
+              </div>
+            ) : null}
+          </div>
+          {funBetsSection}
         </div>
       ) : (
         <div className="space-y-8 md:space-y-10">
@@ -218,6 +208,8 @@ export default async function MatchBetPage({
             {incomingTackleAlert}
             {betSlip}
           </section>
+
+          {funBetsSection}
 
           <div className="space-y-8 md:space-y-10">
             {!canReveal && participationSection}

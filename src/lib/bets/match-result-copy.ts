@@ -24,7 +24,8 @@ export const MATCH_RESULT_COPY = {
     "Vous avez déjà un pronostic sur ce match (résultat ou score exact, pas les deux).",
   kickoffClosed: "Coup d'envoi passé — plus de pari sur le résultat possible.",
   oneChoicePerMatch: "Un seul choix par match : résultat simple ou score exact.",
-  boostHint: "Le boost ne s'applique qu'aux paris sur le résultat du match.",
+  boostHint:
+    "Le boost double les gains sur un pari résultat simple ou score exact (tendance ou tout pile).",
   betsClosedLive: "Paris sur le résultat fermés — paris fun toujours possibles",
   pendingAdmin: (n: number) =>
     `${n} pari(s) en attente sur ce match (résultat). Saisissez`,

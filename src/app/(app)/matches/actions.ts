@@ -86,6 +86,7 @@ export async function placeExactScoreBetAction(
   matchId: number,
   homeScore: number,
   awayScore: number,
+  useBoost = false,
 ): Promise<PlaceBetResult> {
   await requireAuth();
 
@@ -106,7 +107,7 @@ export async function placeExactScoreBetAction(
     p_selection: { home: homeScore, away: awayScore },
     p_odd: 3,
     p_stake: 0,
-    p_use_boost: false,
+    p_use_boost: useBoost,
   });
 
   if (error) {

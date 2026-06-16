@@ -12,6 +12,7 @@ export interface MatchUserBet1n2 {
 export interface MatchUserBetExactScore {
   home: number;
   away: number;
+  is_boosted: boolean;
   odd_at_placement: number;
   potential_payout: number;
 }
@@ -74,6 +75,7 @@ export async function getMatchUserPendingBets(
         exactScore = {
           home: parsed.home,
           away: parsed.away,
+          is_boosted: Boolean(row.is_boosted),
           odd_at_placement: Number(row.odd_at_placement),
           potential_payout: Number(row.potential_payout),
         };

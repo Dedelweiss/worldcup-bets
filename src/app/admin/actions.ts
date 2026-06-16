@@ -581,6 +581,88 @@ export async function createFunMarketAction(
   return { success: true, matchId, marketId: data as string };
 }
 
+export async function updateFunMarketAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const marketId = String(formData.get("marketId") ?? "").trim();
+  const matchId = Number(formData.get("matchId"));
+  const question = String(formData.get("question") ?? "").trim();
+  const oddYes = Number(formData.get("oddYes"));
+  const oddNo = Number(formData.get("oddNo"));
+
+  if (!marketId) {
+    return { success: false, error: "Marché introuvable." };
+  }
+  if (!question) {
+    return { success: false, error: "Question obligatoire." };
+  }
+
+  const { error } = await supabase.rpc("admin_update_fun_market", {
+    p_market_id: marketId,
+    p_question: question,
+    p_odd_yes: oddYes,
+    p_odd_no: oddNo,
+  });
+
+  if (error) {
+    const m = error.message.toLowerCase();
+    if (m.includes("only the admin who created")) {
+      return {
+        success: false,
+        error: "Seul l'admin créateur peut modifier ce pari fun.",
+      };
+    }
+    if (m.includes("only open")) {
+      return {
+        success: false,
+        error: "Seuls les paris fun ouverts peuvent être modifiés.",
+      };
+    }
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(`/admin/matches/${matchId}`);
+  revalidatePath(`/matches/${matchId}`);
+  return { success: true, matchId };
+}
+
+export async function deleteFunMarketAction(
+  marketId: string,
+  matchId: number,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("admin_delete_fun_market", {
+    p_market_id: marketId,
+  });
+
+  if (error) {
+    const m = error.message.toLowerCase();
+    if (m.includes("only the admin who created")) {
+      return {
+        success: false,
+        error: "Seul l'admin créateur peut supprimer ce pari fun.",
+      };
+    }
+    if (m.includes("settled")) {
+      return {
+        success: false,
+        error: "Un pari fun clôturé ne peut pas être supprimé.",
+      };
+    }
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(`/admin/matches/${matchId}`);
+  revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/bets");
+  return { success: true, matchId };
+}
+
 export async function settleFunMarketAction(
   marketId: string,
   winningOutcome: "yes" | "no",
