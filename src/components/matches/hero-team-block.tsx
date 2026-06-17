@@ -1,6 +1,7 @@
+import { NavLink } from "@/components/layout/nav-link";
 import { TeamFlag } from "@/components/shared/team-flag";
 import { getTeamColors } from "@/lib/team-colors";
-import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
+import { isTbdTeam, tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
 import { cn } from "@/lib/utils";
 import type { MatchWithTeams } from "@/types/database";
 
@@ -17,12 +18,14 @@ export function HeroTeamBlock({ team, side, className }: HeroTeamBlockProps) {
   const name = tbdTeamDisplayName(team);
   const palette = getTeamColors(team.code);
   const isHome = side === "home";
+  const linkable = !isTbdTeam(team);
 
-  return (
+  const content = (
     <div
       className={cn(
         "flex min-w-0 flex-col gap-2.5",
         isHome ? "items-end text-right" : "items-start text-left",
+        linkable && "transition-opacity hover:opacity-90",
         className,
       )}
     >
@@ -68,5 +71,13 @@ export function HeroTeamBlock({ team, side, className }: HeroTeamBlockProps) {
         </div>
       </div>
     </div>
+  );
+
+  if (!linkable) return content;
+
+  return (
+    <NavLink href={`/teams/${team.id}`} className="min-w-0">
+      {content}
+    </NavLink>
   );
 }

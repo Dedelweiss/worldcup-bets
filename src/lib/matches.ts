@@ -22,6 +22,7 @@ export const MATCH_SELECT = `
   home_score, away_score, live_minute, live_injury_time,
   live_clock_anchor_at, live_clock_manual,
   odd_home, odd_draw, odd_away, odds_synced_at,
+  goal_events, goal_events_synced_at, goal_events_source,
   home_team:teams!matches_home_team_id_fkey (id, name, code, logo_url),
   away_team:teams!matches_away_team_id_fkey (id, name, code, logo_url)
 `;

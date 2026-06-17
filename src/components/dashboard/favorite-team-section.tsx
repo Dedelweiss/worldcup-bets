@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Heart, Lock, Trophy } from "lucide-react";
 import { setFavoriteTeamAction } from "@/app/(app)/dashboard/favorite-team-actions";
+import { NavLink } from "@/components/layout/nav-link";
 import { FavoriteTeamPicker } from "@/components/profile/favorite-team-picker";
 import { TeamFlag } from "@/components/shared/team-flag";
 import { Button } from "@/components/ui/button";
@@ -74,9 +75,12 @@ export function FavoriteTeamSection({
             size={48}
           />
           <div className="min-w-0 flex-1">
-            <p className="text-lg font-semibold leading-tight">
+            <NavLink
+              href={`/teams/${favorite.team.id}`}
+              className="text-lg font-semibold leading-tight transition-colors hover:text-primary"
+            >
               {favorite.team.name}
-            </p>
+            </NavLink>
             <p className="mt-1 text-xs text-muted-foreground">
               Choix définitif · +{formatPoints(bonusPts)} pts si champion
             </p>

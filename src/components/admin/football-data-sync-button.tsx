@@ -32,6 +32,9 @@ export function FootballDataSyncButton() {
         parts.push(
           `live ${fd.updated} match(s) · ${fd.apiCalls} req football-data`,
         );
+        if (fd.squadsSynced) {
+          parts.push(`${fd.squadsSynced} effectif(s)`);
+        }
       }
       if (odds) {
         parts.push(

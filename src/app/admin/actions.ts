@@ -1007,6 +1007,57 @@ export async function syncFootballDataAdminAction(): Promise<
   return { success: true, stats };
 }
 
+export async function syncTeamSquadsAdminAction(): Promise<
+  ActionResult & {
+    result?: Awaited<ReturnType<typeof import("@/lib/football-data/sync-team-squads").syncTeamSquadsAdminBatch>>;
+    status?: Awaited<ReturnType<typeof import("@/lib/football-data/sync-team-squads").getTeamSquadSyncStatus>>;
+    scorersResult?: Awaited<ReturnType<typeof import("@/lib/football-data/sync-tournament-scorers").syncTournamentScorersFromApi>>;
+    goalEventsResult?: Awaited<ReturnType<typeof import("@/lib/match-goals/sync-goal-events").syncMatchGoalEventsAdminBatch>>;
+  }
+> {
+  const profile = await requireAdmin();
+
+  const { syncTeamSquadsAdminBatch, getTeamSquadSyncStatus } = await import(
+    "@/lib/football-data/sync-team-squads"
+  );
+  const { syncTournamentScorersFromApi } = await import(
+    "@/lib/football-data/sync-tournament-scorers"
+  );
+  const { syncMatchGoalEventsAdminBatch } = await import(
+    "@/lib/match-goals/sync-goal-events"
+  );
+
+  const [result, scorersResult, goalEventsResult] = await Promise.all([
+    syncTeamSquadsAdminBatch(),
+    syncTournamentScorersFromApi(),
+    syncMatchGoalEventsAdminBatch(),
+  ]);
+
+  if (result.error && result.synced === 0 && !scorersResult.synced && goalEventsResult.synced === 0) {
+    return {
+      success: false,
+      error: result.error ?? scorersResult.error ?? "Synchronisation échouée",
+    };
+  }
+
+  const status = await getTeamSquadSyncStatus();
+
+  logAppEvent({
+    level: "info",
+    source: "admin.syncSquads",
+    message: `Sync effectifs ${result.synced} · buteurs ${scorersResult.count} · buts match ${goalEventsResult.synced}`,
+    metadata: { result, scorersResult, goalEventsResult, status },
+    userId: profile.id,
+  });
+
+  revalidatePath("/admin/teams");
+  revalidatePath("/teams", "layout");
+  revalidatePath("/bracket");
+  revalidatePath("/matches", "layout");
+
+  return { success: true, result, status, scorersResult, goalEventsResult };
+}
+
 export async function prepareWorldCupAction(options: {
   startingBalance: number;
   syncOddsAfter?: boolean;

@@ -49,6 +49,50 @@ export interface TournamentTeam extends Team {
   tournament_group?: TournamentGroup | null;
 }
 
+/** Joueur d'effectif (cache football-data.org). */
+export interface TeamSquadPlayer {
+  id: number;
+  name: string;
+  position: string | null;
+  shirtNumber: number | null;
+  dateOfBirth: string | null;
+  nationality: string | null;
+}
+
+export interface TournamentTeamDetail extends TournamentTeam {
+  coach_name: string | null;
+  squad: TeamSquadPlayer[] | null;
+  squad_synced_at: string | null;
+}
+
+/** Buteur cumulé au tournoi (football-data.org scorers). */
+export interface TournamentScorer {
+  playerId: number;
+  playerName: string;
+  teamFootballDataId: number;
+  teamName: string;
+  teamTla: string | null;
+  goals: number;
+  assists: number | null;
+  playedMatches: number | null;
+}
+
+export type MatchGoalEventType = "regular" | "penalty" | "own_goal";
+
+/** But enregistré pour un match (cache enrichi). */
+export interface MatchGoalEvent {
+  minute: string;
+  minuteSort: number;
+  teamSide: "home" | "away";
+  teamName: string;
+  scorerName: string;
+  assistName: string | null;
+  scoreAfter: { home: number; away: number } | null;
+  type: MatchGoalEventType;
+}
+
+export type MatchGoalEventsSource = "native-stats" | "wikipedia";
+
 export interface BracketSlotWithMatch {
   id: string;
   stage: MatchStage;
@@ -114,6 +158,9 @@ export interface MatchWithTeams {
   is_golden?: boolean;
   ai_summary?: string | null;
   settled_at?: string | null;
+  goal_events?: MatchGoalEvent[] | null;
+  goal_events_synced_at?: string | null;
+  goal_events_source?: MatchGoalEventsSource | null;
   home_team: Team;
   away_team: Team;
 }

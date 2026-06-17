@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { TeamSquadsSyncPanel } from "@/components/admin/team-squads-sync-panel";
 import { WorldCupWinnerPanel } from "@/components/admin/world-cup-winner-panel";
 import { TournamentTeamsForm } from "@/components/admin/tournament-teams-form";
+import { getTeamSquadSyncStatus } from "@/lib/football-data/sync-team-squads";
 import { getAllTournamentTeams } from "@/lib/tournament/queries";
 import { getTournamentConfig } from "@/lib/tournament/config";
 import {
@@ -11,10 +13,11 @@ import {
 export const metadata = { title: "Admin · Équipes & groupes" };
 
 export default async function AdminTeamsPage() {
-  const [groups, tournamentTeams, tournamentConfig] = await Promise.all([
+  const [groups, tournamentTeams, tournamentConfig, squadStatus] = await Promise.all([
     getTournamentGroups(),
     getAllTournamentTeams(),
     getTournamentConfig(),
+    getTeamSquadSyncStatus(),
   ]);
   const teamsByGroup: Record<number, Awaited<ReturnType<typeof getTeamsByTournamentGroup>>> =
     {};
@@ -42,6 +45,8 @@ export default async function AdminTeamsPage() {
           ← Créateur de match
         </Link>
       </div>
+
+      <TeamSquadsSyncPanel status={squadStatus} />
 
       <WorldCupWinnerPanel teams={tournamentTeams} config={tournamentConfig} />
 

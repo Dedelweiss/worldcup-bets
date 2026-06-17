@@ -40,5 +40,61 @@ export interface FootballDataCompetitionMatchesResponse {
 }
 
 export interface FootballDataCompetitionTeamsResponse {
-  teams?: (FootballDataTeamRef & { crest?: string | null })[];
+  teams?: FootballDataWcTeamEntry[];
+}
+
+/** Entrée /competitions/WC/teams — inclut effectif et coach. */
+export interface FootballDataWcTeamEntry extends FootballDataTeamRef {
+  crest?: string | null;
+  squad?: FootballDataSquadPerson[];
+  coach?: {
+    name?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+  } | null;
+}
+
+export interface FootballDataSquadPerson {
+  id: number;
+  name?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  position?: string | null;
+  dateOfBirth?: string | null;
+  nationality?: string | null;
+  shirtNumber?: number | null;
+  role?: string | null;
+}
+
+export interface FootballDataTeamDetail {
+  id: number;
+  name: string;
+  shortName?: string | null;
+  tla?: string | null;
+  founded?: number | null;
+  venue?: string | null;
+  squad?: FootballDataSquadPerson[];
+  coach?: {
+    name?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+  } | null;
+}
+
+export interface FootballDataScorerEntry {
+  player: {
+    id: number;
+    name?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+  };
+  team: FootballDataTeamRef & { crest?: string | null };
+  goals: number;
+  assists?: number | null;
+  penalties?: number | null;
+  playedMatches?: number | null;
+}
+
+export interface FootballDataScorersResponse {
+  scorers?: FootballDataScorerEntry[];
 }

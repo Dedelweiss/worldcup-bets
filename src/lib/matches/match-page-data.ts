@@ -7,6 +7,8 @@ import { getMatchUserFunBets } from "@/lib/bets/match-user-fun-bets";
 import { getMatchUserPendingBets } from "@/lib/bets/match-user-bets";
 import { getPreMatchInsights } from "@/lib/bets/pre-match-insights";
 import { hasKickoffStarted } from "@/lib/format";
+import { getMatchTournamentScorersForTeams } from "@/lib/football-data/sync-tournament-scorers";
+import { getMatchGoalEventsFromCache } from "@/lib/match-goals/sync-goal-events";
 import { getFunMarketsByMatch } from "@/lib/fun-markets";
 import { getMatchComments } from "@/lib/match-comments";
 import type { Profile, MatchWithTeams } from "@/types/database";
@@ -24,6 +26,9 @@ export async function getMatchPageData(
   const showFinishedPronosBoard =
     isFinished && canReveal && profile.role === "admin";
 
+  const showScorersBoard =
+    kickoffStarted || isLive || isFinished;
+
   const [
     funMarkets,
     comments,
@@ -34,6 +39,7 @@ export async function getMatchPageData(
     tackleState,
     preMatchInsights,
     revealedBets,
+    tournamentScorers,
   ] = await Promise.all([
     getFunMarketsByMatch(matchId),
     !isFinished && (kickoffStarted || canReveal)
@@ -50,7 +56,19 @@ export async function getMatchPageData(
     showLivePronosBoard || showFinishedPronosBoard
       ? getMatchRevealedBets(matchId)
       : Promise.resolve([]),
+    showScorersBoard
+      ? getMatchTournamentScorersForTeams(
+          match.home_team.id,
+          match.away_team.id,
+        )
+      : Promise.resolve({
+          homeScorers: [],
+          awayScorers: [],
+          syncedAt: null,
+        }),
   ]);
+
+  const goalEventsCache = getMatchGoalEventsFromCache(match);
 
   return {
     funMarkets,
@@ -64,5 +82,10 @@ export async function getMatchPageData(
     revealedBets,
     showLivePronosBoard,
     showFinishedPronosBoard,
+    tournamentScorers,
+    goalEvents: goalEventsCache.events,
+    goalEventsSyncedAt: goalEventsCache.syncedAt,
+    goalEventsSource: goalEventsCache.source,
+    showScorersBoard,
   };
 }

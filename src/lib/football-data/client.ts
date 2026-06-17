@@ -2,6 +2,8 @@ import type {
   FootballDataCompetitionMatchesResponse,
   FootballDataCompetitionTeamsResponse,
   FootballDataMatch,
+  FootballDataScorersResponse,
+  FootballDataTeamDetail,
 } from "@/lib/football-data/types";
 
 const BASE_URL = "https://api.football-data.org/v4";
@@ -72,4 +74,16 @@ export async function fetchFootballDataMatchById(
   matchId: number,
 ): Promise<FootballDataMatch> {
   return footballDataFetch<FootballDataMatch>(`/matches/${matchId}`);
+}
+
+export async function fetchFootballDataTeamById(
+  teamId: number,
+): Promise<FootballDataTeamDetail> {
+  return footballDataFetch<FootballDataTeamDetail>(`/teams/${teamId}`);
+}
+
+export async function fetchWcScorers(): Promise<FootballDataScorersResponse> {
+  return footballDataFetch<FootballDataScorersResponse>(
+    `/competitions/${FOOTBALL_DATA_WC_CODE}/scorers?season=${FOOTBALL_DATA_WC_SEASON}&limit=100`,
+  );
 }

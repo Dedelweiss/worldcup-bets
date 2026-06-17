@@ -6,6 +6,7 @@ import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
 import { MatchGazette } from "@/components/matches/match-gazette";
 import { HashAnchorScroller } from "@/components/layout/hash-anchor-scroller";
 import { MatchFunBetsSection } from "@/components/matches/match-fun-bets-section";
+import { MatchGoalEventsSection } from "@/components/matches/match-goal-events-section";
 import { MatchPageHero } from "@/components/matches/match-page-hero";
 import {
   MatchChatLazy,
@@ -68,6 +69,11 @@ export default async function MatchBetPage({
     revealedBets,
     showLivePronosBoard,
     showFinishedPronosBoard,
+    tournamentScorers,
+    goalEvents,
+    goalEventsSyncedAt,
+    goalEventsSource,
+    showScorersBoard,
   } = await getMatchPageData(match, profile);
 
   const adminEditHref =
@@ -122,6 +128,10 @@ export default async function MatchBetPage({
 
   if (match.ai_summary) {
     navTabs.push({ id: "gazette", label: "Gazette" });
+  }
+
+  if (showScorersBoard) {
+    navTabs.push({ id: "buteurs", label: "Buteurs" });
   }
 
   const incomingTackleAlert =
@@ -180,6 +190,18 @@ export default async function MatchBetPage({
 
   const matchStream = (
     <>
+      {showScorersBoard && (
+        <MatchGoalEventsSection
+          match={match}
+          goalEvents={goalEvents}
+          goalEventsSyncedAt={goalEventsSyncedAt}
+          goalEventsSource={goalEventsSource}
+          homeScorers={tournamentScorers.homeScorers}
+          awayScorers={tournamentScorers.awayScorers}
+          tournamentScorersSyncedAt={tournamentScorers.syncedAt}
+        />
+      )}
+
       {match.ai_summary && (
         <section id="gazette" className={sectionScrollClass}>
           <MatchGazette summary={match.ai_summary} />

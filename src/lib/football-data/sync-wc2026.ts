@@ -10,6 +10,9 @@ import {
   FOOTBALL_DATA_MAX_ODDS_DETAIL_FETCHES,
   FOOTBALL_DATA_TEAMS_ENDPOINT_INTERVAL_MS,
 } from "@/lib/football-data/rate-limit";
+import { syncStaleTeamSquads } from "@/lib/football-data/sync-team-squads";
+import { syncStaleMatchGoalEvents } from "@/lib/match-goals/sync-goal-events";
+import { syncTournamentScorersIfDue } from "@/lib/football-data/sync-tournament-scorers";
 import {
   mapFootballDataScoreToLocal,
   mapFootballDataStatus,
@@ -63,6 +66,9 @@ export interface SyncFootballDataResult {
   linkedMatches: number;
   apiMatches: number;
   apiCalls: number;
+  squadsSynced?: number;
+  scorersSynced?: number;
+  goalEventsSynced?: number;
   error?: string;
 }
 
@@ -563,6 +569,20 @@ export async function syncFootballDataWc2026(options?: {
       },
     });
 
+    const squadResult = await syncStaleTeamSquads();
+    apiCalls += squadResult.apiCalls;
+
+    const hasLive = fdList.some(
+      (m) => m.status === "IN_PLAY" || m.status === "PAUSED",
+    );
+    const scorersResult = await syncTournamentScorersIfDue({
+      hasLiveMatches: hasLive,
+    });
+    apiCalls += scorersResult.apiCalls;
+
+    const goalEventsResult = await syncStaleMatchGoalEvents();
+    apiCalls += goalEventsResult.apiCalls;
+
     return {
       ok: true,
       updated,
@@ -572,6 +592,9 @@ export async function syncFootballDataWc2026(options?: {
       linkedMatches,
       apiMatches: fdList.length,
       apiCalls,
+      squadsSynced: squadResult.synced,
+      scorersSynced: scorersResult.synced ? scorersResult.count : 0,
+      goalEventsSynced: goalEventsResult.synced,
     };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Sync failed";

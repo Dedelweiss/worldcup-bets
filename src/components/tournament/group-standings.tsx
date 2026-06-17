@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { NavLink } from "@/components/layout/nav-link";
 import { TeamFlag } from "@/components/shared/team-flag";
 import { cn } from "@/lib/utils";
+import { isTbdTeam } from "@/lib/tournament/tbd-team";
 import type { GroupStandings } from "@/lib/tournament/standings";
 
 type GroupFilter = "all" | number;
@@ -156,7 +158,16 @@ function GroupStandingsTable({
                       logoUrl={row.team.logo_url}
                       size={22}
                     />
-                    <span className="truncate font-medium">{row.team.name}</span>
+                    {isTbdTeam(row.team) ? (
+                      <span className="truncate font-medium">{row.team.name}</span>
+                    ) : (
+                      <NavLink
+                        href={`/teams/${row.team.id}`}
+                        className="truncate font-medium transition-colors hover:text-primary"
+                      >
+                        {row.team.name}
+                      </NavLink>
+                    )}
                   </div>
                 </td>
                 <td className="px-1 py-2 text-center tabular-nums text-muted-foreground">

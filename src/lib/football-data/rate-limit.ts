@@ -19,3 +19,12 @@ export const FOOTBALL_DATA_MAX_ODDS_DETAIL_FETCHES = 3;
 
 /** Endpoint /teams : uniquement si des équipes ne sont pas encore liées, et pas plus d’une fois / 24 h. */
 export const FOOTBALL_DATA_TEAMS_ENDPOINT_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
+/** Effectifs : resync au plus une fois / 7 jours par équipe. */
+export const FOOTBALL_DATA_SQUAD_SYNC_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Max équipes dont l'effectif est rafraîchi par passage cron (évite le burst). */
+export const FOOTBALL_DATA_MAX_SQUAD_SYNCS_PER_RUN = 1;
+
+/** Lot admin manuel (quota football-data ~10 req/min). */
+export const FOOTBALL_DATA_MAX_SQUAD_SYNCS_ADMIN = 8;
