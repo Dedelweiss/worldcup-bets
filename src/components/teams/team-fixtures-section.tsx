@@ -138,7 +138,7 @@ function FixtureRow({
               size={24}
             />
             <span className="truncate text-sm font-medium">
-              {isHome ? "vs" : "@"} {tbdTeamDisplayName(opponent)}
+              vs {tbdTeamDisplayName(opponent)}
             </span>
           </div>
           <p className="text-xs text-muted-foreground">{formatKickoff(match.kickoff_at)}</p>
