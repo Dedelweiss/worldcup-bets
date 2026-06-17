@@ -5,11 +5,13 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Lock, Sparkles, ThumbsDown, ThumbsUp, Trophy } from "lucide-react";
 import { placeFunBetAction } from "@/app/(app)/matches/fun-actions";
+import { FunMarketBettors } from "@/components/bets/fun-market-bettors";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatOdd, formatPoints } from "@/lib/format";
 import { goldenMatchPoints } from "@/lib/golden-match";
 import type { MatchUserFunBet } from "@/lib/bets/match-user-fun-bets";
+import type { FunMarketParticipant } from "@/lib/bets/fun-market-participation";
 import { pointsFromOdd } from "@/lib/points";
 import { cn } from "@/lib/utils";
 import type { FunMarket, FunOutcome } from "@/types/database";
@@ -18,6 +20,8 @@ interface FunBetSlipProps {
   market: FunMarket;
   isGoldenMatch?: boolean;
   userBet?: MatchUserFunBet | null;
+  participants?: FunMarketParticipant[];
+  currentUserId: string;
 }
 
 const OUTCOMES = [
@@ -29,6 +33,8 @@ export function FunBetSlip({
   market,
   isGoldenMatch = false,
   userBet = null,
+  participants = [],
+  currentUserId,
 }: FunBetSlipProps) {
   const router = useRouter();
   const open = market.status === "open";
@@ -128,6 +134,11 @@ export function FunBetSlip({
             </span>
           </div>
         )}
+        <FunMarketBettors
+          participants={participants}
+          currentUserId={currentUserId}
+          className="mt-3"
+        />
       </div>
     );
   }
@@ -306,6 +317,12 @@ export function FunBetSlip({
             </strong>
           </p>
         )}
+
+        <FunMarketBettors
+          participants={participants}
+          currentUserId={currentUserId}
+          className="mt-4"
+        />
       </div>
     </motion.article>
   );

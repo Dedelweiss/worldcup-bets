@@ -22,7 +22,7 @@ export default async function AdminMatchPage({
   const match = await getAdminMatch(matchId);
   if (!match) notFound();
 
-  const admin = await requireAdmin();
+  await requireAdmin();
 
   const [pendingBetsCount, pendingClassicBetsCount, funMarkets, bets, funMarketBets] =
     await Promise.all([
@@ -59,7 +59,6 @@ export default async function AdminMatchPage({
         matchId={matchId}
         markets={funMarkets}
         betsByMarket={funMarketBets}
-        currentAdminId={admin.id}
       />
     </div>
   );

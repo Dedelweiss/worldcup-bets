@@ -609,12 +609,6 @@ export async function updateFunMarketAction(
 
   if (error) {
     const m = error.message.toLowerCase();
-    if (m.includes("only the admin who created")) {
-      return {
-        success: false,
-        error: "Seul l'admin créateur peut modifier ce pari fun.",
-      };
-    }
     if (m.includes("only open")) {
       return {
         success: false,
@@ -642,12 +636,6 @@ export async function deleteFunMarketAction(
 
   if (error) {
     const m = error.message.toLowerCase();
-    if (m.includes("only the admin who created")) {
-      return {
-        success: false,
-        error: "Seul l'admin créateur peut supprimer ce pari fun.",
-      };
-    }
     if (m.includes("settled")) {
       return {
         success: false,

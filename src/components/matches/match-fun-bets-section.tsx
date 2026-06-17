@@ -2,6 +2,7 @@ import { Sparkles } from "lucide-react";
 import { FunBetSlip } from "@/components/bets/fun-bet-slip";
 import { Badge } from "@/components/ui/badge";
 import type { MatchUserFunBet } from "@/lib/bets/match-user-fun-bets";
+import type { FunMarketParticipationByMarket } from "@/lib/bets/fun-market-participation";
 import { cn } from "@/lib/utils";
 import type { FunMarket } from "@/types/database";
 
@@ -14,6 +15,8 @@ const STATUS_SORT: Record<FunMarket["status"], number> = {
 interface MatchFunBetsSectionProps {
   markets: FunMarket[];
   funBetsByMarket: Map<string, MatchUserFunBet>;
+  funParticipationByMarket: FunMarketParticipationByMarket;
+  currentUserId: string;
   isGoldenMatch?: boolean;
   className?: string;
 }
@@ -21,6 +24,8 @@ interface MatchFunBetsSectionProps {
 export function MatchFunBetsSection({
   markets,
   funBetsByMarket,
+  funParticipationByMarket,
+  currentUserId,
   isGoldenMatch = false,
   className,
 }: MatchFunBetsSectionProps) {
@@ -88,6 +93,8 @@ export function MatchFunBetsSection({
               market={market}
               isGoldenMatch={isGoldenMatch}
               userBet={funBetsByMarket.get(market.id) ?? null}
+              participants={funParticipationByMarket.get(market.id) ?? []}
+              currentUserId={currentUserId}
             />
           ))}
         </div>

@@ -22,21 +22,16 @@ interface FunMarketsAdminProps {
   matchId: number;
   markets: FunMarket[];
   betsByMarket: AdminFunMarketBetsByMarket;
-  currentAdminId: string;
 }
 
-function canManageMarket(market: FunMarket, adminId: string): boolean {
-  return (
-    market.status === "open" &&
-    (market.created_by == null || market.created_by === adminId)
-  );
+function isOpenMarket(market: FunMarket): boolean {
+  return market.status === "open";
 }
 
 export function FunMarketsAdmin({
   matchId,
   markets,
   betsByMarket,
-  currentAdminId,
 }: FunMarketsAdminProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -101,8 +96,8 @@ export function FunMarketsAdmin({
         <CardTitle className="text-base">Paris fun</CardTitle>
         <p className="text-xs text-muted-foreground">
           Restent ouverts après le coup d&apos;envoi jusqu&apos;à clôture manuelle.
-          Vous pouvez modifier ou supprimer vos propres paris fun tant qu&apos;ils
-          sont ouverts.
+          Tout admin peut modifier ou supprimer un pari fun tant qu&apos;il est
+          ouvert.
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -136,7 +131,7 @@ export function FunMarketsAdmin({
           <ul className="space-y-3">
             {markets.map((m) => {
               const marketBets = betsByMarket.get(m.id) ?? [];
-              const manageable = canManageMarket(m, currentAdminId);
+              const manageable = isOpenMarket(m);
               const isEditing = editingId === m.id;
 
               return (

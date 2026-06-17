@@ -17,6 +17,7 @@ import { requireAuth } from "@/lib/auth-server";
 import { canRevealPlayerBets } from "@/lib/bets/can-reveal-player-bets";
 import { getMatchBettingParticipation } from "@/lib/bets/match-participation";
 import { getMatchTackleState } from "@/lib/bets/match-tackle";
+import { getFunMarketParticipation } from "@/lib/bets/fun-market-participation";
 import { getMatchUserFunBets } from "@/lib/bets/match-user-fun-bets";
 import { getMatchRevealedBets } from "@/lib/bets/match-live-bets";
 import { getMatchUserPendingBets } from "@/lib/bets/match-user-bets";
@@ -67,7 +68,7 @@ export default async function MatchBetPage({
   const adminEditHref =
     profile.role === "admin" ? `/admin/matches/${matchId}` : undefined;
 
-  const [funMarkets, comments, pendingBets, funBetsByMarket, participation, tackleState, preMatchInsights, revealedBets] =
+  const [funMarkets, comments, pendingBets, funBetsByMarket, funParticipationByMarket, participation, tackleState, preMatchInsights, revealedBets] =
     await Promise.all([
       getFunMarketsByMatch(matchId),
       !isFinished && (kickoffStarted || canReveal)
@@ -75,6 +76,7 @@ export default async function MatchBetPage({
         : Promise.resolve([]),
       getMatchUserPendingBets(matchId, profile.id),
       getMatchUserFunBets(matchId, profile.id),
+      getFunMarketParticipation(matchId),
       getMatchBettingParticipation(matchId),
       getMatchTackleState(matchId, profile.id, match.stage),
       !kickoffStarted && match.status === "scheduled"
@@ -180,6 +182,8 @@ export default async function MatchBetPage({
     <MatchFunBetsSection
       markets={funMarkets}
       funBetsByMarket={funBetsByMarket}
+      funParticipationByMarket={funParticipationByMarket}
+      currentUserId={profile.id}
       isGoldenMatch={match.is_golden ?? false}
     />
   ) : null;
