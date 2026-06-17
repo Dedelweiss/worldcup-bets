@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Lock, Pencil, Trash2 } from "lucide-react";
 import {
+  closeFunMarketAction,
   createFunMarketAction,
   deleteFunMarketAction,
   settleFunMarketAction,
@@ -14,12 +15,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  funBettingPhaseDescription,
+  funBettingPhaseLabel,
+  funMarketClosesAtLabel,
+} from "@/lib/bets/fun-market-betting";
 import { formatOdd, formatPoints } from "@/lib/format";
 import type { AdminFunMarketBetsByMarket } from "@/lib/admin/fun-market-bets";
-import type { FunMarket } from "@/types/database";
+import { cn } from "@/lib/utils";
+import type { FunMarket, MatchWithTeams } from "@/types/database";
 
 interface FunMarketsAdminProps {
   matchId: number;
+  match: Pick<MatchWithTeams, "status" | "kickoff_at">;
   markets: FunMarket[];
   betsByMarket: AdminFunMarketBetsByMarket;
 }
@@ -30,6 +38,7 @@ function isOpenMarket(market: FunMarket): boolean {
 
 export function FunMarketsAdmin({
   matchId,
+  match,
   markets,
   betsByMarket,
 }: FunMarketsAdminProps) {
@@ -37,6 +46,12 @@ export function FunMarketsAdmin({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [bettingPhase, setBettingPhase] = useState<"pre_match" | "live_window">(
+    "pre_match",
+  );
+
+  const canCreatePreMatch = match.status === "scheduled";
+  const canCreateLiveWindow = match.status === "live";
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -46,6 +61,7 @@ export function FunMarketsAdmin({
     if (!result.success) setError(result.error);
     else {
       (e.target as HTMLFormElement).reset();
+      setBettingPhase("pre_match");
       router.refresh();
     }
     setLoading(false);
@@ -61,6 +77,16 @@ export function FunMarketsAdmin({
       setEditingId(null);
       router.refresh();
     }
+    setLoading(false);
+  }
+
+  async function handleClose(marketId: string) {
+    if (!confirm("Fermer les paris sur ce marché fun ?")) return;
+    setLoading(true);
+    setError(null);
+    const result = await closeFunMarketAction(marketId, matchId);
+    if (!result.success) setError(result.error);
+    else router.refresh();
     setLoading(false);
   }
 
@@ -94,15 +120,24 @@ export function FunMarketsAdmin({
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Paris fun</CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Restent ouverts après le coup d&apos;envoi jusqu&apos;à clôture manuelle.
-          Tout admin peut modifier ou supprimer un pari fun tant qu&apos;il est
-          ouvert.
-        </p>
+        <div className="space-y-2 text-xs text-muted-foreground">
+          <p>
+            <strong className="text-foreground">Pré-match</strong> — fermeture
+            auto au coup d&apos;envoi.{" "}
+            <strong className="text-foreground">Live (2 min)</strong> — fenêtre
+            courte en direct (mi-temps, etc.), puis fermeture auto.
+          </p>
+          <p className="rounded-lg border border-amber-500/25 bg-amber-500/5 px-3 py-2 text-amber-100/90">
+            Charte : pas de pari événementiel en live (penalty, carton…) sauf
+            fenêtre live courte publiée <em>avant</em> l&apos;événement. En cas
+            de doute, fermez les paris manuellement.
+          </p>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <form onSubmit={handleCreate} className="space-y-3 rounded-lg border border-dashed p-4">
           <input type="hidden" name="matchId" value={matchId} />
+          <input type="hidden" name="bettingPhase" value={bettingPhase} />
           <div className="space-y-2">
             <Label htmlFor="question">Question</Label>
             <Input
@@ -122,7 +157,64 @@ export function FunMarketsAdmin({
               <Input id="oddNo" name="oddNo" type="number" step="0.01" min="1.01" defaultValue="1.6" required />
             </div>
           </div>
-          <Button type="submit" size="sm" disabled={loading}>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium">Type de pari</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <label
+                className={cn(
+                  "flex cursor-pointer flex-col gap-1 rounded-lg border p-3 text-sm transition-colors",
+                  bettingPhase === "pre_match"
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-primary/40",
+                  !canCreatePreMatch && "cursor-not-allowed opacity-50",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="bettingPhaseUi"
+                  className="sr-only"
+                  checked={bettingPhase === "pre_match"}
+                  disabled={!canCreatePreMatch}
+                  onChange={() => setBettingPhase("pre_match")}
+                />
+                <span className="font-medium">Pré-match uniquement</span>
+                <span className="text-xs text-muted-foreground">
+                  {funBettingPhaseDescription("pre_match")}
+                </span>
+              </label>
+              <label
+                className={cn(
+                  "flex cursor-pointer flex-col gap-1 rounded-lg border p-3 text-sm transition-colors",
+                  bettingPhase === "live_window"
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-primary/40",
+                  !canCreateLiveWindow && "cursor-not-allowed opacity-50",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="bettingPhaseUi"
+                  className="sr-only"
+                  checked={bettingPhase === "live_window"}
+                  disabled={!canCreateLiveWindow}
+                  onChange={() => setBettingPhase("live_window")}
+                />
+                <span className="font-medium">Live (fenêtre 2 min)</span>
+                <span className="text-xs text-muted-foreground">
+                  {funBettingPhaseDescription("live_window")}
+                </span>
+              </label>
+            </div>
+          </fieldset>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={
+              loading ||
+              (bettingPhase === "pre_match" && !canCreatePreMatch) ||
+              (bettingPhase === "live_window" && !canCreateLiveWindow)
+            }
+          >
             Ajouter le pari fun
           </Button>
         </form>
@@ -133,6 +225,8 @@ export function FunMarketsAdmin({
               const marketBets = betsByMarket.get(m.id) ?? [];
               const manageable = isOpenMarket(m);
               const isEditing = editingId === m.id;
+              const phase = m.betting_phase ?? "pre_match";
+              const closesLabel = funMarketClosesAtLabel(m);
 
               return (
                 <li
@@ -200,6 +294,14 @@ export function FunMarketsAdmin({
                           <Badge variant="outline" className="text-[10px]">
                             {m.status}
                           </Badge>
+                          <Badge variant="secondary" className="text-[10px]">
+                            {funBettingPhaseLabel(phase)}
+                          </Badge>
+                          {closesLabel && m.status === "open" && (
+                            <Badge variant="outline" className="text-[10px] tabular-nums">
+                              jusqu&apos;à {closesLabel}
+                            </Badge>
+                          )}
                           {marketBets.length > 0 && (
                             <Badge variant="secondary" className="text-[10px]">
                               {marketBets.length} pari{marketBets.length > 1 ? "s" : ""}
@@ -243,6 +345,16 @@ export function FunMarketsAdmin({
                               size="sm"
                               variant="outline"
                               disabled={loading}
+                              onClick={() => handleClose(m.id)}
+                            >
+                              <Lock className="size-3.5" aria-hidden />
+                              Fermer les paris
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={loading}
                               onClick={() => setEditingId(m.id)}
                             >
                               <Pencil className="size-3.5" aria-hidden />
@@ -261,7 +373,7 @@ export function FunMarketsAdmin({
                             </Button>
                           </>
                         )}
-                        {m.status === "open" && (
+                        {m.status === "closed" && (
                           <>
                             <Button
                               type="button"

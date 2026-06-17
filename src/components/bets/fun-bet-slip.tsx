@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Lock, Sparkles, ThumbsDown, ThumbsUp, Trophy } from "lucide-react";
 import { placeFunBetAction } from "@/app/(app)/matches/fun-actions";
@@ -10,14 +10,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatOdd, formatPoints } from "@/lib/format";
 import { goldenMatchPoints } from "@/lib/golden-match";
+import {
+  funBettingPhaseLabel,
+  funMarketBettingClosedReason,
+  getLiveWindowRemainingSeconds,
+  isFunMarketBettingOpen,
+} from "@/lib/bets/fun-market-betting";
 import type { MatchUserFunBet } from "@/lib/bets/match-user-fun-bets";
 import type { FunMarketParticipant } from "@/lib/bets/fun-market-participation";
 import { pointsFromOdd } from "@/lib/points";
 import { cn } from "@/lib/utils";
-import type { FunMarket, FunOutcome } from "@/types/database";
+import type { FunMarket, FunOutcome, MatchWithTeams } from "@/types/database";
 
 interface FunBetSlipProps {
   market: FunMarket;
+  match: Pick<MatchWithTeams, "status" | "kickoff_at">;
   isGoldenMatch?: boolean;
   userBet?: MatchUserFunBet | null;
   participants?: FunMarketParticipant[];
@@ -31,15 +38,37 @@ const OUTCOMES = [
 
 export function FunBetSlip({
   market,
+  match,
   isGoldenMatch = false,
   userBet = null,
   participants = [],
   currentUserId,
 }: FunBetSlipProps) {
   const router = useRouter();
-  const open = market.status === "open";
+  const [now, setNow] = useState(() => new Date());
+  const bettingOpen = isFunMarketBettingOpen(market, match, now);
+  const closedReason = funMarketBettingClosedReason(market, match, now);
+  const liveRemaining = getLiveWindowRemainingSeconds(market, now);
   const locked = userBet != null;
-  const canBet = open && !locked;
+  const canBet = bettingOpen && !locked;
+
+  useEffect(() => {
+    if (market.betting_phase !== "live_window" || market.status !== "open") {
+      return;
+    }
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, [market.betting_phase, market.status, market.closes_at]);
+
+  useEffect(() => {
+    if (
+      market.betting_phase === "live_window" &&
+      market.status === "open" &&
+      liveRemaining === 0
+    ) {
+      router.refresh();
+    }
+  }, [liveRemaining, market.betting_phase, market.status, router]);
 
   const [outcome, setOutcome] = useState<FunOutcome | null>(
     () => userBet?.outcome ?? null,
@@ -148,12 +177,12 @@ export function FunBetSlip({
       layout
       className={cn(
         "relative overflow-hidden rounded-xl border bg-card/90 backdrop-blur-sm transition-shadow",
-        open && canBet && "border-amber-500/30 shadow-md shadow-amber-500/5",
-        open && locked && "border-primary/30",
-        !open && "border-border/60 opacity-90",
+        canBet && "border-amber-500/30 shadow-md shadow-amber-500/5",
+        bettingOpen && locked && "border-primary/30",
+        !bettingOpen && "border-border/60 opacity-90",
       )}
     >
-      {open && canBet && (
+      {canBet && (
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/60 to-transparent"
           aria-hidden
@@ -162,14 +191,28 @@ export function FunBetSlip({
 
       <div className="p-4">
         <div className="flex flex-wrap items-center gap-2">
-          {open ? (
+          {bettingOpen ? (
             <Badge className="gap-1 border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-300">
               <span className="size-1.5 animate-pulse rounded-full bg-amber-500" />
               Ouvert
             </Badge>
-          ) : (
+          ) : market.status === "open" ? (
+            <Badge variant="secondary" className="text-[10px]">
+              Paris fermés
+            </Badge>
+          ) : market.status === "closed" ? (
             <Badge variant="secondary" className="text-[10px]">
               Fermé
+            </Badge>
+          ) : null}
+          <Badge variant="outline" className="text-[10px]">
+            {funBettingPhaseLabel(market.betting_phase ?? "pre_match")}
+          </Badge>
+          {liveRemaining != null && bettingOpen && (
+            <Badge variant="outline" className="text-[10px] tabular-nums">
+              {liveRemaining > 0
+                ? `${liveRemaining}s restantes`
+                : "Fermeture…"}
             </Badge>
           )}
           {locked && (
@@ -271,7 +314,7 @@ export function FunBetSlip({
           </form>
         )}
 
-        {open && locked && (
+        {locked && (
           <div className="mt-4 space-y-3">
             <div className="grid grid-cols-2 gap-2">
               {OUTCOMES.map(({ key, label }) => {
@@ -303,19 +346,8 @@ export function FunBetSlip({
           </div>
         )}
 
-        {!open && !locked && (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Paris fermé — en attente de clôture par l&apos;admin.
-          </p>
-        )}
-
-        {!open && locked && (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Votre pronostic :{" "}
-            <strong className="text-foreground">
-              {userBet!.outcome === "yes" ? "Oui" : "Non"}
-            </strong>
-          </p>
+        {!locked && !canBet && closedReason && (
+          <p className="mt-3 text-sm text-muted-foreground">{closedReason}</p>
         )}
 
         <FunMarketBettors

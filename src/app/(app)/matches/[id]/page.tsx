@@ -18,6 +18,7 @@ import { canRevealPlayerBets } from "@/lib/bets/can-reveal-player-bets";
 import { getMatchBettingParticipation } from "@/lib/bets/match-participation";
 import { getMatchTackleState } from "@/lib/bets/match-tackle";
 import { getFunMarketParticipation } from "@/lib/bets/fun-market-participation";
+import { isFunMarketBettingOpen } from "@/lib/bets/fun-market-betting";
 import { getMatchUserFunBets } from "@/lib/bets/match-user-fun-bets";
 import { getMatchRevealedBets } from "@/lib/bets/match-live-bets";
 import { getMatchUserPendingBets } from "@/lib/bets/match-user-bets";
@@ -90,9 +91,12 @@ export default async function MatchBetPage({
   const hasFunSection = funMarkets.length > 0;
   const hasClassicBet =
     pendingBets.hasMatchResult || pendingBets.hasExactScore;
-  const openFunCount = funMarkets.filter((m) => m.status === "open").length;
+  const openFunCount = funMarkets.filter((m) =>
+    isFunMarketBettingOpen(m, match),
+  ).length;
   const unplayedOpenFun = funMarkets.filter(
-    (m) => m.status === "open" && !funBetsByMarket.has(m.id),
+    (m) =>
+      isFunMarketBettingOpen(m, match) && !funBetsByMarket.has(m.id),
   ).length;
   const incomingTackles = tackleState.incomingTackles;
 
@@ -181,6 +185,7 @@ export default async function MatchBetPage({
   const funBetsSection = hasFunSection ? (
     <MatchFunBetsSection
       markets={funMarkets}
+      match={match}
       funBetsByMarket={funBetsByMarket}
       funParticipationByMarket={funParticipationByMarket}
       currentUserId={profile.id}

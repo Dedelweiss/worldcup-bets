@@ -17,6 +17,8 @@ export type FunOutcome = "yes" | "no";
 
 export type FunMarketStatus = "open" | "closed" | "settled";
 
+export type FunBettingPhase = "pre_match" | "live_window";
+
 export type BetStatus = "pending" | "won" | "lost" | "void" | "cancelled";
 
 /** Résultat d'un pari score exact : bon vainqueur ou score parfait. */
@@ -123,6 +125,9 @@ export interface FunMarket {
   odd_yes: number;
   odd_no: number;
   status: FunMarketStatus;
+  betting_phase?: FunBettingPhase;
+  closes_at?: string | null;
+  closed_at?: string | null;
   winning_outcome: FunOutcome | null;
   created_by?: string | null;
   created_at: string;

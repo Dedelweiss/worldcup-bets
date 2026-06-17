@@ -567,18 +567,54 @@ export async function createFunMarketAction(
     return { success: false, error: "Question obligatoire." };
   }
 
+  const bettingPhase = String(formData.get("bettingPhase") ?? "pre_match");
+  if (bettingPhase !== "pre_match" && bettingPhase !== "live_window") {
+    return { success: false, error: "Type de pari fun invalide." };
+  }
+
   const { data, error } = await supabase.rpc("admin_create_fun_market", {
     p_match_id: matchId,
     p_question: question,
     p_odd_yes: oddYes,
     p_odd_no: oddNo,
+    p_betting_phase: bettingPhase,
   });
 
   if (error) return { success: false, error: error.message };
 
   revalidatePath(`/admin/matches/${matchId}`);
   revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/matches/fun");
   return { success: true, matchId, marketId: data as string };
+}
+
+export async function closeFunMarketAction(
+  marketId: string,
+  matchId: number,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("admin_close_fun_market", {
+    p_market_id: marketId,
+  });
+
+  if (error) {
+    const m = error.message.toLowerCase();
+    if (m.includes("only open")) {
+      return {
+        success: false,
+        error: "Seuls les paris fun ouverts peuvent être fermés.",
+      };
+    }
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(`/admin/matches/${matchId}`);
+  revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/matches/fun");
+  revalidatePath("/bets");
+  return { success: true, matchId };
 }
 
 export async function updateFunMarketAction(

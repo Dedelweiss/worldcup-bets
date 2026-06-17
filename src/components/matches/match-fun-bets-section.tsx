@@ -3,8 +3,9 @@ import { FunBetSlip } from "@/components/bets/fun-bet-slip";
 import { Badge } from "@/components/ui/badge";
 import type { MatchUserFunBet } from "@/lib/bets/match-user-fun-bets";
 import type { FunMarketParticipationByMarket } from "@/lib/bets/fun-market-participation";
+import { isFunMarketBettingOpen } from "@/lib/bets/fun-market-betting";
 import { cn } from "@/lib/utils";
-import type { FunMarket } from "@/types/database";
+import type { FunMarket, MatchWithTeams } from "@/types/database";
 
 const STATUS_SORT: Record<FunMarket["status"], number> = {
   open: 0,
@@ -14,6 +15,7 @@ const STATUS_SORT: Record<FunMarket["status"], number> = {
 
 interface MatchFunBetsSectionProps {
   markets: FunMarket[];
+  match: Pick<MatchWithTeams, "status" | "kickoff_at">;
   funBetsByMarket: Map<string, MatchUserFunBet>;
   funParticipationByMarket: FunMarketParticipationByMarket;
   currentUserId: string;
@@ -23,6 +25,7 @@ interface MatchFunBetsSectionProps {
 
 export function MatchFunBetsSection({
   markets,
+  match,
   funBetsByMarket,
   funParticipationByMarket,
   currentUserId,
@@ -31,7 +34,7 @@ export function MatchFunBetsSection({
 }: MatchFunBetsSectionProps) {
   if (markets.length === 0) return null;
 
-  const openCount = markets.filter((m) => m.status === "open").length;
+  const openCount = markets.filter((m) => isFunMarketBettingOpen(m, match)).length;
   const playedCount = markets.filter((m) => funBetsByMarket.has(m.id)).length;
 
   const sortedMarkets = [...markets].sort(
@@ -74,8 +77,9 @@ export function MatchFunBetsSection({
                 )}
               </div>
               <p className="max-w-xl text-sm text-muted-foreground">
-                Questions bonus sur le match — ouverts avant, pendant et après le
-                coup d&apos;envoi jusqu&apos;à clôture admin.
+                Pré-match : pariables avant le coup d&apos;envoi. Live : fenêtre
+                de 2 minutes en direct. Les paris événementiels en cours de
+                match sont interdits.
               </p>
             </div>
             {playedCount > 0 && (
@@ -91,6 +95,7 @@ export function MatchFunBetsSection({
             <FunBetSlip
               key={market.id}
               market={market}
+              match={match}
               isGoldenMatch={isGoldenMatch}
               userBet={funBetsByMarket.get(market.id) ?? null}
               participants={funParticipationByMarket.get(market.id) ?? []}

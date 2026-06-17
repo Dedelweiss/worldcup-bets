@@ -57,6 +57,7 @@ export default async function AdminMatchPage({
       )}
       <FunMarketsAdmin
         matchId={matchId}
+        match={match}
         markets={funMarkets}
         betsByMarket={funMarketBets}
       />
