@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLink } from "@/components/layout/nav-link";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -51,15 +51,15 @@ export function MatchPageHero({
       )}
     >
       <div className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-2.5 md:px-5">
-        <Link
+        <NavLink
           href="/dashboard"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-4 shrink-0" />
           Retour
-        </Link>
+        </NavLink>
         {adminEditHref && (
-          <Link
+          <NavLink
             href={adminEditHref}
             className={cn(
               buttonVariants({ variant: "outline", size: "sm" }),
@@ -68,7 +68,7 @@ export function MatchPageHero({
           >
             <Pencil className="size-3.5" />
             <span className="hidden sm:inline">Modifier</span>
-          </Link>
+          </NavLink>
         )}
       </div>
 

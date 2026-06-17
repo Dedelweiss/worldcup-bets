@@ -11,9 +11,10 @@ type HapticLinkProps = ComponentProps<typeof Link> & {
 export function HapticLink({
   onClick,
   haptic = "light",
+  prefetch = false,
   ...props
 }: HapticLinkProps) {
   return (
-    <Link {...props} onClick={bindHapticClick(onClick, haptic)} />
+    <Link {...props} prefetch={prefetch} onClick={bindHapticClick(onClick, haptic)} />
   );
 }

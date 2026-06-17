@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLink } from "@/components/layout/nav-link";
 import { AppNavLinks } from "@/components/layout/app-nav-links";
 import { appNav } from "@/components/layout/app-nav";
 import { SiteLogo } from "@/components/layout/site-logo";
@@ -13,7 +13,7 @@ export function AppSidebar({ profile }: AppSidebarProps) {
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-white/10 bg-zinc-950/95 backdrop-blur-xl md:flex">
       <div className="flex h-16 items-center gap-2 border-b border-white/10 px-5">
-        <Link
+        <NavLink
           href="/dashboard"
           className="flex min-w-0 items-center gap-2 font-heading text-base font-semibold tracking-tight"
         >
@@ -22,7 +22,7 @@ export function AppSidebar({ profile }: AppSidebarProps) {
             WC<span className="text-lime-400">2026</span>
             <span className="text-zinc-400"> Pool</span>
           </span>
-        </Link>
+        </NavLink>
       </div>
 
       <nav
@@ -40,12 +40,12 @@ export function AppSidebar({ profile }: AppSidebarProps) {
         {profile ? (
           <UserMenu profile={profile} compact />
         ) : (
-          <Link
+          <NavLink
             href="/login"
             className="flex h-9 items-center justify-center rounded-lg bg-lime-400 text-sm font-semibold text-black hover:bg-lime-300"
           >
             Connexion
-          </Link>
+          </NavLink>
         )}
       </div>
     </aside>

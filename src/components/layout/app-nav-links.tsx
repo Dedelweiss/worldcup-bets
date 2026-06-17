@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Shield } from "lucide-react";
+import { NavLink } from "@/components/layout/nav-link";
 import { NavFunBadge } from "@/components/layout/nav-fun-badge";
 import { bindHapticClick } from "@/lib/haptics";
 import { cn } from "@/lib/utils";
@@ -49,7 +49,7 @@ export function AppNavLinks({
         const isFun = item.href === "/matches/fun";
 
         const link = (
-          <Link
+          <NavLink
             href={item.href}
             onClick={bindHapticClick(onNavigate, "light")}
             className={cn(
@@ -66,7 +66,7 @@ export function AppNavLinks({
           >
             {item.label}
             {isFun && <NavFunBadge />}
-          </Link>
+          </NavLink>
         );
 
         if (variant === "mobile") {
@@ -88,7 +88,7 @@ export function AppNavLinks({
       {showAdmin &&
         (variant === "mobile" ? (
           <li className="mt-2 border-t border-border pt-2">
-            <Link
+            <NavLink
               href="/admin"
               onClick={bindHapticClick(onNavigate, "light")}
               className={cn(
@@ -99,11 +99,11 @@ export function AppNavLinks({
             >
               <Shield className="size-4 shrink-0" aria-hidden />
               Administration
-            </Link>
+            </NavLink>
           </li>
         ) : variant === "sidebar" ? (
           <div className="w-full">
-            <Link
+            <NavLink
               href="/admin"
               onClick={bindHapticClick(onNavigate, "light")}
               className={cn(
@@ -114,10 +114,10 @@ export function AppNavLinks({
               )}
             >
               Admin
-            </Link>
+            </NavLink>
           </div>
         ) : (
-          <Link
+          <NavLink
             href="/admin"
             onClick={bindHapticClick(onNavigate, "light")}
             className={cn(
@@ -127,7 +127,7 @@ export function AppNavLinks({
             )}
           >
             Admin
-          </Link>
+          </NavLink>
         ))}
     </>
   );

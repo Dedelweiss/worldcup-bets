@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import Link from "next/link";
+import { NavLink } from "@/components/layout/nav-link";
 import { CircleHelp, Menu, X } from "lucide-react";
 import { AppNavLinks } from "@/components/layout/app-nav-links";
 import { bindHapticClick } from "@/lib/haptics";
@@ -74,14 +74,14 @@ export function MobileNav({ items, showAdmin }: MobileNavProps) {
                 />
               </ul>
               <div className="shrink-0 border-t border-border p-3">
-                <Link
+                <NavLink
                   href="/help"
                   onClick={bindHapticClick(() => setOpen(false), "light")}
                   className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <CircleHelp className="size-4" />
                   Aide & règles
-                </Link>
+                </NavLink>
               </div>
             </nav>
           </div>,

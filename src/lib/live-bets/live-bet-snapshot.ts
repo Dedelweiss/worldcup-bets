@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { MATCH_RESULT_COPY } from "@/lib/bets/match-result-copy";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeMatch } from "@/lib/matches";
@@ -14,7 +15,7 @@ export interface LiveBetsSnapshot {
   items: LiveBetSnapshotItem[];
 }
 
-export async function getLiveBetsSnapshot(
+async function fetchLiveBetsSnapshot(
   userId: string,
 ): Promise<LiveBetsSnapshot> {
   const supabase = await createClient();
@@ -61,3 +62,5 @@ export async function getLiveBetsSnapshot(
 
   return { livePendingCount, items };
 }
+
+export const getLiveBetsSnapshot = cache(fetchLiveBetsSnapshot);

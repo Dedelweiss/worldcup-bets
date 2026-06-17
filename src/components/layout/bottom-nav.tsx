@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { NavLink } from "@/components/layout/nav-link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { LayoutGroup, motion } from "framer-motion";
@@ -219,7 +219,7 @@ export function BottomNav({
                     />
                   )}
 
-                  <Link
+                  <NavLink
                     href={resolved.href}
                     aria-label={isLiveShortcut ? resolved.ariaLabel : label}
                     aria-current={active ? "page" : undefined}
@@ -256,7 +256,7 @@ export function BottomNav({
                         </span>
                       )}
                     </motion.span>
-                  </Link>
+                  </NavLink>
                 </li>
               );
             })}

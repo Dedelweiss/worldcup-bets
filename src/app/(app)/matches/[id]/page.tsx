@@ -3,30 +3,24 @@ import { BetSlip } from "@/components/bets/bet-slip";
 import { TackleIncomingAlert } from "@/components/bets/tackle-incoming-alert";
 import { MarkFunBetsSeen } from "@/components/fun-bets/mark-fun-bets-seen";
 import { LiveStatusPoller } from "@/components/dashboard/live-status-poller";
-import { MatchChat } from "@/components/matches/match-chat";
 import { MatchGazette } from "@/components/matches/match-gazette";
 import { HashAnchorScroller } from "@/components/layout/hash-anchor-scroller";
 import { MatchFunBetsSection } from "@/components/matches/match-fun-bets-section";
 import { MatchPageHero } from "@/components/matches/match-page-hero";
+import {
+  MatchChatLazy,
+  PreMatchAssistantLazy,
+} from "@/components/matches/match-page-lazy";
 import { MatchPageNav, type MatchPageNavTab } from "@/components/matches/match-page-nav";
 import { MatchParticipation } from "@/components/matches/match-participation";
-import { PreMatchAssistant } from "@/components/matches/pre-match-assistant";
 import { MatchFinishedPronos } from "@/components/matches/match-finished-pronos";
 import { MatchLivePronos } from "@/components/matches/match-live-pronos";
 import { requireAuth } from "@/lib/auth-server";
 import { canRevealPlayerBets } from "@/lib/bets/can-reveal-player-bets";
-import { getMatchBettingParticipation } from "@/lib/bets/match-participation";
-import { getMatchTackleState } from "@/lib/bets/match-tackle";
-import { getFunMarketParticipation } from "@/lib/bets/fun-market-participation";
 import { isFunMarketBettingOpen } from "@/lib/bets/fun-market-betting";
-import { getMatchUserFunBets } from "@/lib/bets/match-user-fun-bets";
-import { getMatchRevealedBets } from "@/lib/bets/match-live-bets";
-import { getMatchUserPendingBets } from "@/lib/bets/match-user-bets";
-import { getPreMatchInsights } from "@/lib/bets/pre-match-insights";
 import { hasKickoffStarted } from "@/lib/format";
-import { getFunMarketsByMatch } from "@/lib/fun-markets";
-import { getMatchComments } from "@/lib/match-comments";
 import { getMatchById } from "@/lib/matches";
+import { getMatchPageData } from "@/lib/matches/match-page-data";
 import { cn } from "@/lib/utils";
 
 export async function generateMetadata({
@@ -35,7 +29,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const match = await getMatchById(Number(id));
+  const match = await getMatchById(Number(id), { skipLiveSync: true });
   if (!match) return { title: "Match · WC2026 Pool" };
   return {
     title: `${match.home_team.name} vs ${match.away_team.name} · WC2026 Pool`,
@@ -60,33 +54,24 @@ export default async function MatchBetPage({
   const kickoffStarted = hasKickoffStarted(match.kickoff_at);
   const canReveal = canRevealPlayerBets(match);
   const isFinished = match.status === "finished";
-  const isLive = match.status === "live";
-  const showLivePronosBoard = isLive && canReveal;
-  const showFinishedPronosBoard =
-    isFinished && canReveal && profile.role === "admin";
   const isPreMatch = match.status === "scheduled" && !kickoffStarted;
+
+  const {
+    funMarkets,
+    comments,
+    pendingBets,
+    funBetsByMarket,
+    funParticipationByMarket,
+    participation,
+    tackleState,
+    preMatchInsights,
+    revealedBets,
+    showLivePronosBoard,
+    showFinishedPronosBoard,
+  } = await getMatchPageData(match, profile);
 
   const adminEditHref =
     profile.role === "admin" ? `/admin/matches/${matchId}` : undefined;
-
-  const [funMarkets, comments, pendingBets, funBetsByMarket, funParticipationByMarket, participation, tackleState, preMatchInsights, revealedBets] =
-    await Promise.all([
-      getFunMarketsByMatch(matchId),
-      !isFinished && (kickoffStarted || canReveal)
-        ? getMatchComments(matchId)
-        : Promise.resolve([]),
-      getMatchUserPendingBets(matchId, profile.id),
-      getMatchUserFunBets(matchId, profile.id),
-      getFunMarketParticipation(matchId),
-      getMatchBettingParticipation(matchId),
-      getMatchTackleState(matchId, profile.id, match.stage),
-      !kickoffStarted && match.status === "scheduled"
-        ? getPreMatchInsights(match, profile.id)
-        : Promise.resolve(null),
-      showLivePronosBoard || showFinishedPronosBoard
-        ? getMatchRevealedBets(matchId)
-        : Promise.resolve([]),
-    ]);
 
   const hasFunSection = funMarkets.length > 0;
   const hasClassicBet =
@@ -170,7 +155,7 @@ export default async function MatchBetPage({
 
   const assistantSection = preMatchInsights ? (
     <section id="assistant" className={sectionScrollClass}>
-      <PreMatchAssistant match={match} insights={preMatchInsights} />
+      <PreMatchAssistantLazy match={match} insights={preMatchInsights} />
     </section>
   ) : null;
 
@@ -233,7 +218,7 @@ export default async function MatchBetPage({
 
       {!isFinished && (kickoffStarted || canReveal) && (
         <section id="chambrages" className={sectionScrollClass}>
-          <MatchChat
+          <MatchChatLazy
             matchId={matchId}
             currentUserId={profile.id}
             initialComments={comments}

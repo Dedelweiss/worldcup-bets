@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { NavLink } from "@/components/layout/nav-link";
 import { CircleHelp, LogOut, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { buttonVariants } from "@/components/ui/button";
@@ -46,7 +46,7 @@ export function UserMenu({ profile, compact = false }: UserMenuProps) {
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-0.5">
-        <Link
+        <NavLink
           href="/help"
           onClick={bindHapticClick(undefined, "light")}
           className={cn(
@@ -56,8 +56,8 @@ export function UserMenu({ profile, compact = false }: UserMenuProps) {
           title="Aide & règles"
         >
           <CircleHelp className="size-4" />
-        </Link>
-        <Link
+        </NavLink>
+        <NavLink
           href="/profile"
           onClick={bindHapticClick(undefined, "light")}
           className={cn(
@@ -74,8 +74,8 @@ export function UserMenu({ profile, compact = false }: UserMenuProps) {
               {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
-        </Link>
-        <Link
+        </NavLink>
+        <NavLink
           href="/profile"
           onClick={bindHapticClick(undefined, "light")}
           className={cn(
@@ -86,7 +86,7 @@ export function UserMenu({ profile, compact = false }: UserMenuProps) {
           title="Mon profil"
         >
           <User className="size-4" />
-        </Link>
+        </NavLink>
         <form action="/auth/signout" method="post" className="shrink-0">
           <button
             type="submit"

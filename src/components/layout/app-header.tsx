@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLink } from "@/components/layout/nav-link";
 import { Shield } from "lucide-react";
 import { AppNavLinks } from "@/components/layout/app-nav-links";
 import { HapticLink } from "@/components/ui/haptic-link";
@@ -60,17 +60,17 @@ export function AppHeader({ profile }: AppHeaderProps) {
           {profile ? (
             <UserMenu profile={profile} />
           ) : (
-            <Link href="/login" className={cn(buttonVariants({ size: "sm" }))}>
+            <NavLink href="/login" className={cn(buttonVariants({ size: "sm" }))}>
               Connexion
-            </Link>
+            </NavLink>
           )}
         </div>
 
         <div className="hidden md:block">
           {profile ? null : (
-            <Link href="/login" className={cn(buttonVariants({ size: "sm" }))}>
+            <NavLink href="/login" className={cn(buttonVariants({ size: "sm" }))}>
               Connexion
-            </Link>
+            </NavLink>
           )}
         </div>
       </div>
