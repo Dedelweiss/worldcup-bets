@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { NavLink } from "@/components/layout/nav-link";
 import { TeamFlag } from "@/components/shared/team-flag";
+import { TeamNavLink } from "@/components/shared/team-nav-link";
 import { cn } from "@/lib/utils";
-import { isTbdTeam } from "@/lib/tournament/tbd-team";
 import type { GroupStandings } from "@/lib/tournament/standings";
 
 type GroupFilter = "all" | number;
@@ -151,24 +150,18 @@ function GroupStandingsTable({
                   {index + 1}
                 </td>
                 <td className="px-2 py-2">
-                  <div className="flex min-w-0 items-center gap-2">
+                  <TeamNavLink
+                    team={row.team}
+                    className="flex min-w-0 items-center gap-2"
+                  >
                     <TeamFlag
                       name={row.team.name}
                       code={row.team.code}
                       logoUrl={row.team.logo_url}
                       size={22}
                     />
-                    {isTbdTeam(row.team) ? (
-                      <span className="truncate font-medium">{row.team.name}</span>
-                    ) : (
-                      <NavLink
-                        href={`/teams/${row.team.id}`}
-                        className="truncate font-medium transition-colors hover:text-primary"
-                      >
-                        {row.team.name}
-                      </NavLink>
-                    )}
-                  </div>
+                    <span className="truncate font-medium">{row.team.name}</span>
+                  </TeamNavLink>
                 </td>
                 <td className="px-1 py-2 text-center tabular-nums text-muted-foreground">
                   {row.played}

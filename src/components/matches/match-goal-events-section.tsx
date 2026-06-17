@@ -1,4 +1,5 @@
 import { TeamFlag } from "@/components/shared/team-flag";
+import { TeamNavLink } from "@/components/shared/team-nav-link";
 import { TournamentScorersList } from "@/components/tournament/tournament-scorers-list";
 import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
 import { cn } from "@/lib/utils";
@@ -116,14 +117,16 @@ function GoalTimeline({
               <span className="w-10 shrink-0 pt-0.5 text-right font-mono text-sm font-semibold tabular-nums text-primary">
                 {event.minute}&apos;
               </span>
-              <TeamFlag
-                name={team.name}
-                code={team.code}
-                logoUrl={team.logo_url}
-                teamId={team.id}
-                size={24}
-                className="mt-0.5 shrink-0"
-              />
+              <TeamNavLink team={team} className="mt-0.5 shrink-0">
+                <TeamFlag
+                  name={team.name}
+                  code={team.code}
+                  logoUrl={team.logo_url}
+                  teamId={team.id}
+                  size={24}
+                  className="mt-0.5 shrink-0"
+                />
+              </TeamNavLink>
               <div className="min-w-0 flex-1">
                 <p className="font-medium leading-snug">
                   {event.scorerName}

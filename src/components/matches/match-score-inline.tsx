@@ -1,5 +1,6 @@
 import { HeroTeamBlock } from "@/components/matches/hero-team-block";
 import { TeamFlag } from "@/components/shared/team-flag";
+import { TeamNavLink } from "@/components/shared/team-nav-link";
 import { cn } from "@/lib/utils";
 import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
 import type { MatchWithTeams } from "@/types/database";
@@ -16,12 +17,14 @@ function TeamLogo({
   team,
   size,
   className,
+  linkable = true,
 }: {
   team: Team;
   size: number;
   className?: string;
+  linkable?: boolean;
 }) {
-  return (
+  const flag = (
     <TeamFlag
       name={team.name}
       code={team.code}
@@ -30,6 +33,14 @@ function TeamLogo({
       size={size}
       className={className}
     />
+  );
+
+  if (!linkable) return flag;
+
+  return (
+    <TeamNavLink team={team} className="shrink-0">
+      {flag}
+    </TeamNavLink>
   );
 }
 
@@ -159,12 +170,12 @@ export function MatchScoreInline({
         <TeamLogo team={awayTeam} size={flagSize} />
       </div>
       <div className="flex w-full max-w-[min(100%,280px)] justify-between gap-6 px-1 text-[11px] text-muted-foreground sm:text-xs">
-        <span className="max-w-[42%] truncate text-right">
+        <TeamNavLink team={homeTeam} className="max-w-[42%] truncate text-right">
           {tbdTeamDisplayName(homeTeam)}
-        </span>
-        <span className="max-w-[42%] truncate text-left">
+        </TeamNavLink>
+        <TeamNavLink team={awayTeam} className="max-w-[42%] truncate text-left">
           {tbdTeamDisplayName(awayTeam)}
-        </span>
+        </TeamNavLink>
       </div>
     </div>
   );

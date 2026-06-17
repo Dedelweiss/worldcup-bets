@@ -1,4 +1,5 @@
 import { TeamFlag } from "@/components/shared/team-flag";
+import { TeamNavLink } from "@/components/shared/team-nav-link";
 import { TournamentScorersList } from "@/components/tournament/tournament-scorers-list";
 import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
 import type { MatchWithTeams, TournamentScorer } from "@/types/database";
@@ -74,7 +75,7 @@ function TeamScorersBlock({
 }) {
   return (
     <div className="space-y-3 rounded-2xl border border-white/[0.08] bg-zinc-900/30 p-4">
-      <div className="flex items-center gap-2.5">
+      <TeamNavLink team={team} className="flex items-center gap-2.5">
         <TeamFlag
           name={team.name}
           code={team.code}
@@ -83,7 +84,7 @@ function TeamScorersBlock({
           size={28}
         />
         <h3 className="font-semibold">{tbdTeamDisplayName(team)}</h3>
-      </div>
+      </TeamNavLink>
       <TournamentScorersList
         scorers={scorers}
         syncedAt={syncedAt}

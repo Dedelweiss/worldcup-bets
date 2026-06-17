@@ -33,8 +33,9 @@ export default async function BracketPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Tournoi</h1>
           <p className="text-muted-foreground">
-            Classements de poule et arbre éliminatoire. Cliquez une équipe dans
-            la phase finale pour choisir votre vainqueur (temps réglementaire).
+            Classements de poule et arbre éliminatoire. Cliquez une équipe pour
+            voir sa fiche ; dans la phase finale, cliquez une équipe pour
+            choisir votre vainqueur (temps réglementaire).
           </p>
         </div>
         <Link href="/matches?view=group" className="text-sm text-primary hover:underline">

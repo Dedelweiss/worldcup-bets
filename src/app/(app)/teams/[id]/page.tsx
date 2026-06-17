@@ -45,15 +45,19 @@ export default async function TeamPage({
     <div className="flex w-full flex-col gap-8">
       <TeamPageHero team={team} standing={standing} />
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start lg:gap-10">
-        <div className="space-y-8">
-          <TeamSquadSection squad={team.squad} syncedAt={team.squad_synced_at} />
-          <TeamTournamentScorersSection
-            scorers={tournamentScorers.scorers}
-            syncedAt={tournamentScorers.syncedAt}
-            totalGoals={tournamentScorers.totalGoals}
-          />
-        </div>
+      <TeamSquadSection
+        squad={team.squad}
+        syncedAt={team.squad_synced_at}
+        teamName={team.name}
+        teamCode={team.code}
+      />
+
+      <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-10">
+        <TeamTournamentScorersSection
+          scorers={tournamentScorers.scorers}
+          syncedAt={tournamentScorers.syncedAt}
+          totalGoals={tournamentScorers.totalGoals}
+        />
         <TeamFixturesSection
           teamId={team.id}
           liveMatches={liveMatches}

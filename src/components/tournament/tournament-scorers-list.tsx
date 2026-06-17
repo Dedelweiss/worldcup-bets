@@ -58,24 +58,31 @@ export function TournamentScorersList({
         {scorers.map((scorer, index) => (
           <li
             key={scorer.playerId}
-            className="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-zinc-900/35 px-3 py-2.5"
+            className="flex items-start gap-3 rounded-xl border border-white/[0.06] bg-zinc-900/35 px-3 py-2.5"
           >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-sm font-bold tabular-nums text-muted-foreground">
+            <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-sm font-bold tabular-nums text-muted-foreground">
               {index + 1}
             </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-medium leading-tight">
+            <div className="flex-1 space-y-1.5">
+              <p className="font-medium leading-snug [overflow-wrap:anywhere]">
                 {scorer.playerName}
               </p>
               {(showTeamName || scorer.assists != null) && (
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  {showTeamName ? scorer.teamName : null}
-                  {showTeamName && scorer.assists != null ? " · " : null}
-                  {scorer.assists != null ? `${scorer.assists} passe${scorer.assists > 1 ? "s" : ""} D` : null}
-                </p>
+                <ul className="flex flex-wrap gap-1.5">
+                  {showTeamName ? (
+                    <li className="rounded-md bg-white/[0.05] px-2 py-0.5 text-xs text-muted-foreground [overflow-wrap:anywhere]">
+                      {scorer.teamName}
+                    </li>
+                  ) : null}
+                  {scorer.assists != null ? (
+                    <li className="rounded-md bg-white/[0.05] px-2 py-0.5 text-xs text-muted-foreground">
+                      {scorer.assists} passe{scorer.assists > 1 ? "s" : ""} D
+                    </li>
+                  ) : null}
+                </ul>
               )}
             </div>
-            <span className="flex shrink-0 items-center gap-1 text-lg font-bold tabular-nums text-primary">
+            <span className="mt-0.5 flex shrink-0 items-center gap-1 text-lg font-bold tabular-nums text-primary">
               <Goal className="size-4 opacity-70" aria-hidden />
               {scorer.goals}
             </span>

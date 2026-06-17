@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { TeamFlag } from "@/components/shared/team-flag";
+import { TeamNavLink } from "@/components/shared/team-nav-link";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { LiveMatchAnimation } from "@/components/matches/live-match-animation";
@@ -25,7 +26,7 @@ interface MatchCardProps {
 
 function TeamRow({ team }: { team: Team }) {
   return (
-    <div className="flex flex-1 flex-col items-center gap-2">
+    <TeamNavLink team={team} className="flex flex-1 flex-col items-center gap-2">
       <TeamFlag
         name={team.name}
         code={team.code}
@@ -37,7 +38,7 @@ function TeamRow({ team }: { team: Team }) {
       <span className="max-w-[5.5rem] truncate text-center text-xs font-medium">
         {tbdTeamDisplayName(team)}
       </span>
-    </div>
+    </TeamNavLink>
   );
 }
 

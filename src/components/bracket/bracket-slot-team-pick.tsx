@@ -6,6 +6,7 @@ import { Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { placeBetAction } from "@/app/(app)/matches/actions";
 import { TeamFlag } from "@/components/shared/team-flag";
+import { TeamNavLink } from "@/components/shared/team-nav-link";
 import { canPlaceBetOnMatch } from "@/lib/bets/can-place-bet-on-match";
 import { formatOdd } from "@/lib/format";
 import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
@@ -222,21 +223,17 @@ function TeamLine({
   highlight,
   compact,
   muted,
+  linkable = true,
 }: {
   team: Pick<Team, "id" | "name" | "code" | "logo_url">;
   score?: number | null;
   highlight?: boolean;
   compact?: boolean;
   muted?: boolean;
+  linkable?: boolean;
 }) {
-  return (
-    <div
-      className={cn(
-        "flex items-center justify-between gap-1",
-        highlight && "font-semibold text-primary",
-        muted && "text-muted-foreground/80",
-      )}
-    >
+  const row = (
+    <>
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <TeamFlag
           name={team.name}
@@ -252,6 +249,22 @@ function TeamLine({
       {score != null && (
         <span className="shrink-0 tabular-nums text-[11px] font-bold">{score}</span>
       )}
-    </div>
+    </>
+  );
+
+  const shellClass = cn(
+    "flex items-center justify-between gap-1",
+    highlight && "font-semibold text-primary",
+    muted && "text-muted-foreground/80",
+  );
+
+  if (!linkable) {
+    return <div className={shellClass}>{row}</div>;
+  }
+
+  return (
+    <TeamNavLink team={team} className={shellClass}>
+      {row}
+    </TeamNavLink>
   );
 }

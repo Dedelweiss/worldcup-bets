@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { HeroTeamBlock } from "@/components/matches/hero-team-block";
 import { TeamFlag } from "@/components/shared/team-flag";
+import { TeamNavLink } from "@/components/shared/team-nav-link";
 import { cn } from "@/lib/utils";
 import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
 import type { Team } from "@/types/database";
@@ -11,7 +12,10 @@ function TeamBadge({ team }: { team: Team }) {
   const name = tbdTeamDisplayName(team);
 
   return (
-    <div className="relative z-10 flex shrink-0 flex-col items-center gap-1">
+    <TeamNavLink
+      team={team}
+      className="relative z-10 flex shrink-0 flex-col items-center gap-1"
+    >
       <TeamFlag
         name={team.name}
         code={team.code}
@@ -23,7 +27,7 @@ function TeamBadge({ team }: { team: Team }) {
       <span className="max-w-[72px] truncate text-[10px] font-medium text-muted-foreground">
         {name}
       </span>
-    </div>
+    </TeamNavLink>
   );
 }
 

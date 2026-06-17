@@ -92,3 +92,107 @@ const POSITION_STYLES: Record<SquadPositionGroup, SquadPositionStyle> = {
 export function squadPositionStyle(position: string | null): SquadPositionStyle {
   return POSITION_STYLES[squadPositionGroup(position)];
 }
+
+function normalizeCountryToken(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+/**
+ * Synonymes nationalité (API football-data, souvent en anglais) ↔ équipe affichée (souvent en français).
+ * Clé = code interne seed (MX, FR, GB-ENG…).
+ */
+const NATIONALITY_EQUIVALENTS_BY_TEAM_CODE: Record<string, string[]> = {
+  MX: ["mexico", "mexique", "mex"],
+  ZA: ["southafrica", "afriquedusud", "rsa"],
+  KR: ["korea", "korearepublic", "southkorea", "coreedusud", "kor"],
+  CZ: ["czech", "czechia", "czechrepublic", "tchequie", "cze"],
+  CA: ["canada", "can"],
+  BA: ["bosnia", "bosniaandherzegovina", "bosnieherzegovine", "bih"],
+  QA: ["qatar", "qat"],
+  CH: ["switzerland", "suisse", "sui"],
+  BR: ["brazil", "bresil", "bra"],
+  MA: ["morocco", "maroc", "mar"],
+  HT: ["haiti", "hai"],
+  "GB-SCT": ["scotland", "ecosse", "sco"],
+  US: ["unitedstates", "usa", "america", "etatsunis"],
+  PY: ["paraguay", "par"],
+  AU: ["australia", "australie", "aus"],
+  TR: ["turkey", "turkiye", "turquie", "tur"],
+  DE: ["germany", "allemagne", "ger"],
+  CW: ["curacao", "cuw"],
+  CI: ["ivorycoast", "cotedivoire", "coteivoire", "civ"],
+  EC: ["ecuador", "equateur", "ecu"],
+  NL: ["netherlands", "holland", "paysbas", "ned"],
+  JP: ["japan", "japon", "jpn"],
+  SE: ["sweden", "suede", "swe"],
+  TN: ["tunisia", "tunisie", "tun"],
+  BE: ["belgium", "belgique", "bel"],
+  EG: ["egypt", "egypte", "egy"],
+  IR: ["iran", "irn"],
+  NZ: ["newzealand", "nouvellezelande", "nzl"],
+  ES: ["spain", "espagne", "esp"],
+  CV: ["capeverde", "capvert", "cpv"],
+  SA: ["saudiarabia", "arabiesaoudite", "ksa"],
+  UY: ["uruguay", "uru"],
+  FR: ["france", "fra"],
+  SN: ["senegal", "sen"],
+  NO: ["norway", "norvege", "nor"],
+  IQ: ["iraq", "irak", "irq"],
+  AR: ["argentina", "argentine", "arg"],
+  DZ: ["algeria", "algerie", "alg"],
+  AT: ["austria", "autriche", "aut"],
+  JO: ["jordan", "jordanie", "jor"],
+  PT: ["portugal", "por"],
+  CD: ["congo", "drcongo", "democraticrepublicofthecongo", "rdcongo", "cod"],
+  UZ: ["uzbekistan", "ouzbekistan", "uzb"],
+  CO: ["colombia", "colombie", "col"],
+  "GB-ENG": ["england", "angleterre", "eng"],
+  HR: ["croatia", "croatie", "cro"],
+  GH: ["ghana", "gha"],
+  PA: ["panama", "pan"],
+};
+
+function nationalityMatchesTeam(
+  nationality: string,
+  teamName: string,
+  teamCode: string | null,
+): boolean {
+  const n = normalizeCountryToken(nationality);
+  if (!n) return false;
+
+  const candidates = new Set<string>();
+  candidates.add(normalizeCountryToken(teamName));
+
+  if (teamCode) {
+    const key = teamCode.trim().toUpperCase();
+    for (const token of NATIONALITY_EQUIVALENTS_BY_TEAM_CODE[key] ?? []) {
+      candidates.add(token);
+    }
+    candidates.add(normalizeCountryToken(key));
+    candidates.add(normalizeCountryToken(key.replace("GB-", "")));
+  }
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    if (n === candidate) return true;
+    if (candidate.length >= 4 && (n.includes(candidate) || candidate.includes(n))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/** Masque la nationalité quand elle correspond déjà à la sélection. */
+export function shouldShowPlayerNationality(
+  nationality: string | null,
+  teamName: string,
+  teamCode: string | null,
+): boolean {
+  if (!nationality?.trim()) return false;
+  return !nationalityMatchesTeam(nationality, teamName, teamCode);
+}
