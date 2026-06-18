@@ -22,6 +22,7 @@ import { OnboardingTeamGrid } from "@/components/onboarding/onboarding-team-grid
 import { TeamFlag } from "@/components/shared/team-flag";
 import { Button } from "@/components/ui/button";
 import { formatPoints } from "@/lib/format";
+import { hasValidChoiceOptions } from "@/lib/prediction-campaigns/choice-options";
 import type { PredictionCampaign } from "@/lib/onboarding/campaigns";
 import {
   getStepTheme,
@@ -228,6 +229,9 @@ export function OnboardingWizard({
     const q = currentStep.question;
     if (q.type === "team") return teamSelection != null;
     if (q.type === "player") return playerSelection != null;
+    if (!hasValidChoiceOptions(q.options)) {
+      return !q.required;
+    }
     return choiceSelection != null;
   }, [currentStep, teamSelection, playerSelection, choiceSelection]);
 
@@ -249,6 +253,13 @@ export function OnboardingWizard({
         team_name: playerSelection.teamName,
       };
     } else {
+      if (!hasValidChoiceOptions(q.options)) {
+        if (!q.required) return true;
+        setError(
+          "Cette question n'est pas configurée. Ajoutez des options dans l'admin (Formulaires).",
+        );
+        return false;
+      }
       if (!choiceSelection) return false;
       answer = { choice_id: choiceSelection };
     }
@@ -378,15 +389,27 @@ export function OnboardingWizard({
               />
             )}
             {currentStep.question.type === "choice" &&
-              currentStep.question.options && (
+              (hasValidChoiceOptions(currentStep.question.options) ? (
                 <OnboardingChoiceCards
-                  options={currentStep.question.options}
+                  options={currentStep.question.options!}
                   value={choiceSelection}
                   onChange={setChoiceSelection}
                   disabled={loading}
                   accentClass={stepTheme.accentClass}
                 />
-              )}
+              ) : (
+                <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
+                  <p className="text-sm text-amber-300/90">
+                    Cette question n&apos;est pas encore configurée (options
+                    manquantes).
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {currentStep.question.required
+                      ? "Un administrateur doit ajouter au moins 2 options dans Formulaires avant de continuer."
+                      : "Vous pouvez passer cette étape — la question sera ignorée."}
+                  </p>
+                </div>
+              ))}
           </div>
         </div>
       )}

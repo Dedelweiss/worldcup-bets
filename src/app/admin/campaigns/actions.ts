@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth-server";
 import {
+  parseChoiceOptions,
+  validateChoiceQuestionOptions,
+} from "@/lib/prediction-campaigns/choice-options";
+import {
   adminDeleteCampaignQuestion,
   adminUpsertCampaign,
   adminUpsertCampaignQuestion,
@@ -153,6 +157,26 @@ export async function saveCampaignQuestionAction(
   const excludeSame = String(formData.get("excludeSameTeamAs") ?? "").trim();
   if (excludeSame) {
     config.excludeSameTeamAs = excludeSame;
+  }
+
+  const optionsRaw = String(formData.get("optionsJson") ?? "").trim();
+  if (optionsRaw) {
+    try {
+      config.options = parseChoiceOptions(JSON.parse(optionsRaw));
+    } catch {
+      return { success: false, error: "JSON des options invalide." };
+    }
+  }
+
+  if (questionType === "choice") {
+    const options = parseChoiceOptions(config.options);
+    const optionsError = validateChoiceQuestionOptions(options);
+    if (optionsError) {
+      return { success: false, error: optionsError };
+    }
+    config.options = options;
+  } else {
+    delete config.options;
   }
 
   try {

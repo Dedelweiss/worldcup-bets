@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import {
   deleteCampaignAction,
   deleteCampaignQuestionAction,
@@ -12,6 +12,8 @@ import type {
   PredictionCampaignQuestionRow,
   PredictionCampaignRow,
 } from "@/lib/prediction-campaigns/db";
+import { parseChoiceOptions, hasValidChoiceOptions } from "@/lib/prediction-campaigns/choice-options";
+import type { OnboardingChoiceOption } from "@/lib/onboarding/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -330,7 +332,11 @@ function QuestionEditCard({
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [questionType, setQuestionType] = useState(question.question_type);
   const config = question.config ?? {};
+  const choiceOptionsInvalid =
+    question.question_type === "choice" &&
+    !hasValidChoiceOptions(parseChoiceOptions(config.options));
 
   if (!open) {
     return (
@@ -343,6 +349,11 @@ function QuestionEditCard({
             {question.question_id} · {question.question_type} ·{" "}
             {question.points_potential} pts
           </p>
+          {choiceOptionsInvalid ? (
+            <p className="mt-1 text-xs text-amber-400">
+              Options manquantes — éditez la question pour débloquer l&apos;onboarding.
+            </p>
+          ) : null}
         </div>
         <div className="flex shrink-0 gap-2">
           <Button
@@ -390,7 +401,10 @@ function QuestionEditCard({
           <select
             id={`type-${question.question_id}`}
             name="questionType"
-            defaultValue={question.question_type}
+            value={questionType}
+            onChange={(e) =>
+              setQuestionType(e.target.value as "team" | "player" | "choice")
+            }
             className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
             <option value="team">Équipe</option>
@@ -435,9 +449,13 @@ function QuestionEditCard({
             : ""
         }
       />
+      <ChoiceOptionsFields
+        questionType={questionType}
+        initialOptions={parseChoiceOptions(config.options)}
+      />
       <div>
         <Label htmlFor={`config-${question.question_id}`}>
-          Config JSON (options pour type choice, etc.)
+          Config JSON (autres paramètres)
         </Label>
         <textarea
           id={`config-${question.question_id}`}
@@ -447,7 +465,11 @@ function QuestionEditCard({
             Object.fromEntries(
               Object.entries(config).filter(
                 ([k]) =>
-                  !["requiresFavoriteTeamOpen", "excludeSameTeamAs"].includes(k),
+                  ![
+                    "requiresFavoriteTeamOpen",
+                    "excludeSameTeamAs",
+                    "options",
+                  ].includes(k),
               ),
             ),
             null,
@@ -485,6 +507,9 @@ function QuestionCreateForm({
   onCreate: (fd: FormData) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [questionType, setQuestionType] = useState<"team" | "player" | "choice">(
+    "player",
+  );
 
   if (!open) {
     return (
@@ -518,7 +543,10 @@ function QuestionCreateForm({
           <select
             id="new-q-type"
             name="questionType"
-            defaultValue="player"
+            value={questionType}
+            onChange={(e) =>
+              setQuestionType(e.target.value as "team" | "player" | "choice")
+            }
             className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
             <option value="team">Équipe</option>
@@ -533,7 +561,7 @@ function QuestionCreateForm({
         <input type="checkbox" name="required" defaultChecked />
         Obligatoire
       </label>
-      <Field label="Config JSON" name="configJson" placeholder='{"options":[]}' />
+      <ChoiceOptionsFields questionType={questionType} />
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={disabled}>
           Ajouter
@@ -553,6 +581,8 @@ function Field({
   type = "text",
   placeholder,
   required,
+  value,
+  onChange,
 }: {
   label: string;
   name: string;
@@ -560,6 +590,8 @@ function Field({
   type?: string;
   placeholder?: string;
   required?: boolean;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
     <div>
@@ -569,9 +601,133 @@ function Field({
         name={name}
         type={type}
         defaultValue={defaultValue}
+        value={value}
+        onChange={onChange}
         placeholder={placeholder}
         required={required}
       />
+    </div>
+  );
+}
+
+const EMPTY_CHOICE_OPTION: OnboardingChoiceOption = {
+  id: "",
+  label: "",
+};
+
+function defaultChoiceOptions(
+  initial?: OnboardingChoiceOption[],
+): OnboardingChoiceOption[] {
+  if (initial?.length) {
+    return initial.map((option) => ({ ...option }));
+  }
+  return [{ ...EMPTY_CHOICE_OPTION }, { ...EMPTY_CHOICE_OPTION }];
+}
+
+function ChoiceOptionsFields({
+  questionType,
+  initialOptions,
+}: {
+  questionType: "team" | "player" | "choice";
+  initialOptions?: OnboardingChoiceOption[];
+}) {
+  const [options, setOptions] = useState(() =>
+    defaultChoiceOptions(initialOptions),
+  );
+
+  useEffect(() => {
+    setOptions(defaultChoiceOptions(initialOptions));
+  }, [initialOptions, questionType]);
+
+  if (questionType !== "choice") {
+    return null;
+  }
+
+  function updateOption(
+    index: number,
+    field: keyof OnboardingChoiceOption,
+    value: string,
+  ) {
+    setOptions((prev) =>
+      prev.map((option, i) =>
+        i === index ? { ...option, [field]: value } : option,
+      ),
+    );
+  }
+
+  function addOption() {
+    setOptions((prev) => [...prev, { ...EMPTY_CHOICE_OPTION }]);
+  }
+
+  function removeOption(index: number) {
+    setOptions((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  return (
+    <div className="space-y-3 rounded-lg border border-white/10 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-medium">
+          Options <span className="text-red-400">*</span>
+        </p>
+        <Button type="button" size="sm" variant="outline" onClick={addOption}>
+          <Plus className="size-4" />
+          Ajouter
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Minimum 2 options avec un identifiant unique et un libellé.
+      </p>
+      <input
+        type="hidden"
+        name="optionsJson"
+        value={JSON.stringify(options)}
+      />
+      <div className="space-y-2">
+        {options.map((option, index) => (
+          <div
+            key={index}
+            className="grid gap-2 rounded-md border border-white/10 p-2 sm:grid-cols-[1fr_1fr_1fr_auto]"
+          >
+            <Field
+              label="Identifiant"
+              name={`option-id-${index}`}
+              placeholder="lt_130"
+              value={option.id}
+              onChange={(e) => updateOption(index, "id", e.target.value)}
+              required
+            />
+            <Field
+              label="Libellé"
+              name={`option-label-${index}`}
+              placeholder="Moins de 130"
+              value={option.label}
+              onChange={(e) => updateOption(index, "label", e.target.value)}
+              required
+            />
+            <Field
+              label="Description"
+              name={`option-desc-${index}`}
+              placeholder="Optionnel"
+              value={option.description ?? ""}
+              onChange={(e) =>
+                updateOption(index, "description", e.target.value)
+              }
+            />
+            <div className="flex items-end">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={options.length <= 2}
+                onClick={() => removeOption(index)}
+                aria-label="Supprimer l'option"
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
