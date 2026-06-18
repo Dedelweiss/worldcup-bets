@@ -3,9 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { setFavoriteTeamAction } from "@/app/(app)/dashboard/favorite-team-actions";
 import { SignupAvatarPicker } from "@/components/profile/signup-avatar-picker";
-import { FavoriteTeamPicker } from "@/components/profile/favorite-team-picker";
 import { createClient } from "@/lib/supabase/client";
 import {
   normalizeUsername,
@@ -13,28 +11,15 @@ import {
   validateUsernameInput,
 } from "@/lib/auth/username";
 import { DEFAULT_AVATAR_ID } from "@/lib/profile/avatars";
-import { formatPoints } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { TournamentTeam } from "@/types/database";
 
-interface SignupFormProps {
-  teams: TournamentTeam[];
-  selectionOpen: boolean;
-  bonusPoints: number;
-}
-
-export function SignupForm({
-  teams,
-  selectionOpen,
-  bonusPoints,
-}: SignupFormProps) {
+export function SignupForm() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [avatarId, setAvatarId] = useState(DEFAULT_AVATAR_ID);
-  const [favoriteTeamId, setFavoriteTeamId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -53,12 +38,6 @@ export function SignupForm({
 
     if (password.length < 6) {
       setError("Le mot de passe doit contenir au moins 6 caractères.");
-      setLoading(false);
-      return;
-    }
-
-    if (selectionOpen && !favoriteTeamId) {
-      setError("Choisissez votre équipe favorite pour continuer.");
       setLoading(false);
       return;
     }
@@ -87,16 +66,7 @@ export function SignupForm({
     }
 
     if (data.session) {
-      if (selectionOpen && favoriteTeamId) {
-        const teamResult = await setFavoriteTeamAction(Number(favoriteTeamId));
-        if (!teamResult.success) {
-          router.push("/choose-favorite-team");
-          router.refresh();
-          return;
-        }
-      }
-
-      router.push("/dashboard");
+      router.push("/onboarding");
       router.refresh();
       return;
     }
@@ -131,35 +101,6 @@ export function SignupForm({
           </p>
         </div>
         <SignupAvatarPicker value={avatarId} onChange={setAvatarId} />
-        {selectionOpen && (
-          <div className="space-y-2">
-            <Label htmlFor="favorite-team">Équipe favorite</Label>
-            {teams.length > 0 ? (
-              <FavoriteTeamPicker
-                id="favorite-team"
-                teams={teams}
-                value={favoriteTeamId}
-                onChange={setFavoriteTeamId}
-                disabled={loading}
-              />
-            ) : (
-              <p className="rounded-lg border border-dashed border-amber-500/40 bg-amber-500/5 px-3 py-2 text-xs text-amber-200">
-                Liste des équipes indisponible — configurez{" "}
-                <code className="text-[11px]">SUPABASE_SERVICE_ROLE_KEY</code>{" "}
-                ou exécutez le peuplement des équipes dans Supabase.
-              </p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              Choix définitif · +{formatPoints(bonusPoints)} pts si champion du
-              monde · fermé au coup d&apos;envoi du 1er match
-            </p>
-          </div>
-        )}
-        {!selectionOpen && (
-          <p className="rounded-lg border border-dashed border-border/60 bg-muted/10 px-3 py-2 text-xs text-muted-foreground">
-            Le choix d&apos;équipe favorite est fermé (tournoi commencé).
-          </p>
-        )}
         <div className="space-y-2">
           <Label htmlFor="password">Mot de passe</Label>
           <Input
@@ -173,6 +114,10 @@ export function SignupForm({
           />
           <p className="text-xs text-muted-foreground">Minimum 6 caractères</p>
         </div>
+        <p className="rounded-lg border border-dashed border-primary/30 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+          Après la création du compte, vous compléterez vos pronostics pour tout
+          le tournoi (équipe favorite, buteur, finalistes…).
+        </p>
         {error && (
           <p className="text-sm text-destructive" role="alert">
             {error}

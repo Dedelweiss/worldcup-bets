@@ -45,6 +45,7 @@ export default async function DashboardPage() {
           favoriteBonusSettled: false,
           dashboardAnnouncementEnabled: false,
           dashboardAnnouncementMessage: "",
+          activePredictionCampaign: "wc2026",
         },
         [] as Awaited<ReturnType<typeof getAllTournamentTeams>>,
         true,

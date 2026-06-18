@@ -7,6 +7,7 @@ import { getProfile, requireAdmin } from "@/lib/auth-server";
 const adminNav = [
   { href: "/admin", label: "Matchs" },
   { href: "/admin/pronos", label: "Pronos" },
+  { href: "/admin/campaigns", label: "Formulaires" },
   { href: "/admin/leagues", label: "Ligues" },
   { href: "/admin/teams", label: "Équipes" },
   { href: "/admin/matches/new", label: "Créateur" },

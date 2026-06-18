@@ -83,8 +83,8 @@ async function resolveGoalEvents(
   if (html) {
     const events = parseNativeStatsMatchGoals(
       html,
-      match.home_team.name,
-      match.away_team.name,
+      { name: match.home_team.name, code: match.home_team.code },
+      { name: match.away_team.name, code: match.away_team.code },
     );
     if (events.length > 0) {
       return { events, source: "native-stats", apiCalls };

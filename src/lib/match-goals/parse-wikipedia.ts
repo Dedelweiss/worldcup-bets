@@ -4,7 +4,6 @@ import {
   GOAL_EVENTS_USER_AGENT,
   parseGoalMinute,
   sortGoalEvents,
-  teamNamesLooselyMatch,
 } from "@/lib/match-goals/types";
 import type { MatchGoalEvent } from "@/types/database";
 
@@ -46,9 +45,15 @@ function wikiCodeToOurCode(wikiCode: string): string {
   return WIKI_FLAG_TO_OUR[wikiCode] ?? wikiCode;
 }
 
-function ourCodeToWiki(code: string | null): string | null {
-  if (!code) return null;
-  return footballDataTlaForOurCode(code);
+function wikiTeamMatchesOurCode(
+  wikiCode: string,
+  ourCode: string | null,
+): boolean {
+  if (!wikiCode || !ourCode) return false;
+  const mapped = wikiCodeToOurCode(wikiCode).toUpperCase();
+  if (mapped === ourCode.toUpperCase()) return true;
+  const tla = footballDataTlaForOurCode(ourCode);
+  return Boolean(tla && wikiCode.toUpperCase() === tla);
 }
 
 function parseGoalLines(
@@ -113,6 +118,11 @@ function parseFootballBoxes(wikitext: string): WikiFootballBox[] {
   });
 }
 
+function ourCodeToWiki(code: string | null): string | null {
+  if (!code) return null;
+  return footballDataTlaForOurCode(code);
+}
+
 export async function fetchWikipediaGroupWikitext(
   groupLetter: string,
 ): Promise<string | null> {
@@ -150,19 +160,13 @@ export function findWikipediaMatchGoals(
   for (const box of parseFootballBoxes(wikitext)) {
     if (box.date && box.date !== kickoffDay) continue;
 
-    const t1 = wikiCodeToOurCode(box.team1Code);
-    const t2 = wikiCodeToOurCode(box.team2Code);
-    const homeIsTeam1 =
-      (homeWiki && box.team1Code === homeWiki) ||
-      teamNamesLooselyMatch(options.homeName, t1);
-    const homeIsTeam2 =
-      (homeWiki && box.team2Code === homeWiki) ||
-      teamNamesLooselyMatch(options.homeName, t2);
+    const homeOnTeam1 = wikiTeamMatchesOurCode(box.team1Code, options.homeCode);
+    const homeOnTeam2 = wikiTeamMatchesOurCode(box.team2Code, options.homeCode);
 
-    if (!homeIsTeam1 && !homeIsTeam2) continue;
+    if (!homeOnTeam1 && !homeOnTeam2) continue;
 
-    const homeGoals = homeIsTeam1 ? box.goals1 : box.goals2;
-    const awayGoals = homeIsTeam1 ? box.goals2 : box.goals1;
+    const homeGoals = homeOnTeam1 ? box.goals1 : box.goals2;
+    const awayGoals = homeOnTeam1 ? box.goals2 : box.goals1;
 
     const events = [
       ...parseGoalLines(homeGoals, "home", options.homeName),

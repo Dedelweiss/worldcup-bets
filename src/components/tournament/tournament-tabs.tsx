@@ -3,18 +3,21 @@
 import { useState } from "react";
 import { BracketView } from "@/components/bracket/bracket-view";
 import { GroupStandingsView } from "@/components/tournament/group-standings";
+import { TournamentStatsView } from "@/components/tournament/tournament-stats-view";
 import { cn } from "@/lib/utils";
 import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
+import type { TournamentStatsPageData } from "@/lib/tournament/tournament-stats-data";
 import type { BracketSlotWithMatch } from "@/types/database";
 import type { GroupStandings } from "@/lib/tournament/standings";
 
-type Tab = "groups" | "knockout";
+type Tab = "groups" | "knockout" | "stats";
 
 interface TournamentTabsProps {
   standings: GroupStandings[];
   slots: BracketSlotWithMatch[];
   betStatuses?: Record<number, UserMatchBetStatus>;
   isAdmin?: boolean;
+  stats?: TournamentStatsPageData | null;
 }
 
 export function TournamentTabs({
@@ -22,18 +25,20 @@ export function TournamentTabs({
   slots,
   betStatuses = {},
   isAdmin,
+  stats,
 }: TournamentTabsProps) {
   const [tab, setTab] = useState<Tab>("groups");
+
+  const tabs: [Tab, string][] = [
+    ["groups", "Classement poules"],
+    ["knockout", "Phase finale"],
+    ["stats", "Statistiques"],
+  ];
 
   return (
     <div className="min-w-0 space-y-6">
       <div className="flex min-w-0 gap-2 rounded-lg border border-border p-1">
-        {(
-          [
-            ["groups", "Classement poules"],
-            ["knockout", "Phase finale"],
-          ] as const
-        ).map(([id, label]) => (
+        {tabs.map(([id, label]) => (
           <button
             key={id}
             type="button"
@@ -52,12 +57,18 @@ export function TournamentTabs({
 
       {tab === "groups" ? (
         <GroupStandingsView standings={standings} />
-      ) : (
+      ) : tab === "knockout" ? (
         <BracketView
           slots={slots}
           betStatuses={betStatuses}
           isAdmin={isAdmin}
         />
+      ) : stats ? (
+        <TournamentStatsView data={stats} />
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Statistiques indisponibles pour le moment.
+        </p>
       )}
     </div>
   );

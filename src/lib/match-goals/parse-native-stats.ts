@@ -1,5 +1,6 @@
 import {
   detectGoalType,
+  type GoalEventTeamRef,
   mapEventsToSides,
   parseGoalMinute,
   parseScorePair,
@@ -17,8 +18,8 @@ function stripTags(html: string): string {
 
 export function parseNativeStatsMatchGoals(
   html: string,
-  homeTeamName: string,
-  awayTeamName: string,
+  home: GoalEventTeamRef,
+  away: GoalEventTeamRef,
 ): MatchGoalEvent[] {
   const goalsBlock = html.split("<!-- Goals -->")[1]?.split("<!-- Bookings -->")[0];
   if (!goalsBlock) return [];
@@ -57,7 +58,7 @@ export function parseNativeStatsMatchGoals(
   }
 
   if (parsed.length > 0) {
-    return sortGoalEvents(mapEventsToSides(parsed, homeTeamName, awayTeamName));
+    return sortGoalEvents(mapEventsToSides(parsed, home, away));
   }
 
   return [];

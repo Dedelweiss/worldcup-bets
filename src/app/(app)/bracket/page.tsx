@@ -4,14 +4,16 @@ import { getUserMatchBetStatuses } from "@/lib/bets/user-match-status-query";
 import { hasSupabaseConfig, requireAuth } from "@/lib/auth-server";
 import { getBracketSlots } from "@/lib/tournament/queries";
 import { getAllGroupStandings } from "@/lib/tournament/standings";
+import { getTournamentStatsPageData } from "@/lib/tournament/tournament-stats-data";
 
 export const metadata = { title: "Tournoi · Poules & arbre" };
 
 export default async function BracketPage() {
   const profile = hasSupabaseConfig ? await requireAuth() : null;
-  const [slots, standings] = await Promise.all([
+  const [slots, standings, stats] = await Promise.all([
     getBracketSlots(),
     getAllGroupStandings(),
+    getTournamentStatsPageData(),
   ]);
   const isAdmin = profile?.role === "admin";
 
@@ -48,6 +50,7 @@ export default async function BracketPage() {
         slots={slots}
         betStatuses={betStatuses}
         isAdmin={isAdmin}
+        stats={stats}
       />
     </div>
   );

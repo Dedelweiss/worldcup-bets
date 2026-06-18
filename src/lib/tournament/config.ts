@@ -11,6 +11,7 @@ export interface TournamentConfig {
   favoriteBonusSettled: boolean;
   dashboardAnnouncementEnabled: boolean;
   dashboardAnnouncementMessage: string;
+  activePredictionCampaign: string;
 }
 
 const EMPTY_CONFIG: TournamentConfig = {
@@ -20,6 +21,7 @@ const EMPTY_CONFIG: TournamentConfig = {
   favoriteBonusSettled: false,
   dashboardAnnouncementEnabled: false,
   dashboardAnnouncementMessage: "",
+  activePredictionCampaign: "wc2026",
 };
 
 async function fetchTeam(
@@ -41,7 +43,7 @@ export async function getTournamentConfig(): Promise<TournamentConfig> {
   const { data, error } = await supabase
     .from("tournament_config")
     .select(
-      "favorite_team_bonus_points, world_cup_winner_team_id, favorite_bonus_settled_at, dashboard_announcement_enabled, dashboard_announcement_message",
+      "favorite_team_bonus_points, world_cup_winner_team_id, favorite_bonus_settled_at, dashboard_announcement_enabled, dashboard_announcement_message, active_prediction_campaign",
     )
     .eq("id", 1)
     .maybeSingle();
@@ -67,5 +69,8 @@ export async function getTournamentConfig(): Promise<TournamentConfig> {
     dashboardAnnouncementMessage: String(
       data.dashboard_announcement_message ?? "",
     ).trim(),
+    activePredictionCampaign: String(
+      data.active_prediction_campaign ?? "wc2026",
+    ),
   };
 }

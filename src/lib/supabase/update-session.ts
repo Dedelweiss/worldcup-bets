@@ -13,11 +13,88 @@ const PROTECTED_PREFIXES = [
   "/bracket",
   "/help",
   "/choose-favorite-team",
+  "/onboarding",
   "/admin",
 ];
 
-const FAVORITE_TEAM_ROUTE = "/choose-favorite-team";
-const FAVORITE_TEAM_SKIP_PREFIXES = ["/admin", "/api", FAVORITE_TEAM_ROUTE];
+const ONBOARDING_ROUTE = "/onboarding";
+const ONBOARDING_SKIP_PREFIXES = ["/admin", "/api", ONBOARDING_ROUTE];
+
+async function checkNeedsOnboarding(
+  supabase: ReturnType<typeof createServerClient>,
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("user_needs_prediction_onboarding");
+
+  if (error == null) {
+    return Boolean(data);
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select(
+      "onboarding_campaign_id, onboarding_completed_at, is_ai, favorite_team_id",
+    )
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || profile.is_ai) return false;
+
+  const { data: config } = await supabase
+    .from("tournament_config")
+    .select("active_prediction_campaign")
+    .eq("id", 1)
+    .maybeSingle();
+
+  const active =
+    (config?.active_prediction_campaign as string | undefined) ?? "wc2026";
+
+  if (!profileError?.message.includes("onboarding_campaign_id")) {
+    if (profile.onboarding_campaign_id !== active) {
+      return true;
+    }
+  } else if (profile.onboarding_completed_at == null) {
+    return true;
+  }
+
+  const { data: requiredQuestions } = await supabase
+    .from("prediction_campaign_questions")
+    .select("question_id")
+    .eq("campaign_id", active)
+    .eq("required", true);
+
+  if (!requiredQuestions?.length) {
+    if (!profileError?.message.includes("onboarding_campaign_id")) {
+      return profile.onboarding_campaign_id !== active;
+    }
+    return profile.onboarding_completed_at == null;
+  }
+
+  const { data: picks } = await supabase
+    .from("tournament_picks")
+    .select("question_id")
+    .eq("user_id", user.id)
+    .eq("campaign_id", active);
+
+  const answered = new Set(
+    (picks ?? []).map((p: { question_id: string }) => p.question_id),
+  );
+
+  if (
+    profile.favorite_team_id != null &&
+    requiredQuestions.some((q: { question_id: string }) => q.question_id === "favorite_team")
+  ) {
+    answered.add("favorite_team");
+  }
+
+  return requiredQuestions.some(
+    (q: { question_id: string }) => !answered.has(q.question_id),
+  );
+}
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -59,8 +136,9 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && isAuthRoute) {
+    const needsOnboarding = await checkNeedsOnboarding(supabase);
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = needsOnboarding ? ONBOARDING_ROUTE : "/dashboard";
     return NextResponse.redirect(url);
   }
 
@@ -88,53 +166,19 @@ export async function updateSession(request: NextRequest) {
   if (
     user &&
     !isAuthRoute &&
-    !FAVORITE_TEAM_SKIP_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+    !ONBOARDING_SKIP_PREFIXES.some((prefix) => pathname.startsWith(prefix))
   ) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("favorite_team_id, is_ai")
-      .eq("id", user.id)
-      .single();
+    const needsOnboarding = await checkNeedsOnboarding(supabase);
 
-    if (
-      profile &&
-      !profile.is_ai &&
-      profile.favorite_team_id == null
-    ) {
-      const { data: selectionOpen, error: selectionError } = await supabase.rpc(
-        "is_favorite_team_selection_open",
-      );
-
-      const open =
-        selectionError == null
-          ? Boolean(selectionOpen)
-          : await fallbackFavoriteTeamSelectionOpen(supabase);
-
-      if (open) {
-        const url = request.nextUrl.clone();
-        url.pathname = FAVORITE_TEAM_ROUTE;
-        if (pathname !== "/") {
-          url.searchParams.set("next", pathname);
-        }
-        return NextResponse.redirect(url);
+    if (needsOnboarding) {
+      const url = request.nextUrl.clone();
+      url.pathname = ONBOARDING_ROUTE;
+      if (pathname !== "/") {
+        url.searchParams.set("next", pathname);
       }
+      return NextResponse.redirect(url);
     }
   }
 
   return supabaseResponse;
-}
-
-async function fallbackFavoriteTeamSelectionOpen(
-  supabase: ReturnType<typeof createServerClient>,
-): Promise<boolean> {
-  const { data } = await supabase
-    .from("matches")
-    .select("kickoff_at")
-    .not("status", "in", "(cancelled,postponed)")
-    .order("kickoff_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (!data?.kickoff_at) return true;
-  return new Date(String(data.kickoff_at)).getTime() > Date.now();
 }
