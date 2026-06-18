@@ -75,10 +75,11 @@ export function MatchCard({ match, betStatus }: MatchCardProps) {
 
   return (
     <Card
+      interactive
       className={cn(
-        "group overflow-hidden transition-shadow duration-300",
+        "group overflow-hidden",
         goldenMatchCardClass(isGolden, isLive),
-        isUpcoming && "border-white/10 hover:border-sky-500/25 hover:shadow-[0_0_28px_-12px] hover:shadow-sky-500/20",
+        isUpcoming && "hover:border-sky-500/30",
         hasClassicBet && !isGolden && !isLive && "ring-1 ring-primary/30",
         hasFunToPlay && "ring-1 ring-amber-500/40",
       )}

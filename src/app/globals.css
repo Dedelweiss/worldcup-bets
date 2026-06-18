@@ -51,42 +51,76 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Neon Stadium — dark mode exclusif */
+/* Neon Stadium — dark mode exclusif. Refined: disciplined accent, solid surfaces. */
 :root,
 .dark {
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: rgb(24 24 27 / 0.5);
-  --card-foreground: #fafafa;
-  --popover: rgb(24 24 27 / 0.85);
-  --popover-foreground: #fafafa;
-  --primary: #a3e635;
-  --primary-foreground: #000000;
+  --background: #08080a;
+  --foreground: #f5f5f6;
+  /* Card is now a solid surface (was translucent) for cheaper paint + clearer hierarchy */
+  --card: #161619;
+  --card-foreground: #f5f5f6;
+  --popover: rgb(20 20 24 / 0.92);
+  --popover-foreground: #f5f5f6;
+  /* Slightly desaturated lime reads as premium rather than raw neon */
+  --primary: #b6f04a;
+  --primary-foreground: #0a0f00;
   --secondary: rgb(255 255 255 / 0.08);
-  --secondary-foreground: #fafafa;
+  --secondary-foreground: #f5f5f6;
   --muted: rgb(255 255 255 / 0.06);
-  --muted-foreground: #a1a1aa;
-  --accent: rgb(217 70 239 / 0.15);
+  /* Lightened to clear ~7:1 contrast on the base background */
+  --muted-foreground: #a8a8b0;
+  --accent: rgb(232 121 249 / 0.15);
   --accent-foreground: #f0abfc;
-  --destructive: #f87171;
-  --border: rgb(255 255 255 / 0.1);
+  --destructive: #fb7185;
+  --border: rgb(255 255 255 / 0.08);
   --input: rgb(255 255 255 / 0.12);
-  --ring: rgb(163 230 53 / 0.45);
-  --chart-1: #a3e635;
-  --chart-2: #d946ef;
+  --ring: rgb(182 240 74 / 0.5);
+  --chart-1: #b6f04a;
+  --chart-2: #e879f9;
   --chart-3: #38bdf8;
   --chart-4: #fbbf24;
   --chart-5: #fb7185;
   --radius: 1rem;
-  --sidebar: rgb(9 9 11 / 0.95);
-  --sidebar-foreground: #fafafa;
-  --sidebar-primary: #a3e635;
-  --sidebar-primary-foreground: #000000;
+  --sidebar: rgb(8 8 10 / 0.96);
+  --sidebar-foreground: #f5f5f6;
+  --sidebar-primary: #b6f04a;
+  --sidebar-primary-foreground: #0a0f00;
   --sidebar-accent: rgb(255 255 255 / 0.06);
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: rgb(255 255 255 / 0.1);
-  --sidebar-ring: rgb(163 230 53 / 0.45);
+  --sidebar-accent-foreground: #f5f5f6;
+  --sidebar-border: rgb(255 255 255 / 0.08);
+  --sidebar-ring: rgb(182 240 74 / 0.5);
   --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+
+  /* ---- Additive design tokens (referenced via arbitrary values) ---- */
+  /* Surfaces */
+  --color-bg: #08080a;
+  --color-surface: #161619;
+  --color-surface-raised: #1d1d21;
+  --color-glass: rgb(20 20 24 / 0.62);
+  /* Hairlines */
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-line-strong: rgb(255 255 255 / 0.14);
+  /* Accent ramp + semantics */
+  --color-primary-strong: #c9f56e;
+  --color-live: #e879f9;
+  --color-positive: #4ade80;
+  --color-negative: #fb7185;
+  /* Radii: exactly three */
+  --radius-control: 0.625rem;
+  --radius-card: 1.25rem;
+  --radius-modal: 1.75rem;
+  /* Elevation: layered soft shadows, not glow */
+  --shadow-card:
+    0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 1px 2px rgb(0 0 0 / 0.4),
+    0 8px 24px -12px rgb(0 0 0 / 0.6);
+  --shadow-raised:
+    0 1px 0 0 rgb(255 255 255 / 0.06) inset, 0 12px 32px -10px rgb(0 0 0 / 0.7);
+  --shadow-glow: 0 0 24px -6px rgb(182 240 74 / 0.45);
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-slow: 360ms;
 }
 
 @keyframes golden-border-pulse {
@@ -204,4 +238,16 @@
 
 .badge-legendary-shimmer {
   animation: badge-legendary-shimmer 2.4s ease-in-out infinite;
+}
+
+/* Respect users who ask for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
