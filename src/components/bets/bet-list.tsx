@@ -364,6 +364,33 @@ function renderBetItem(bet: BetRow, latestWinId: string | null) {
 type BetsTab = "pending" | "settled";
 type MatchLiveFilter = "all" | "live" | "upcoming";
 
+function betKickoffTime(bet: BetRow): number {
+  const kickoff = bet.match?.kickoff_at;
+  return kickoff ? new Date(kickoff).getTime() : 0;
+}
+
+function betSettledTime(bet: BetRow): number {
+  const settled = bet.settled_at;
+  return settled ? new Date(settled).getTime() : 0;
+}
+
+function betPlacedTime(bet: BetRow): number {
+  return bet.placed_at ? new Date(bet.placed_at).getTime() : 0;
+}
+
+/** Terminés : match le plus récent en premier, puis clôture, puis placement. */
+function sortSettledBets(bets: BetRow[]): BetRow[] {
+  return [...bets].sort((a, b) => {
+    const kickoffDiff = betKickoffTime(b) - betKickoffTime(a);
+    if (kickoffDiff !== 0) return kickoffDiff;
+
+    const settledDiff = betSettledTime(b) - betSettledTime(a);
+    if (settledDiff !== 0) return settledDiff;
+
+    return betPlacedTime(b) - betPlacedTime(a);
+  });
+}
+
 function isBetOnLiveMatch(bet: BetRow): boolean {
   return bet.match?.status === "live";
 }
@@ -498,7 +525,10 @@ export function BetList({ bets }: BetListProps) {
     [bets],
   );
   const settledBets = useMemo(
-    () => bets.filter((b) => b.status === "won" || b.status === "lost"),
+    () =>
+      sortSettledBets(
+        bets.filter((b) => b.status === "won" || b.status === "lost"),
+      ),
     [bets],
   );
 
