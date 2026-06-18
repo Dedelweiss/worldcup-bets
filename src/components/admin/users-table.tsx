@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { Fragment, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { deleteUserAccountAction } from "@/app/admin/actions";
+import { UserJokersAdminFields } from "@/components/admin/user-jokers-admin-fields";
 import { UserProfileAdminFields } from "@/components/admin/user-profile-admin-fields";
+import type { AdminUserJokers } from "@/lib/admin/user-jokers";
 import { Button } from "@/components/ui/button";
 import { formatPoints } from "@/lib/format";
 import type { TournamentTeam, UserRole } from "@/types/database";
@@ -16,6 +18,7 @@ export interface AdminUserRow {
   points: number;
   role: UserRole;
   favorite_team_id: number | null;
+  jokers: AdminUserJokers;
 }
 
 interface UsersTableProps {
@@ -122,7 +125,8 @@ export function UsersTable({
                     </td>
                   </tr>
                   <tr className="border-t border-border/40 bg-muted/10">
-                    <td colSpan={4} className="px-3 py-2 sm:px-4">
+                    <td colSpan={4} className="space-y-2 px-3 py-2 sm:px-4">
+                      <UserJokersAdminFields userId={p.id} jokers={p.jokers} />
                       <UserProfileAdminFields user={p} teams={teams} />
                     </td>
                   </tr>

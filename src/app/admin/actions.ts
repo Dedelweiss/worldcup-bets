@@ -8,7 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { parseRpcUuid } from "@/lib/leagues/parse-uuid";
 import { DEFAULT_KNOCKOUT_BET_NOTE } from "@/lib/tournament/constants";
-import type { MatchStage, MatchStatus } from "@/types/database";
+import type { MatchStage, MatchStatus, TacklePhase } from "@/types/database";
 import type { SyncMatchProvidersResult } from "@/lib/matches/sync-providers";
 import type {
   GroupMatchFormValues,
@@ -863,6 +863,74 @@ export async function adminSetUserUsernameAction(
   revalidatePath("/matches");
 
   return { success: true, username: data as string };
+}
+
+export async function adminRestoreUserBoostAction(
+  userId: string,
+): Promise<ActionResult> {
+  const profile = await requireAdmin();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("admin_restore_user_boost", {
+    p_user_id: userId,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Exécutez supabase/migrations/091_admin_boost_tackle_restore.sql dans Supabase."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  logAppEvent({
+    level: "info",
+    source: "admin.restoreUserBoost",
+    message: "Boost x2 redonné à un joueur",
+    metadata: { targetUserId: userId, result: data },
+    userId: profile.id,
+  });
+
+  revalidatePath("/admin/users");
+  revalidatePath("/dashboard");
+  revalidatePath("/leaderboard");
+  revalidatePath("/matches");
+
+  return { success: true };
+}
+
+export async function adminRestoreUserTackleAction(
+  userId: string,
+  phase: TacklePhase,
+): Promise<ActionResult> {
+  const profile = await requireAdmin();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("admin_restore_user_tackle", {
+    p_user_id: userId,
+    p_phase: phase,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Exécutez supabase/migrations/091_admin_boost_tackle_restore.sql dans Supabase."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  logAppEvent({
+    level: "info",
+    source: "admin.restoreUserTackle",
+    message: "Tacle redonné à un joueur",
+    metadata: { targetUserId: userId, phase, result: data },
+    userId: profile.id,
+  });
+
+  revalidatePath("/admin/users");
+  revalidatePath("/dashboard");
+  revalidatePath("/leaderboard");
+  revalidatePath("/matches");
+
+  return { success: true };
 }
 
 export async function adminSetUserFavoriteTeamAction(
