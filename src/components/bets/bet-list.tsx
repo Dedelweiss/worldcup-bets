@@ -100,6 +100,9 @@ function cardSurfaceClass(bet: BetRow, isLive: boolean): string {
       "border-lime-400/40 hover:border-lime-400/60",
     );
   }
+  if (bet.status === "won" && bet.bet_type === "fun") {
+    return "border-fuchsia-500/45 bg-fuchsia-500/10 shadow-sm shadow-fuchsia-500/10 hover:border-fuchsia-500/65";
+  }
   if (bet.status !== "won" || bet.bet_type !== "exact_score") {
     return "border-border hover:border-primary/40";
   }
@@ -118,6 +121,7 @@ function BetCard({ bet }: { bet: BetRow }) {
   const hasScore =
     match?.home_score != null && match?.away_score != null;
   const settled = bet.status === "won" || bet.status === "lost";
+  const isFunWin = bet.bet_type === "fun" && bet.status === "won";
   const isExactWin =
     bet.bet_type === "exact_score" &&
     bet.status === "won" &&
@@ -155,7 +159,14 @@ function BetCard({ bet }: { bet: BetRow }) {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               {bet.bet_type === "fun" && (
-                <Badge variant="outline" className="text-[10px]">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-[10px]",
+                    isFunWin &&
+                      "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-800 dark:text-fuchsia-200",
+                  )}
+                >
                   Fun
                 </Badge>
               )}
@@ -216,6 +227,8 @@ function BetCard({ bet }: { bet: BetRow }) {
               variant={STATUS_VARIANT[bet.status]}
               className={cn(
                 "shrink-0 text-[10px]",
+                isFunWin &&
+                  "border-fuchsia-500/50 bg-fuchsia-500/25 text-fuchsia-950 dark:text-fuchsia-50",
                 bet.score_precision === "exact" &&
                   bet.status === "won" &&
                   "border-amber-500/50 bg-amber-500/25 text-amber-950 dark:text-amber-50",
@@ -292,11 +305,12 @@ function BetCard({ bet }: { bet: BetRow }) {
               className={cn(
                 "font-semibold tabular-nums",
                 isLive && "text-lime-400",
+                isFunWin && "text-fuchsia-600 dark:text-fuchsia-400",
                 bet.score_precision === "exact"
                   ? "text-amber-600 dark:text-amber-400"
                   : bet.score_precision === "tendance"
                     ? "text-emerald-600 dark:text-emerald-400"
-                    : !isLive && "text-primary",
+                    : !isLive && !isFunWin && "text-primary",
               )}
             >
               +
