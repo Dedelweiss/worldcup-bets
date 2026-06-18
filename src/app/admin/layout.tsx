@@ -4,17 +4,6 @@ import { AdminNav } from "@/components/layout/admin-nav";
 import { AppHeader } from "@/components/layout/app-header";
 import { getProfile, requireAdmin } from "@/lib/auth-server";
 
-const adminNav = [
-  { href: "/admin", label: "Matchs" },
-  { href: "/admin/pronos", label: "Pronos" },
-  { href: "/admin/campaigns", label: "Formulaires" },
-  { href: "/admin/leagues", label: "Ligues" },
-  { href: "/admin/teams", label: "Équipes" },
-  { href: "/admin/matches/new", label: "Créateur" },
-  { href: "/admin/users", label: "Joueurs" },
-  { href: "/admin/logs", label: "Journal" },
-];
-
 export default async function AdminLayout({
   children,
 }: {
@@ -32,7 +21,7 @@ export default async function AdminLayout({
           <span className="font-semibold">Administration</span>
         </div>
         <div className="hidden md:block">
-          <AdminNav items={adminNav} />
+          <AdminNav />
         </div>
         {children}
       </div>
