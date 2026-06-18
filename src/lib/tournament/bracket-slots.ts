@@ -1,3 +1,4 @@
+import { getKnockoutMatchDisplay } from "@/lib/tournament/knockout-match-display";
 import type { BracketSlotWithMatch, MatchStage, MatchWithTeams } from "@/types/database";
 
 const KNOCKOUT_STAGES: MatchStage[] = [
@@ -58,15 +59,18 @@ export function enrichBracketSlotsWithKnockoutMatches(
   const r32List = byStage.get("r32") ?? [];
 
   if (!hasR32Slots && r32List.length > 0) {
-    const virtual: BracketSlotWithMatch[] = r32List.map((m, i) => ({
-      id: `r32-${m.id}`,
-      stage: "r32",
-      label: m.round ?? `32es de finale · ${i + 1}`,
-      bracket_order: i + 1,
-      match_id: m.id,
-      match: m,
-      scheduled_kickoff: m.kickoff_at,
-    }));
+    const virtual: BracketSlotWithMatch[] = r32List.map((m, i) => {
+      const display = getKnockoutMatchDisplay(m.id);
+      return {
+        id: `r32-${m.id}`,
+        stage: "r32",
+        label: display?.title ?? m.round ?? `32es de finale · ${i + 1}`,
+        bracket_order: display?.fifaNo ?? i + 1,
+        match_id: m.id,
+        match: m,
+        scheduled_kickoff: m.kickoff_at,
+      };
+    });
     return [...virtual, ...enriched];
   }
 

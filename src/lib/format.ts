@@ -25,6 +25,8 @@ export function formatKickoff(isoDate: string): string {
   });
 }
 
+export { formatKnockoutKickoff } from "@/lib/tournament/knockout-match-display";
+
 export function formatKickoffRelative(isoDate: string): string {
   const zonedNow = toZonedTime(new Date(), PARIS_TZ);
   const zonedKickoff = toZonedTime(new Date(isoDate), PARIS_TZ);
