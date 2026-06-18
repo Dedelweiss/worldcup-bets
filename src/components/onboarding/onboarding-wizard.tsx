@@ -165,11 +165,15 @@ export function OnboardingWizard({
   const stepTheme = getStepTheme(stepKey);
   const totalSteps = Math.max(steps.length - 1, 1);
   const progressStep = stepIndex;
-  const answeredInCampaign =
-    (totalCampaignQuestions ?? questions.length) - questions.length;
-  const answeredCount = answeredInCampaign + questions.filter((q) => savedPicks.has(q.id)).length;
-  const totalCount = totalCampaignQuestions ?? questions.length;
-  const missingCount = questions.filter((q) => !savedPicks.has(q.id)).length;
+  const campaignQuestionCount = totalCampaignQuestions ?? questions.length;
+  const answeredCount = partialMode
+    ? campaignQuestionCount -
+      questions.filter((q) => !savedPicks.has(q.id)).length
+    : questions.filter((q) => savedPicks.has(q.id)).length;
+  const totalCount = campaignQuestionCount;
+  const missingCount = partialMode
+    ? questions.filter((q) => !savedPicks.has(q.id)).length
+    : campaignQuestionCount - answeredCount;
 
   const resetLocalSelection = useCallback(
     (question: OnboardingQuestion) => {
@@ -303,7 +307,6 @@ export function OnboardingWizard({
 
     if (stepIndex < steps.length - 1) {
       goToStep(stepIndex + 1);
-      router.refresh();
     }
   }
 
@@ -332,7 +335,7 @@ export function OnboardingWizard({
             {campaign.intro.subtitle}
           </p>
           <ul className="mt-8 max-w-sm space-y-2.5 text-left text-sm text-muted-foreground">
-            <li>· {questions.length} pronostics à verrouiller</li>
+            <li>· {campaignQuestionCount} pronostics à verrouiller</li>
             <li>· Un choix par question, pour toute la durée du tournoi</li>
             <li>· Points bonus en fin de compétition si vous avez bon</li>
           </ul>
@@ -340,19 +343,21 @@ export function OnboardingWizard({
       )}
 
       {currentStep.kind === "question" && (
-        <>
-          <OnboardingStepTitle
-            stepKey={stepKey}
-            title={currentStep.question.title}
-            subtitle={currentStep.question.subtitle}
-            accentLine={
-              pointsLabel != null && pointsLabel > 0
-                ? `Jusqu'à +${formatPoints(pointsLabel)} pts si correct`
-                : undefined
-            }
-          />
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="shrink-0">
+            <OnboardingStepTitle
+              stepKey={stepKey}
+              title={currentStep.question.title}
+              subtitle={currentStep.question.subtitle}
+              accentLine={
+                pointsLabel != null && pointsLabel > 0
+                  ? `Jusqu'à +${formatPoints(pointsLabel)} pts si correct`
+                  : undefined
+              }
+            />
+          </div>
 
-          <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden pt-4">
             {currentStep.question.type === "team" && (
               <OnboardingTeamGrid
                 teams={teams}
@@ -383,12 +388,12 @@ export function OnboardingWizard({
                 />
               )}
           </div>
-        </>
+        </div>
       )}
 
       {currentStep.kind === "summary" && (
-        <div className="flex flex-1 flex-col">
-          <div className="mb-6 text-center">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="mb-6 shrink-0 text-center">
             <OnboardingStepIcon theme={stepTheme} className="mx-auto mb-4" />
             <h1 className="text-2xl font-bold">Récapitulatif</h1>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -397,7 +402,7 @@ export function OnboardingWizard({
                 : `Vérifiez vos choix — verrouillés pour ${campaign.shortLabel}.`}
             </p>
           </div>
-          <ul className="flex-1 space-y-3 overflow-y-auto">
+          <ul className="min-h-0 flex-1 touch-pan-y space-y-3 overflow-y-auto overscroll-contain">
             {summaryQuestions.map((q) => {
               const pick = savedPicks.get(q.id);
               return (
@@ -417,7 +422,7 @@ export function OnboardingWizard({
   );
 
   return (
-    <div className="relative flex h-[100dvh] flex-col">
+    <div className="relative isolate flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-zinc-950">
       <OnboardingAmbientBackground
         stepKey={stepKey}
         ambientClass={ambientClass}
@@ -466,19 +471,21 @@ export function OnboardingWizard({
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto flex w-full max-w-lg min-h-0 flex-1 flex-col px-4 py-4">
+      <main className="relative z-10 mx-auto flex h-full w-full max-w-lg min-h-0 flex-1 flex-col overflow-hidden px-4 py-4">
         {isClient ? (
           <AnimatePresence mode="wait">
             <motion.div
               key={stepIndex}
               {...stepTransition}
-              className="flex min-h-0 flex-1 flex-col"
+              className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
             >
               {stepBody}
             </motion.div>
           </AnimatePresence>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col">{stepBody}</div>
+          <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+            {stepBody}
+          </div>
         )}
       </main>
 

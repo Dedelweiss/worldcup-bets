@@ -200,5 +200,23 @@ export async function getOnboardingContext(userId: string) {
   const needsOnboarding = await userNeedsPredictionOnboarding(userId);
   const picks = await getUserTournamentPicks(userId, campaignId);
 
-  return { campaignId, campaign, needsOnboarding, picks };
+  let completedCampaignId: string | null = null;
+  if (hasSupabaseConfig) {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("profiles")
+      .select("onboarding_campaign_id")
+      .eq("id", userId)
+      .maybeSingle();
+    completedCampaignId =
+      (data?.onboarding_campaign_id as string | null | undefined) ?? null;
+  }
+
+  return {
+    campaignId,
+    campaign,
+    needsOnboarding,
+    picks,
+    completedCampaignId,
+  };
 }

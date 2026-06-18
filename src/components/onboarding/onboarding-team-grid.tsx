@@ -66,7 +66,7 @@ export function OnboardingTeamGrid({
         className="h-11 shrink-0 border-white/10 bg-background/60 backdrop-blur-sm"
         aria-label="Rechercher une équipe"
       />
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+      <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain pr-1">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {filtered.map((team, i) => {
             const selected = value === team.id;

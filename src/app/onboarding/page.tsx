@@ -17,7 +17,7 @@ export const metadata = { title: "Vos pronostics" };
 
 export default async function OnboardingPage() {
   const profile = await requireAuth();
-  const { campaignId, campaign, needsOnboarding, picks } =
+  const { campaignId, campaign, needsOnboarding, picks, completedCampaignId } =
     await getOnboardingContext(profile.id);
 
   if (!needsOnboarding) {
@@ -56,10 +56,15 @@ export default async function OnboardingPage() {
     allQuestions,
     seededPicks,
   );
-  const questionsToShow =
-    unansweredQuestions.length > 0 ? unansweredQuestions : allQuestions;
+
+  // Mode partiel uniquement si le joueur a déjà complété cette campagne
+  // (ex. nouvelle question ajoutée) — pas pendant la première passée.
   const partialMode =
-    seededPicks.length > 0 && unansweredQuestions.length < allQuestions.length;
+    completedCampaignId === campaignId &&
+    unansweredQuestions.length > 0 &&
+    unansweredQuestions.length < allQuestions.length;
+
+  const questionsToShow = partialMode ? unansweredQuestions : allQuestions;
 
   return (
     <OnboardingWizard
@@ -73,7 +78,7 @@ export default async function OnboardingPage() {
       isReturningUser={Boolean(profile.favorite_team_id) || picks.length > 0}
       partialMode={partialMode}
       totalCampaignQuestions={allQuestions.length}
-      summaryQuestions={partialMode ? allQuestions : undefined}
+      summaryQuestions={allQuestions}
     />
   );
 }

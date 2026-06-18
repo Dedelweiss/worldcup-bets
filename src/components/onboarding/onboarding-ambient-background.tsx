@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { StepParticleKind } from "@/lib/onboarding/step-themes";
@@ -54,67 +54,67 @@ export function OnboardingAmbientBackground({
   stepKey,
 }: OnboardingAmbientBackgroundProps) {
   const isClient = useIsClient();
+  const reduceMotion = useReducedMotion();
   const cfg = PARTICLE_CONFIG[particles];
+  const particleCount = reduceMotion ? 0 : cfg.count;
 
   const particleLayout = useMemo(
     () =>
-      Array.from({ length: cfg.count }, (_, i) => ({
+      Array.from({ length: particleCount }, (_, i) => ({
         left: pseudoRandom(i + stepKey.length * 3) * 100,
         top: pseudoRandom(i + stepKey.length * 7) * 100,
         delay: pseudoRandom(i + 1) * 4,
         duration: 4 + pseudoRandom(i + 2) * 5,
         char: cfg.chars?.[i % (cfg.chars?.length ?? 1)] ?? "·",
       })),
-    [cfg.chars, cfg.count, stepKey],
+    [cfg.chars, particleCount, stepKey],
   );
 
+  const showMotion = isClient && !reduceMotion;
+
   return (
-    <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
+    <div
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      aria-hidden
+    >
       <div
         className={cn(
           "absolute inset-0 bg-gradient-to-br transition-colors duration-700",
           ambientClass,
         )}
       />
+      <div className="absolute inset-0 bg-zinc-950/40" />
 
-      {isClient ? (
+      {showMotion ? (
         <>
           <motion.div
-            className="absolute -left-1/4 top-0 size-[70vmin] rounded-full blur-3xl"
+            className="absolute -left-8 top-[2%] size-[min(48vmin,18rem)] rounded-full blur-3xl max-sm:left-0 max-sm:size-[min(40vmin,14rem)]"
             style={{ background: orbA }}
-            animate={{
-              x: [0, 40, -20, 0],
-              y: [0, 30, 50, 0],
-              scale: [1, 1.1, 0.95, 1],
-            }}
-            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+            animate={{ opacity: [0.5, 0.75, 0.5], scale: [1, 1.08, 1] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
           />
           <motion.div
-            className="absolute -right-1/4 bottom-0 size-[60vmin] rounded-full blur-3xl"
+            className="absolute -right-8 bottom-[2%] size-[min(44vmin,16rem)] rounded-full blur-3xl max-sm:right-0 max-sm:size-[min(36vmin,12rem)]"
             style={{ background: orbB }}
-            animate={{
-              x: [0, -30, 20, 0],
-              y: [0, -40, -20, 0],
-              scale: [1, 0.9, 1.08, 1],
-            }}
-            transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+            animate={{ opacity: [0.45, 0.7, 0.45], scale: [1, 1.06, 1] }}
+            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
           />
         </>
       ) : (
         <>
           <div
-            className="absolute -left-1/4 top-0 size-[70vmin] rounded-full blur-3xl"
+            className="absolute -left-8 top-[2%] size-[min(48vmin,18rem)] rounded-full blur-3xl max-sm:left-0 max-sm:size-[min(40vmin,14rem)]"
             style={{ background: orbA }}
           />
           <div
-            className="absolute -right-1/4 bottom-0 size-[60vmin] rounded-full blur-3xl"
+            className="absolute -right-8 bottom-[2%] size-[min(44vmin,16rem)] rounded-full blur-3xl max-sm:right-0 max-sm:size-[min(36vmin,12rem)]"
             style={{ background: orbB }}
           />
         </>
       )}
 
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="absolute inset-0 hidden opacity-[0.03] sm:block"
         style={{
           backgroundImage:
             "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
@@ -122,18 +122,21 @@ export function OnboardingAmbientBackground({
         }}
       />
 
-      {isClient
+      {showMotion
         ? particleLayout.map((p, i) => (
             <motion.span
               key={`${stepKey}-p-${i}`}
-              className={particleClass(particles, cfg.size)}
+              className={cn(
+                particleClass(particles, cfg.size),
+                "hidden sm:inline",
+              )}
               style={{ left: `${p.left}%`, top: `${p.top}%` }}
               initial={{ opacity: 0, scale: 0 }}
               animate={{
-                opacity: [0, 0.5, 0],
-                y: [0, -30, -60],
+                opacity: [0, 0.45, 0],
+                y: [0, -24, -48],
                 scale: [0.5, 1, 0.5],
-                rotate: [0, 180],
+                rotate: [0, 120],
               }}
               transition={{
                 duration: p.duration,

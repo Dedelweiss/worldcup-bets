@@ -29,7 +29,7 @@ export function OnboardingPlayerList({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return players.slice(0, 80);
+    if (!q) return players;
     return players
       .filter(
         (p) =>
@@ -37,7 +37,7 @@ export function OnboardingPlayerList({
           p.teamName.toLowerCase().includes(q) ||
           p.teamCode?.toLowerCase().includes(q),
       )
-      .slice(0, 60);
+      .slice(0, 80);
   }, [players, query]);
 
   return (
@@ -52,12 +52,11 @@ export function OnboardingPlayerList({
         aria-label="Rechercher un joueur"
       />
       {!query.trim() && players.length > 0 && (
-        <p className="text-xs text-muted-foreground">
-          Tapez un nom pour afficher les joueurs ({players.length} dans les
-          effectifs).
+        <p className="shrink-0 text-xs text-muted-foreground">
+          Faites défiler ou tapez un nom ({players.length} joueurs).
         </p>
       )}
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+      <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain pr-1">
         <ul className="space-y-1.5">
           {filtered.map((player) => {
             const selected = value === player.playerId;
