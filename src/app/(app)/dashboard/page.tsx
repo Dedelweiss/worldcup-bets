@@ -4,6 +4,10 @@ import { DashboardAnnouncementBanner } from "@/components/dashboard/dashboard-an
 import { DashboardBento } from "@/components/dashboard/dashboard-bento";
 import { getUserMatchBetStatuses } from "@/lib/bets/user-match-status-query";
 import { getDashboardData } from "@/lib/dashboard";
+import {
+  getExpertiseRadar,
+  MOCK_EXPERTISE_RADAR,
+} from "@/lib/dashboard/expertise-radar";
 import { getGlobalLiveChatInitial } from "@/lib/global-live-chat.server";
 import { DEMO_LEADERBOARD_TOP } from "@/lib/leaderboard-demo";
 import {
@@ -89,6 +93,10 @@ export default async function DashboardPage() {
         )
       : {};
 
+  const expertiseRadar = isDemo
+    ? { axes: MOCK_EXPERTISE_RADAR, hasData: true, ovr: 56 }
+    : await getExpertiseRadar(profile.id);
+
   return (
     <div className="space-y-8">
       {!isDemo && <LiveStatusPoller />}
@@ -145,6 +153,7 @@ export default async function DashboardPage() {
         topPlayers={topPlayers}
         rankNeighbors={rankNeighbors}
         globalLiveChat={globalLiveChat}
+        expertiseRadar={expertiseRadar}
       />
     </div>
   );

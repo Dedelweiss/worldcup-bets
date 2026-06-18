@@ -14,6 +14,7 @@ import type { ProfileFavoriteTeam } from "@/lib/profile/favorite-team";
 import type { DashboardStats } from "@/lib/dashboard-stats";
 import type { TournamentConfig } from "@/lib/tournament/config";
 import { cn } from "@/lib/utils";
+import type { ExpertiseRadarData } from "@/lib/dashboard/expertise-radar";
 import type { LeaderboardRankNeighbors } from "@/lib/leaderboard";
 import type {
   LeaderboardEntry,
@@ -35,6 +36,7 @@ interface DashboardBentoProps {
   topPlayers: LeaderboardEntry[];
   rankNeighbors: LeaderboardRankNeighbors;
   globalLiveChat: GlobalLiveChatInitial;
+  expertiseRadar: ExpertiseRadarData;
 }
 
 export function DashboardBento({
@@ -50,6 +52,7 @@ export function DashboardBento({
   topPlayers,
   rankNeighbors,
   globalLiveChat,
+  expertiseRadar,
 }: DashboardBentoProps) {
   const [featured, ...rest] = upcomingMatches;
 
@@ -140,7 +143,12 @@ export function DashboardBento({
             initialLiveMatchIds={globalLiveChat.liveMatchIds}
           />
         )}
-        <ExpertiseRadarCard />
+        <ExpertiseRadarCard
+          data={expertiseRadar.axes}
+          hasData={expertiseRadar.hasData}
+          ovr={expertiseRadar.ovr}
+          isDemo={isDemo}
+        />
       </MotionReveal>
     </div>
   );
