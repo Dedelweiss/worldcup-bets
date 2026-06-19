@@ -66,8 +66,15 @@ export function resolveEffectiveClassicOutcome(
   return "unknown";
 }
 
-function settledExactScorePoints(bet: BetForPointsDisplay): number {
-  return bet.potential_payout;
+function settledExactScorePoints(
+  bet: BetForPointsDisplay,
+  isGoldenMatch: boolean,
+): number {
+  return betDisplayPayout(
+    bet.potential_payout,
+    bet.is_boosted,
+    isGoldenMatch,
+  );
 }
 
 function pendingExactScoreMaxPoints(
@@ -161,7 +168,7 @@ export function resolveBetPointsDisplay(
   if (bet.status === "won") {
     if (bet.bet_type === "exact_score") {
       return {
-        points: settledExactScorePoints(bet),
+        points: settledExactScorePoints(bet, isGoldenMatch),
         label: "Points gagnés",
         tone: "won",
       };

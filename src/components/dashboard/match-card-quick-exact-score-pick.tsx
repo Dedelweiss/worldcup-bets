@@ -95,6 +95,7 @@ export function MatchCardQuickExactScorePick({
 }: MatchCardQuickExactScorePickProps) {
   const router = useRouter();
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
+  const [customError, setCustomError] = useState<string | null>(null);
   const [selected, setSelected] = useState(
     () => betStatus?.exactScore ?? null,
   );
@@ -139,11 +140,16 @@ export function MatchCardQuickExactScorePick({
     }
 
     setLoadingKey(key);
+    setCustomError(null);
     const result = await placeExactScoreBetAction(match.id, home, away);
     setLoadingKey(null);
 
     if (!result.success) {
-      toast.error(result.error);
+      if (key === CUSTOM_LOADING_KEY) {
+        setCustomError(result.error);
+      } else {
+        toast.error(result.error);
+      }
       return;
     }
 
@@ -168,7 +174,7 @@ export function MatchCardQuickExactScorePick({
   async function handleSubmitCustom() {
     const parsed = parseScoreInputs(homeInput, awayInput);
     if (!parsed) {
-      toast.error("Score invalide (0 à 20 buts par équipe).");
+      setCustomError("Score invalide (0 à 20 buts par équipe).");
       return;
     }
     await submitScore(parsed.home, parsed.away, CUSTOM_LOADING_KEY);
@@ -259,9 +265,14 @@ export function MatchCardQuickExactScorePick({
             )}
           </Button>
         </div>
-        {parsedCustom != null && (
+        {parsedCustom != null && !customError && (
           <p className="mt-1.5 text-center font-mono text-xs tabular-nums text-muted-foreground">
             {formatExactScoreSelection(parsedCustom.home, parsedCustom.away)}
+          </p>
+        )}
+        {customError && (
+          <p className="mt-1.5 text-center text-xs text-destructive" role="alert">
+            {customError}
           </p>
         )}
       </div>

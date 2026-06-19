@@ -21,7 +21,13 @@ export function useClassicBettingOpen(match: MatchWithTeams) {
 
     const timer = setTimeout(() => setOpen(false), msUntilKickoff);
     return () => clearTimeout(timer);
-  }, [match.kickoff_at, match.status]);
+  }, [
+    match.kickoff_at,
+    match.status,
+    match.odd_home,
+    match.odd_draw,
+    match.odd_away,
+  ]);
 
   return open;
 }

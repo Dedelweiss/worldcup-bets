@@ -134,6 +134,7 @@ export async function placeExactScoreBetAction(
   revalidatePath("/dashboard");
   revalidatePath("/bets");
   revalidatePath("/leaderboard");
+  revalidatePath("/bracket");
 
   return { success: true, betId: betId as string };
 }

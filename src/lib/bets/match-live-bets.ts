@@ -89,7 +89,8 @@ async function fetchMatchBets(
 
     const isLive = match.status === "live";
     if (!isLive) {
-      const kickoff = new Date(match.kickoff_at as string).getTime();
+      if (!match.kickoff_at) return [];
+      const kickoff = new Date(match.kickoff_at).getTime();
       if (Number.isNaN(kickoff) || kickoff > Date.now()) {
         return [];
       }

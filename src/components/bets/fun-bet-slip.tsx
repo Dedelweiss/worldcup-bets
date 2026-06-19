@@ -101,18 +101,20 @@ export function FunBetSlip({
     if (!canBet || !outcome) return;
     setLoading(true);
     setError(null);
-    const result = await placeFunBetAction(
-      market.id,
-      market.match_id,
-      outcome,
-    );
-    if (!result.success) {
-      setError(result.error);
+    try {
+      const result = await placeFunBetAction(
+        market.id,
+        market.match_id,
+        outcome,
+      );
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    } finally {
       setLoading(false);
-      return;
     }
-    router.refresh();
-    setLoading(false);
   }
 
   if (market.status === "settled") {
