@@ -11,7 +11,9 @@ import { MatchPageHero } from "@/components/matches/match-page-hero";
 import {
   MatchChatLazy,
   PreMatchAssistantLazy,
+  SmartBetAdvisorLazy,
 } from "@/components/matches/match-page-lazy";
+import { isAiConfigured } from "@/lib/ai/constants";
 import { MatchPageNav, type MatchPageNavTab } from "@/components/matches/match-page-nav";
 import { MatchParticipation } from "@/components/matches/match-participation";
 import { MatchFinishedPronos } from "@/components/matches/match-finished-pronos";
@@ -79,6 +81,7 @@ export default async function MatchBetPage({
   const adminEditHref =
     profile.role === "admin" ? `/admin/matches/${matchId}` : undefined;
 
+  const showAdvisor = isPreMatch && isAiConfigured();
   const hasFunSection = funMarkets.length > 0;
   const hasClassicBet =
     pendingBets.hasMatchResult || pendingBets.hasExactScore;
@@ -126,6 +129,10 @@ export default async function MatchBetPage({
     navTabs.push({ id: "assistant", label: "Assistant" });
   }
 
+  if (showAdvisor) {
+    navTabs.push({ id: "conseiller", label: "Conseiller" });
+  }
+
   if (match.ai_summary) {
     navTabs.push({ id: "gazette", label: "Gazette" });
   }
@@ -169,11 +176,22 @@ export default async function MatchBetPage({
     </section>
   ) : null;
 
+  const advisorSection = showAdvisor ? (
+    <section id="conseiller" className={sectionScrollClass}>
+      <SmartBetAdvisorLazy
+        matchId={matchId}
+        homeTeam={match.home_team.name}
+        awayTeam={match.away_team.name}
+      />
+    </section>
+  ) : null;
+
   const sidebarRail =
-    participationSection || assistantSection ? (
+    participationSection || assistantSection || advisorSection ? (
       <div className="min-w-0 space-y-4 lg:sticky lg:top-28 lg:self-start">
         {participationSection}
         {assistantSection}
+        {advisorSection}
       </div>
     ) : null;
 

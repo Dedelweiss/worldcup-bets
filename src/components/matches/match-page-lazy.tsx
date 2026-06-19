@@ -30,3 +30,11 @@ export const PreMatchAssistantLazy = dynamic(
     })),
   { loading: () => <SectionSkeleton className="h-48" /> },
 );
+
+export const SmartBetAdvisorLazy = dynamic(
+  () =>
+    import("@/components/matches/smart-bet-advisor").then((m) => ({
+      default: m.SmartBetAdvisor,
+    })),
+  { loading: () => <SectionSkeleton className="h-40" /> },
+);

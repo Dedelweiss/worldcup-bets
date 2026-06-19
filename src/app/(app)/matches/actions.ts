@@ -157,32 +157,29 @@ export async function fillRandomClassicScoresAction(): Promise<FillRandomClassic
   }
 
   const supabase = await createClient();
-  let placed = 0;
-  let failed = 0;
 
-  for (const match of eligible) {
-    const score = randomClassicScore(match.id);
-    const { error } = await supabase.rpc("place_bet", {
-      p_match_id: match.id,
-      p_bet_type: "exact_score",
-      p_selection: { home: score.home, away: score.away },
-      p_odd: 3,
-      p_stake: 0,
-      p_use_boost: false,
-    });
+  const results = await Promise.all(
+    eligible.map(async (match) => {
+      const score = randomClassicScore(match.id);
+      const { error } = await supabase.rpc("place_bet", {
+        p_match_id: match.id,
+        p_bet_type: "exact_score",
+        p_selection: { home: score.home, away: score.away },
+        p_odd: 3,
+        p_stake: 0,
+        p_use_boost: false,
+      });
 
-    if (error) {
-      failed += 1;
-      if (process.env.NODE_ENV === "development") {
-        console.error(
-          `[fillRandomClassicScores] match ${match.id}:`,
-          error.message,
-        );
+      if (error && process.env.NODE_ENV === "development") {
+        console.error(`[fillRandomClassicScores] match ${match.id}:`, error.message);
       }
-    } else {
-      placed += 1;
-    }
-  }
+
+      return error == null;
+    })
+  );
+
+  const placed = results.filter(Boolean).length;
+  const failed = results.length - placed;
 
   revalidatePath("/matches");
   revalidatePath("/matches/quick");
