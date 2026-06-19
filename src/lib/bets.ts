@@ -43,13 +43,25 @@ function mapBetRows(data: unknown[]): BetRow[] {
     const r = row as Record<string, unknown>;
     const matchRaw = r.match;
     const match = Array.isArray(matchRaw) ? matchRaw[0] : matchRaw;
-    return {
-      ...r,
-      score_precision: (r.score_precision as BetRow["score_precision"]) ?? null,
+    const bet: BetRow = {
+      id: r.id as string,
+      match_id: r.match_id as number,
+      market_id: (r.market_id ?? null) as string | null,
+      fun_market_id: r.fun_market_id as string | null | undefined,
+      bet_type: r.bet_type as BetRow["bet_type"],
+      selection: r.selection as BetRow["selection"],
+      odd_at_placement: r.odd_at_placement as number,
+      stake: r.stake as number,
+      potential_payout: r.potential_payout as number,
       is_boosted: Boolean(r.is_boosted),
+      score_precision: (r.score_precision as BetRow["score_precision"]) ?? null,
+      status: r.status as BetRow["status"],
+      placed_at: r.placed_at as string,
+      settled_at: r.settled_at as string | null | undefined,
       match: match ? normalizeMatch(match) : null,
       fun_market: null,
-    } as BetRow;
+    };
+    return bet;
   });
 }
 
