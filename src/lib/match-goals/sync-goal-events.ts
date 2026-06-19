@@ -54,6 +54,48 @@ function normalizeGroup(
   return group;
 }
 
+function normalizeTeam(
+  raw: unknown,
+): { name: string; code: string | null } | null {
+  const team = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof team !== "object" || team === null) return null;
+  const t = team as Record<string, unknown>;
+  if (typeof t.name !== "string") return null;
+  return {
+    name: t.name,
+    code: typeof t.code === "string" ? t.code : null,
+  };
+}
+
+function normalizeMatchSyncRow(row: unknown): MatchSyncRow | null {
+  if (typeof row !== "object" || row === null) return null;
+  const r = row as Record<string, unknown>;
+
+  if (typeof r.id !== "number" || typeof r.football_data_id !== "number") {
+    return null;
+  }
+
+  const home_team = normalizeTeam(r.home_team);
+  const away_team = normalizeTeam(r.away_team);
+  if (!home_team || !away_team) return null;
+
+  return {
+    id: r.id,
+    football_data_id: r.football_data_id,
+    kickoff_at: typeof r.kickoff_at === "string" ? r.kickoff_at : "",
+    status: r.status as MatchStatus,
+    home_score: typeof r.home_score === "number" ? r.home_score : null,
+    away_score: typeof r.away_score === "number" ? r.away_score : null,
+    goal_events_synced_at:
+      typeof r.goal_events_synced_at === "string"
+        ? r.goal_events_synced_at
+        : null,
+    home_team,
+    away_team,
+    tournament_group: r.tournament_group as MatchSyncRow["tournament_group"],
+  };
+}
+
 function totalGoals(match: MatchSyncRow): number {
   return (match.home_score ?? 0) + (match.away_score ?? 0);
 }
@@ -140,7 +182,10 @@ async function loadMatchesNeedingSync(): Promise<MatchSyncRow[]> {
 
   if (error || !data) return [];
 
-  return (data as unknown as MatchSyncRow[]).filter(isSyncDue);
+  return data
+    .map(normalizeMatchSyncRow)
+    .filter((m): m is MatchSyncRow => m !== null)
+    .filter(isSyncDue);
 }
 
 export async function syncStaleMatchGoalEvents(options?: {
