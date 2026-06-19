@@ -1,5 +1,6 @@
 import { hasSupabaseConfig } from "@/lib/auth-server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAdminConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 /** Fenêtre avant coup d'envoi où on accélère la sync. */
@@ -8,8 +9,7 @@ const PRE_KICKOFF_MS = 30 * 60 * 1000;
 const POST_KICKOFF_MS = 3 * 60 * 60 * 1000;
 
 async function getSupabaseForSync() {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (serviceRoleKey) return createAdminClient();
+  if (isAdminConfigured()) return createAdminClient();
   return createClient();
 }
 

@@ -1,3 +1,4 @@
+import { isAiConfigured } from "@/lib/ai/constants";
 import { generateMatchSummaryText } from "@/lib/ai/match-summary";
 
 export interface AiChatContext {
@@ -249,9 +250,7 @@ ${formatConversationForPrompt(ctx.recentMessages)}`,
 }
 
 export async function generateAiChatMessage(ctx: AiChatContext): Promise<string> {
-  const hasLlmKey =
-    Boolean(process.env.GROQ_API_KEY?.trim()) ||
-    Boolean(process.env.GEMINI_API_KEY?.trim());
+  const hasLlmKey = isAiConfigured();
 
   const fallback =
     ctx.trigger === "kickoff" ? kickoffFallback(ctx) : ambientFallback(ctx);

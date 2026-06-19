@@ -9,6 +9,7 @@ import {
 } from "@/lib/ai/generate-chat-message";
 import { logAppEvent } from "@/lib/logging/app-logger";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAdminConfigured } from "@/lib/supabase/env";
 
 interface EvaluateAiChatResult {
   eligible: boolean;
@@ -49,8 +50,7 @@ function toContext(
 }
 
 function getAdminSupabase(): ReturnType<typeof createAdminClient> | null {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!serviceRoleKey) return null;
+  if (!isAdminConfigured()) return null;
 
   try {
     return createAdminClient();

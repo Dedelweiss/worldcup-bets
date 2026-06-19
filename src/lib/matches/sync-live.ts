@@ -3,6 +3,7 @@ import { ensureAiKickoffChat } from "@/lib/ai/ensure-ai-chat";
 import { hasSupabaseConfig } from "@/lib/auth-server";
 import { syncFootballDataMatches } from "@/lib/matches/sync-football-data";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAdminConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 const SYNC_INTERVAL_MS = 30_000;
@@ -26,10 +27,7 @@ async function executeLiveSync(options?: { force?: boolean }): Promise<void> {
   const skipRpcSync = !options?.force && now - lastSyncAt < SYNC_INTERVAL_MS;
 
   if (!skipRpcSync) {
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-    const supabase = serviceRoleKey
-      ? createAdminClient()
-      : await createClient();
+    const supabase = isAdminConfigured() ? createAdminClient() : await createClient();
     // football-data d'abord, puis RPC : le passage kickoff → live ne doit pas être écrasé.
     await syncFootballDataMatches();
     await supabase.rpc("sync_live_matches");

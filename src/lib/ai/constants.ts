@@ -4,3 +4,10 @@ export const AI_PLAYER_ID = "a1000000-0000-4000-8000-000000000001";
 export function isAiPlayer(userId: string | null | undefined): boolean {
   return userId === AI_PLAYER_ID;
 }
+
+export function isAiConfigured(): boolean {
+  return (
+    Boolean(process.env.GROQ_API_KEY?.trim()) ||
+    Boolean(process.env.GEMINI_API_KEY?.trim())
+  );
+}

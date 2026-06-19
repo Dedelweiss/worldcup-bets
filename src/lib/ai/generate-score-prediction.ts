@@ -1,3 +1,4 @@
+import { isAiConfigured } from "@/lib/ai/constants";
 import { generateMatchSummaryText } from "@/lib/ai/match-summary";
 
 export interface ScorePredictionInput {
@@ -227,9 +228,7 @@ Propose un score exact crédible selon la force relative des équipes. Varie les
 export async function generateScorePrediction(
   input: ScorePredictionInput,
 ): Promise<ScorePrediction> {
-  const hasLlmKey =
-    Boolean(process.env.GROQ_API_KEY?.trim()) ||
-    Boolean(process.env.GEMINI_API_KEY?.trim());
+  const hasLlmKey = isAiConfigured();
 
   if (!hasLlmKey) {
     return heuristicScorePrediction(input);

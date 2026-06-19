@@ -14,6 +14,10 @@ export function getSupabaseAnonKey(): string {
 export const hasSupabaseConfig =
   Boolean(getSupabaseUrl()) && Boolean(getSupabaseAnonKey());
 
+export function isAdminConfigured(): boolean {
+  return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim());
+}
+
 export function assertSupabaseEnv(): void {
   const url = getSupabaseUrl();
   const key = getSupabaseAnonKey();

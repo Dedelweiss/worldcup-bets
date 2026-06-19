@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAdminConfigured } from "@/lib/supabase/env";
 import {
   fetchFunMarketSnippets,
   resolveFunMarketId,
@@ -132,8 +133,7 @@ export async function getUserBets(userId: string): Promise<BetRow[]> {
  * Serveur uniquement — l'API ne renvoie que des stats agrégées.
  */
 export async function getUserBetsForFutCard(userId: string): Promise<BetRow[]> {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (serviceRoleKey) {
+  if (isAdminConfigured()) {
     try {
       return fetchUserBetsWithClient(createAdminClient(), userId);
     } catch (error) {

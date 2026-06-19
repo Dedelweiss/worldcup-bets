@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAdminConfigured } from "@/lib/supabase/env";
 
 export type AppLogLevel = "debug" | "info" | "warn" | "error";
 
@@ -40,8 +41,7 @@ export async function writeAppLog(params: WriteAppLogParams): Promise<void> {
     user_id: params.userId ?? null,
   };
 
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!serviceRoleKey) {
+  if (!isAdminConfigured()) {
     console.error(`[app-log:${row.level}] ${row.source}: ${row.message}`, row.metadata);
     return;
   }

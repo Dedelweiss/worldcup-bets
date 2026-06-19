@@ -1,6 +1,7 @@
 import { logAppEvent } from "@/lib/logging/app-logger";
 import { generateScorePrediction } from "@/lib/ai/generate-score-prediction";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAdminConfigured } from "@/lib/supabase/env";
 
 interface MatchNeedingAiBet {
   match_id: number;
@@ -40,8 +41,7 @@ async function placeAiBetForRow(
 }
 
 function getAdminSupabase(): ReturnType<typeof createAdminClient> | null {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!serviceRoleKey) {
+  if (!isAdminConfigured()) {
     logAppEvent({
       level: "warn",
       source: "ai.bets",

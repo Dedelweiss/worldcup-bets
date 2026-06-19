@@ -1,12 +1,13 @@
 import { usernameToAuthEmail } from "@/lib/auth/username";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAdminConfigured } from "@/lib/supabase/env";
 
 /** Aligne l'email technique Supabase Auth après changement de pseudo. */
 export async function syncAuthEmailForUsername(
   userId: string,
   username: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  if (!isAdminConfigured()) {
     return {
       ok: false,
       error:
