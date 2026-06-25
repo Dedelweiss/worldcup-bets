@@ -18,17 +18,38 @@ export interface CardImagePromptInput {
   } | null;
 }
 
-const STREET_ART_STYLE = [
+const STREET_ART_STYLE_BASE = [
   "Artistic style: Street Art and modern Vector Illustration.",
   "Vibrant flat color blocks, bold pronounced outlines, graffiti-inspired graphic poster aesthetic.",
   "Full-bleed artwork filling the entire trading card frame edge to edge, no empty margins, no inner inset panel.",
   "Vertical collectible trading card artwork, 3:4 portrait composition.",
   "Stylized graphic design only — never photorealistic, never a photographic portrait.",
-  "Humans appear as comic-book stylized characters: faces simplified into abstract color planes with dynamic expression, no recognizable real-person likeness.",
+].join(" ");
+
+const GENERIC_HUMAN_STYLE =
+  "Humans appear as comic-book stylized characters: faces simplified into abstract color planes, no recognizable real-person likeness.";
+
+/** Style joueur : ressemblance stylisée évocative, pas portrait photo. */
+const JOUEUR_STYLE = [
+  "Draw a stylized footballer whose look loosely evokes a specific real athlete — fans should feel a hint of recognition through hair silhouette, build, skin tone, and signature pose.",
+  "Street-art caricature energy: bold simplified features, flat color planes, expressive but not hyperrealistic.",
 ].join(" ");
 
 const NEGATIVE_CONSTRAINTS = [
   "Do NOT include: FIFA logo, World Cup year badge, CDM 2018 or any tournament date text, corner tournament branding, federation crest, club badge, sponsor logos, watermarks, readable text labels, newspaper headlines, TV scoreboard text.",
+].join(" ");
+
+/** Contraintes joueurs : pas de nom sur l'illustration, visage stylisé mais évocateur. */
+const JOUEUR_FACE_GUIDANCE = [
+  "Face in simplified comic/street-art style with bold outlines — suggest familiar traits (hairstyle, facial hair, expression, jawline) so the figure loosely resembles the intended player without photorealistic detail.",
+  "Dynamic action pose typical of their role on the pitch; energy and attitude matter more than exact facial accuracy.",
+  "Caricature-adjacent vector art: evocative and recognizable at a glance, but clearly illustrated — not a photo, not an exact portrait.",
+].join(" ");
+
+const JOUEUR_NEGATIVE_CONSTRAINTS = [
+  "Do NOT include: any readable text, player names, surnames, first names, initials, jersey name labels, nameplates, autograph text, typography, captions, or card title text burned into the artwork.",
+  "Do NOT include: shirt numbers, squad numbers, or any digits meant to identify a specific athlete.",
+  "Do NOT use photorealistic skin texture, photographic portrait lighting, or hyperrealistic facial detail.",
 ].join(" ");
 
 function colorHint(countryCode: string | null): string {
@@ -116,9 +137,10 @@ function buildJoueurSubject(
 ): string {
   const role = card.position?.trim() || "football player";
   return [
-    `Card title: "${card.name}". Subject: stylized generic ${role} character for ${nation ?? "international"} team.`,
-    "Dynamic action pose, jersey suggested by flat color blocks matching team palette.",
-    "Face as abstract color-block comic style — energetic expression, zero resemblance to any real athlete named on the card.",
+    `Subject: stylized ${role} character loosely inspired by footballer "${card.name}" (${nation ?? "international"} team).`,
+    "Use visual cues that evoke this player (hair, build, typical celebration or action pose) — do NOT write their name or any text on the image.",
+    "Dynamic action pose, plain jersey as flat color blocks matching team palette: NO name text, NO number, NO sponsor marks on kit.",
+    JOUEUR_FACE_GUIDANCE,
   ].join(" ");
 }
 
@@ -156,18 +178,25 @@ function buildSubject(card: CardImagePromptInput, cat: CardCategory | "autre"): 
   return `Card title: "${card.name}". Subject: "${fallback}" — interpret literally from the card name, vector street-art illustration.`;
 }
 
-/** Prompt Street Art / vectoriel centré sur le nom de la carte (sans portrait réaliste). */
+/** Prompt Street Art / vectoriel (joueurs : ressemblance stylisée, sans nom sur l'image). */
 export function buildCardImagePrompt(card: CardImagePromptInput): string {
   const cat = normalizeCategory(card.category);
   const rarityLabel = RARITY_LABEL[card.rarity];
   const colors = colorHint(card.country_code);
   const subject = buildSubject(card, cat);
+  const isJoueur = cat === "joueur";
+  const style = isJoueur
+    ? `${STREET_ART_STYLE_BASE} ${JOUEUR_STYLE}`
+    : `${STREET_ART_STYLE_BASE} ${GENERIC_HUMAN_STYLE}`;
 
   return [
-    STREET_ART_STYLE,
+    style,
     subject,
     colors + ".",
     `${rarityLabel} rarity collectible card mood, high contrast, print-ready vector artwork.`,
     NEGATIVE_CONSTRAINTS,
-  ].join(" ");
+    isJoueur ? JOUEUR_NEGATIVE_CONSTRAINTS : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
