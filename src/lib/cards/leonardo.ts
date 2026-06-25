@@ -30,6 +30,7 @@ function leonardoUseAlchemy(modelId: string): boolean {
 function buildLeonardoPayload(
   prompt: string,
   modelId: string,
+  negativePrompt?: string,
 ): Record<string, unknown> {
   const useAlchemy = leonardoUseAlchemy(modelId);
   const isSdxl = SDXL_ALCHEMY_MODEL_IDS.has(modelId);
@@ -41,6 +42,10 @@ function buildLeonardoPayload(
     height: 1024,
     num_images: 1,
   };
+
+  if (negativePrompt?.trim()) {
+    payload.negative_prompt = negativePrompt.trim();
+  }
 
   if (useAlchemy) {
     payload.alchemy = true;
@@ -74,9 +79,14 @@ function leonardoHeaders(): HeadersInit {
 
 export async function createLeonardoGeneration(
   prompt: string,
+  options?: { negativePrompt?: string },
 ): Promise<string> {
   const modelId = process.env.LEONARDO_MODEL_ID?.trim() || DEFAULT_MODEL_ID;
-  const payload = buildLeonardoPayload(prompt, modelId);
+  const payload = buildLeonardoPayload(
+    prompt,
+    modelId,
+    options?.negativePrompt,
+  );
 
   const res = await fetch(`${LEONARDO_API}/generations`, {
     method: "POST",

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { buildCardImagePrompt } from "@/lib/cards/image-prompt";
+import { buildCardImagePrompt, LEONARDO_NEGATIVE_PROMPT } from "@/lib/cards/image-prompt";
 import type {
   CardImageAdminStats,
   CardImageDailyQuota,
@@ -392,7 +392,9 @@ export async function processCardImageJob(
     }
 
     try {
-      const generationId = await createLeonardoGeneration(job.prompt as string);
+      const generationId = await createLeonardoGeneration(job.prompt as string, {
+        negativePrompt: LEONARDO_NEGATIVE_PROMPT,
+      });
       await touchJob(supabase, jobId, {
         status: "generating",
         leonardo_generation_id: generationId,

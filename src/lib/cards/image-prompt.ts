@@ -1,8 +1,11 @@
 import { normalizeCategory, type CardCategory } from "@/lib/cards/card-categories";
 import { iso2ToName } from "@/lib/cards/nations";
+import { getStarTier } from "@/lib/cards/player-stars";
 import { RARITY_LABEL } from "@/lib/cards/styles";
-import { getTeamColors } from "@/lib/team-colors";
 import type { CardRarity } from "@/lib/cards/types";
+
+/** Limite API Leonardo (caractères). */
+export const LEONARDO_MAX_PROMPT_LENGTH = 1500;
 
 export interface CardImagePromptInput {
   code?: string | null;
@@ -18,43 +21,35 @@ export interface CardImagePromptInput {
   } | null;
 }
 
-const STREET_ART_STYLE_BASE = [
-  "Artistic style: Street Art and modern Vector Illustration.",
-  "Vibrant flat color blocks, bold pronounced outlines, graffiti-inspired graphic poster aesthetic.",
-  "Full-bleed artwork filling the entire trading card frame edge to edge, no empty margins, no inner inset panel.",
-  "Vertical collectible trading card artwork, 3:4 portrait composition.",
-  "Stylized graphic design only — never photorealistic, never a photographic portrait.",
-].join(" ");
+const STYLE =
+  "Street-art vector illustration, 3:4 full-bleed artwork, flat bold colors, thick outlines, not photorealistic, pure artwork with zero typography.";
 
-const GENERIC_HUMAN_STYLE =
-  "Humans appear as comic-book stylized characters: faces simplified into abstract color planes, no recognizable real-person likeness.";
+const GENERIC_HUMAN =
+  "Generic stylized figures, abstract faces, no celebrity likeness.";
 
-/** Style joueur : ressemblance stylisée évocative, pas portrait photo. */
-const JOUEUR_STYLE = [
-  "Draw a stylized footballer whose look loosely evokes a specific real athlete — fans should feel a hint of recognition through hair silhouette, build, skin tone, and signature pose.",
-  "Street-art caricature energy: bold simplified features, flat color planes, expressive but not hyperrealistic.",
-].join(" ");
+const JOUEUR_STYLE =
+  "Caricature footballer, loosely recognizable via hairstyle, build, and pose only.";
 
-const NEGATIVE_CONSTRAINTS = [
-  "Do NOT include: FIFA logo, World Cup year badge, CDM 2018 or any tournament date text, corner tournament branding, federation crest, club badge, sponsor logos, watermarks, readable text labels, newspaper headlines, TV scoreboard text.",
-].join(" ");
+const AVOID =
+  "No FIFA logos, federation crests, sponsors, watermarks, captions, or any readable text anywhere.";
 
-/** Contraintes joueurs : pas de nom sur l'illustration, visage stylisé mais évocateur. */
-const JOUEUR_FACE_GUIDANCE = [
-  "Face in simplified comic/street-art style with bold outlines — suggest familiar traits (hairstyle, facial hair, expression, jawline) so the figure loosely resembles the intended player without photorealistic detail.",
-  "Dynamic action pose typical of their role on the pitch; energy and attitude matter more than exact facial accuracy.",
-  "Caricature-adjacent vector art: evocative and recognizable at a glance, but clearly illustrated — not a photo, not an exact portrait.",
-].join(" ");
+/** Negative prompt Leonardo — renforce l'absence de texte/nom sur l'illustration. */
+export const LEONARDO_NEGATIVE_PROMPT =
+  "text, words, letters, numbers, digits, typography, font, caption, title, title bar, name banner, label, player name, surname, first name, jersey name, nameplate, shirt number, squad number, watermark, autograph, signature, trading card text, UI overlay, speech bubble, newspaper, scoreboard";
 
-const JOUEUR_NEGATIVE_CONSTRAINTS = [
-  "Do NOT include: any readable text, player names, surnames, first names, initials, jersey name labels, nameplates, autograph text, typography, captions, or card title text burned into the artwork.",
-  "Do NOT include: shirt numbers, squad numbers, or any digits meant to identify a specific athlete.",
-  "Do NOT use photorealistic skin texture, photographic portrait lighting, or hyperrealistic facial detail.",
-].join(" ");
+const JOUEUR_AVOID =
+  "Blank plain jersey with no writing. No name or number anywhere in the artwork.";
 
 function colorHint(countryCode: string | null): string {
-  const palette = getTeamColors(countryCode);
-  return `Color palette inspired by ${palette.from} and ${palette.to}, flat vibrant tones`;
+  const nation = countryCode ? iso2ToName(countryCode) : null;
+  return nation ? `${nation} team colors` : "Vibrant flat palette";
+}
+
+function shortRole(position: string | null): string {
+  const p = position?.trim();
+  if (!p) return "player";
+  if (p.length <= 24) return p.toLowerCase();
+  return p.slice(0, 21).trimEnd() + "…";
 }
 
 function buildObjetSubject(
@@ -65,138 +60,125 @@ function buildObjetSubject(
   const key = (code ?? name).toLowerCase();
 
   if (key.includes("var") || name.toLowerCase() === "var") {
-    return [
-      `Card title: "${name}". Subject is Video Assistant Referee (VAR) technology — NOT a football player.`,
-      "Composition: dark review booth with multiple flat-screen monitors showing stylized pitch replay graphics (green field, white vector lines, abstract offside triangles).",
-      "Optional referee silhouette from behind or side, hand gesture toward screens. Focus on screens and technology.",
-      "Absolutely NO player face, NO portrait close-up, NO athlete headshot.",
-    ].join(" ");
+    return `VAR tech scene: review monitors, pitch graphics, referee silhouette. Not a player portrait. "${name}".`;
   }
 
   if (key.includes("whistle") || name.toLowerCase().includes("sifflet")) {
-    return `Card title: "${name}". Subject: referee whistle and match official gear as bold vector icon composition, dynamic motion lines, no human portrait.`;
+    return `Referee whistle vector icon, "${name}", motion lines, no human portrait.`;
   }
 
-  if (key.includes("ball") || name.toLowerCase().includes("ballon")) {
-    return `Card title: "${name}". Subject: stylized football with motion streaks and geometric patterns, hero object shot, no players.`;
+  if (key.includes("ball") || name.toLowerCase().includes("ballon") || icon === "ball") {
+    return `Stylized football hero shot, "${name}", geometric motion, no players.`;
   }
 
-  if (icon === "ball") {
-    return `Card title: "${name}". Subject: stylized football icon, vector graphic centerpiece, no human figures.`;
-  }
-
-  return `Card title: "${name}". Subject: football-themed object "${name}" as the sole visual focus, symbolic vector illustration, no player portrait unless the object itself requires it.`;
+  return `Football object "${name}", symbolic vector centerpiece.`;
 }
 
 function buildStadeSubject(card: CardImagePromptInput): string {
-  const subtitle = card.stats?.subtitle?.trim();
-  const place = subtitle ? ` (${subtitle})` : "";
-  return [
-    `Card title: "${card.name}". Subject: stadium architecture${place}.`,
-    "Hero exterior or aerial view, geometric vector shapes, crowd suggested as flat color blocks in stands.",
-    "No player portraits, no tournament badges.",
-  ].join(" ");
+  const place = card.stats?.subtitle?.trim();
+  const where = place ? ` (${place})` : "";
+  return `Stadium "${card.name}"${where}, geometric exterior, flat crowd blocks.`;
 }
 
 function buildLegendeSubject(card: CardImagePromptInput): string {
-  const decade = card.stats?.decade ?? card.stats?.subtitle ?? "classic era";
-  return [
-    `Card title: "${card.name}". Subject: stylized dream team of eleven generic football players in ${decade} retro aesthetic.`,
-    "Formation diagram feel, small uniform silhouettes, no individual celebrity likeness, no faces in detail.",
-  ].join(" ");
+  const decade = card.stats?.decade ?? card.stats?.subtitle ?? "classic";
+  return `"${card.name}", dream-team silhouettes, ${decade} retro, tiny generic players.`;
 }
 
 function buildSpecialSubject(card: CardImagePromptInput): string {
   const name = card.name.toLowerCase();
   if (name.includes("12") || card.stats?.icon === "crowd") {
-    return [
-      `Card title: "${card.name}". Subject: passionate stadium crowd and supporters in the stands.`,
-      "Abstract silhouettes, raised arms, flags as flat color shapes, collective energy — no single player portrait.",
-    ].join(" ");
+    return `"${card.name}", stadium crowd energy, abstract silhouettes and flags.`;
   }
-  return `Card title: "${card.name}". Subject: "${card.name}" as symbolic football World Cup scene, vector street-art composition.`;
+  return `"${card.name}", symbolic World Cup street-art scene.`;
 }
 
 function buildTropheeSubject(card: CardImagePromptInput): string {
-  return [
-    `Card title: "${card.name}". Subject: golden championship trophy as stylized vector icon.`,
-    "Generic cup silhouette with light rays, not an exact FIFA trophy replica, no text engraving.",
-  ].join(" ");
+  return `"${card.name}", golden trophy vector icon, generic cup, light rays, no engraving.`;
 }
 
 function buildNationSubject(card: CardImagePromptInput, nation: string | null): string {
-  return [
-    `Card title: "${card.name}". Subject: national team identity for ${nation ?? card.name}.`,
-    "Abstract flag-inspired geometric shapes, bold patriotic color blocks, no photorealistic faces, no official federation logo.",
-  ].join(" ");
+  return `${nation ?? card.name} national identity, flag-inspired geometric shapes, no faces or federation logo.`;
+}
+
+/** Indices visuels sans envoyer le nom du joueur à Leonardo (évite le texte sur l'image). */
+function joueurFameCue(name: string, rarity: CardRarity): string {
+  const tier = getStarTier(name);
+  if (tier === "superstar") {
+    return "iconic superstar energy, memorable celebration pose";
+  }
+  if (tier === "star") {
+    return "top international pro, confident match action";
+  }
+  if (rarity === "legendaire") {
+    return "legendary presence, heroic dynamic pose";
+  }
+  return "national squad player, energetic movement";
 }
 
 function buildJoueurSubject(
   card: CardImagePromptInput,
   nation: string | null,
 ): string {
-  const role = card.position?.trim() || "football player";
+  const role = shortRole(card.position);
+  const team = nation ?? "international";
+  const fame = joueurFameCue(card.name, card.rarity);
   return [
-    `Subject: stylized ${role} character loosely inspired by footballer "${card.name}" (${nation ?? "international"} team).`,
-    "Use visual cues that evoke this player (hair, build, typical celebration or action pose) — do NOT write their name or any text on the image.",
-    "Dynamic action pose, plain jersey as flat color blocks matching team palette: NO name text, NO number, NO sponsor marks on kit.",
-    JOUEUR_FACE_GUIDANCE,
+    `Stylized ${role} for ${team} team. ${fame}.`,
+    "Dynamic action, plain blank jersey, no logos or writing.",
+    "Comic caricature face, simplified evocative features, artwork only.",
   ].join(" ");
 }
 
 function buildSubject(card: CardImagePromptInput, cat: CardCategory | "autre"): string {
   const icon = card.stats?.icon;
 
-  if (cat === "objet") {
-    return buildObjetSubject(card.code, card.name, icon);
-  }
-  if (cat === "stade") {
-    return buildStadeSubject(card);
-  }
-  if (cat === "legende") {
-    return buildLegendeSubject(card);
-  }
-  if (cat === "special") {
-    return buildSpecialSubject(card);
-  }
-  if (cat === "trophee") {
-    return buildTropheeSubject(card);
-  }
+  if (cat === "objet") return buildObjetSubject(card.code, card.name, icon);
+  if (cat === "stade") return buildStadeSubject(card);
+  if (cat === "legende") return buildLegendeSubject(card);
+  if (cat === "special") return buildSpecialSubject(card);
+  if (cat === "trophee") return buildTropheeSubject(card);
 
   const nation = card.country_code
     ? (iso2ToName(card.country_code) ?? card.country_code.toUpperCase())
     : null;
 
-  if (cat === "nation") {
-    return buildNationSubject(card, nation);
-  }
-  if (cat === "joueur") {
-    return buildJoueurSubject(card, nation);
-  }
+  if (cat === "nation") return buildNationSubject(card, nation);
+  if (cat === "joueur") return buildJoueurSubject(card, nation);
 
   const fallback = card.stats?.subtitle?.trim() || card.name;
-  return `Card title: "${card.name}". Subject: "${fallback}" — interpret literally from the card name, vector street-art illustration.`;
+  return `"${card.name}": ${fallback}, vector street-art.`;
 }
 
-/** Prompt Street Art / vectoriel (joueurs : ressemblance stylisée, sans nom sur l'image). */
+/** Tronque proprement si le prompt dépasse la limite Leonardo. */
+export function clampLeonardoPrompt(
+  prompt: string,
+  max = LEONARDO_MAX_PROMPT_LENGTH,
+): string {
+  const trimmed = prompt.trim();
+  if (trimmed.length <= max) return trimmed;
+
+  const cut = trimmed.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  const safe =
+    lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut.slice(0, max - 1);
+  return `${safe.trimEnd()}.`;
+}
+
+/** Prompt Street Art compact (joueurs : ressemblance stylisée, sans nom sur l'image). */
 export function buildCardImagePrompt(card: CardImagePromptInput): string {
   const cat = normalizeCategory(card.category);
-  const rarityLabel = RARITY_LABEL[card.rarity];
-  const colors = colorHint(card.country_code);
-  const subject = buildSubject(card, cat);
   const isJoueur = cat === "joueur";
-  const style = isJoueur
-    ? `${STREET_ART_STYLE_BASE} ${JOUEUR_STYLE}`
-    : `${STREET_ART_STYLE_BASE} ${GENERIC_HUMAN_STYLE}`;
+  const rarityLabel = RARITY_LABEL[card.rarity];
 
-  return [
-    style,
-    subject,
-    colors + ".",
-    `${rarityLabel} rarity collectible card mood, high contrast, print-ready vector artwork.`,
-    NEGATIVE_CONSTRAINTS,
-    isJoueur ? JOUEUR_NEGATIVE_CONSTRAINTS : null,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const parts = [
+    STYLE,
+    isJoueur ? JOUEUR_STYLE : GENERIC_HUMAN,
+    buildSubject(card, cat),
+    `${colorHint(card.country_code)}, ${rarityLabel} rarity.`,
+    AVOID,
+    isJoueur ? JOUEUR_AVOID : null,
+  ].filter(Boolean);
+
+  return clampLeonardoPrompt(parts.join(" "));
 }
