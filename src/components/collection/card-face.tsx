@@ -128,7 +128,10 @@ export interface CardFaceProps {
   stats?: AlbumCard["stats"];
   imagePath?: string | null;
   compact?: boolean;
+  /** Grand format (modale / partage) — image pleine, badges plus lisibles. */
+  featured?: boolean;
   showNumber?: number | null;
+  className?: string;
 }
 
 /** Template visuel unifié pour toutes les cartes (grille, packs, preview). */
@@ -141,7 +144,9 @@ export function CardFace({
   stats = null,
   imagePath = null,
   compact = false,
+  featured = false,
   showNumber = null,
+  className,
 }: CardFaceProps) {
   const style = RARITY_STYLE[rarity];
   const colors = getNationColors(countryCode);
@@ -157,23 +162,32 @@ export function CardFace({
     return (
       <div
         className={cn(
-          "relative aspect-[3/4] overflow-hidden rounded-lg border-2",
+          "relative aspect-[3/4] w-full overflow-hidden border-2",
+          featured ? "rounded-xl" : "rounded-lg",
           style.border,
           style.glow,
           isShiny && "card-shine",
           isHolo && "card-holo",
+          className,
         )}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover object-center"
+          alt={name}
+          decoding="async"
+          className={cn(
+            "absolute inset-0 h-full w-full bg-zinc-950",
+            featured ? "object-contain object-center" : "object-cover object-center",
+          )}
         />
 
         {/* Légère vignette pour la profondeur */}
         <div
-          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/15"
+          className={cn(
+            "pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/15",
+            featured && "from-black/35 via-transparent to-black/10",
+          )}
           aria-hidden
         />
 
@@ -181,7 +195,11 @@ export function CardFace({
           <span
             className={cn(
               "absolute left-1 top-1 z-10 rounded bg-black/55 font-bold text-white/95 backdrop-blur-sm",
-              compact ? "px-0.5 text-[7px]" : "px-1 text-[8px]",
+              compact
+                ? "px-0.5 text-[7px]"
+                : featured
+                  ? "px-1.5 text-[10px]"
+                  : "px-1 text-[8px]",
             )}
           >
             {showNumber}
@@ -191,7 +209,7 @@ export function CardFace({
         <div
           className={cn(
             "absolute inset-x-0 bottom-0 z-10 border-t border-white/10 bg-black/45 py-0.5 text-center font-bold uppercase tracking-[0.15em] text-white backdrop-blur-[2px]",
-            compact ? "text-[6px]" : "text-[8px]",
+            compact ? "text-[6px]" : featured ? "text-[9px]" : "text-[8px]",
           )}
         >
           {RARITY_LABEL[rarity]}
@@ -203,12 +221,14 @@ export function CardFace({
   return (
     <div
       className={cn(
-        "relative flex aspect-[3/4] flex-col overflow-hidden rounded-lg border-2",
+        "relative flex aspect-[3/4] w-full flex-col overflow-hidden border-2",
+        featured ? "rounded-xl" : "rounded-lg",
         style.border,
         RARITY_SURFACE[rarity],
         style.glow,
         isShiny && "card-shine",
         isHolo && "card-holo",
+        className,
       )}
     >
       {/* Texture grain */}

@@ -302,6 +302,11 @@
   animation: card-holo-shift 5s ease infinite;
 }
 
+[data-exporting] .card-shine::after,
+[data-exporting] .card-holo::before {
+  display: none;
+}
+
 @keyframes card-holo-shift {
   0%,
   100% {

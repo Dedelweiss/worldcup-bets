@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { CardDetailModal } from "@/components/collection/card-detail-modal";
 import { CardTile } from "@/components/collection/card-tile";
 import { HoloCard } from "@/components/collection/holo-card";
 import {
@@ -11,7 +12,7 @@ import {
 } from "@/lib/cards/card-categories";
 import { RARITY_LABEL, RARITY_ORDER } from "@/lib/cards/styles";
 import { cn } from "@/lib/utils";
-import type { AlbumGroup, CardRarity } from "@/lib/cards/types";
+import type { AlbumCard, AlbumGroup, CardRarity } from "@/lib/cards/types";
 
 type RarityFilter = CardRarity | "all";
 type CategoryFilter = CardCategory | "all";
@@ -54,6 +55,7 @@ export function CollectionGrid({
   const [rarity, setRarity] = useState<RarityFilter>("all");
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [country, setCountry] = useState<CountryFilter>("all");
+  const [selectedCard, setSelectedCard] = useState<AlbumCard | null>(null);
 
   const filtered = useMemo(() => {
     let list = allCards;
@@ -179,11 +181,27 @@ export function CollectionGrid({
               key={card.id}
               active={card.owned && isRarePlus(card.rarity)}
             >
-              <CardTile card={card} compact />
+              {card.owned ? (
+                <button
+                  type="button"
+                  className="w-full rounded-lg text-left transition-opacity hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                  onClick={() => setSelectedCard(card)}
+                  aria-label={`Voir ${card.name}`}
+                >
+                  <CardTile card={card} compact />
+                </button>
+              ) : (
+                <CardTile card={card} compact />
+              )}
             </HoloCard>
           ))}
         </div>
       )}
+
+      <CardDetailModal
+        card={selectedCard}
+        onClose={() => setSelectedCard(null)}
+      />
     </div>
   );
 }

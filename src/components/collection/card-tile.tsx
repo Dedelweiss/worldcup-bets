@@ -66,6 +66,7 @@ export function CardTile({
         imagePath={card.image_path}
         compact={compact}
         showNumber={card.number}
+        className="w-full"
       />
       {card.quantity > 1 && (
         <span

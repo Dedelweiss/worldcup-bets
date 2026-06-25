@@ -360,7 +360,11 @@ export async function shareOrDownloadFutCard(
   shareInFlight = true;
 
   try {
-    const file = new File([blob], filename, { type: "image/png" });
+    const mimeType =
+      blob.type && blob.type.startsWith("image/")
+        ? blob.type
+        : "image/png";
+    const file = new File([blob], filename, { type: mimeType });
 
     if (
       typeof navigator !== "undefined" &&

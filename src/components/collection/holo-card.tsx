@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useSyncExternalStore, type PointerEvent } from "react";
+import { cn } from "@/lib/utils";
 
 const FINE_POINTER = "(hover: hover) and (pointer: fine)";
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
@@ -33,9 +34,11 @@ function subscribeCapable(cb: () => void): () => void {
 export function HoloCard({
   active,
   children,
+  className,
 }: {
   active: boolean;
   children: React.ReactNode;
+  className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const glossRef = useRef<HTMLDivElement>(null);
@@ -71,7 +74,7 @@ export function HoloCard({
       ref={ref}
       onPointerMove={handleMove}
       onPointerLeave={reset}
-      className="relative"
+      className={cn("relative", className)}
       style={{
         transition: "transform 150ms ease-out",
         transformStyle: "preserve-3d",

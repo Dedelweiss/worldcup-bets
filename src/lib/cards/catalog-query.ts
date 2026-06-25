@@ -197,6 +197,30 @@ export async function fetchValidCatalogCardIds(
   return ids;
 }
 
+/** Carte catalogue par numéro d'album Panini (1-based, ordre alphabétique des codes). */
+export async function fetchCatalogCardByNumber(
+  supabase: SupabaseClient,
+  catalogNumber: number,
+): Promise<ActiveCatalogRow | null> {
+  if (!Number.isFinite(catalogNumber) || catalogNumber < 1) return null;
+
+  const setId = await getWcSetId(supabase);
+  if (!setId) return null;
+
+  const offset = Math.floor(catalogNumber) - 1;
+  const { data, error } = await validCatalogQuery(
+    supabase,
+    setId,
+    "id, code, name, rarity, category, country_code, position, image_path, stats, team_id",
+  )
+    .order("code")
+    .range(offset, offset);
+
+  if (error) throw error;
+  const row = data?.[0] as unknown as ActiveCatalogRow | undefined;
+  return row ?? null;
+}
+
 export async function countUserOwnedActiveCards(
   supabase: SupabaseClient,
   userId: string,
