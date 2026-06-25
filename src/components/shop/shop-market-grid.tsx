@@ -136,6 +136,7 @@ export function ShopMarketGrid({
                     countryCode={listing.country_code}
                     position={listing.position}
                     stats={listing.stats}
+                    imagePath={listing.image_path}
                     compact
                   />
                 </HoloCard>

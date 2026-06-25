@@ -63,6 +63,7 @@ export function CardTile({
         countryCode={card.country_code}
         position={card.position}
         stats={card.stats}
+        imagePath={card.image_path}
         compact={compact}
         showNumber={card.number}
       />

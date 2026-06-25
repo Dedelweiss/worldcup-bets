@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { cardDisplayIcon, normalizeCategory } from "@/lib/cards/card-categories";
+import { cardImagePublicUrl } from "@/lib/cards/card-image-urls";
 import { flagEmoji, RARITY_LABEL, RARITY_STYLE } from "@/lib/cards/styles";
 import { getNationColors, type NationColors } from "@/lib/cards/nations";
 import { cn } from "@/lib/utils";
@@ -125,6 +126,7 @@ export interface CardFaceProps {
   countryCode?: string | null;
   position?: string | null;
   stats?: AlbumCard["stats"];
+  imagePath?: string | null;
   compact?: boolean;
   showNumber?: number | null;
 }
@@ -137,6 +139,7 @@ export function CardFace({
   countryCode = null,
   position = null,
   stats = null,
+  imagePath = null,
   compact = false,
   showNumber = null,
 }: CardFaceProps) {
@@ -148,6 +151,54 @@ export function CardFace({
   const isHolo = rarity === "epique" || rarity === "legendaire";
   const isShiny = rarity === "rare" || isHolo;
   const sheenId = useId().replace(/:/g, "");
+  const imageUrl = cardImagePublicUrl(imagePath);
+
+  if (imageUrl) {
+    return (
+      <div
+        className={cn(
+          "relative aspect-[3/4] overflow-hidden rounded-lg border-2",
+          style.border,
+          style.glow,
+          isShiny && "card-shine",
+          isHolo && "card-holo",
+        )}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imageUrl}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover object-center"
+        />
+
+        {/* Légère vignette pour la profondeur */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/15"
+          aria-hidden
+        />
+
+        {showNumber != null && (
+          <span
+            className={cn(
+              "absolute left-1 top-1 z-10 rounded bg-black/55 font-bold text-white/95 backdrop-blur-sm",
+              compact ? "px-0.5 text-[7px]" : "px-1 text-[8px]",
+            )}
+          >
+            {showNumber}
+          </span>
+        )}
+
+        <div
+          className={cn(
+            "absolute inset-x-0 bottom-0 z-10 border-t border-white/10 bg-black/45 py-0.5 text-center font-bold uppercase tracking-[0.15em] text-white backdrop-blur-[2px]",
+            compact ? "text-[6px]" : "text-[8px]",
+          )}
+        >
+          {RARITY_LABEL[rarity]}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

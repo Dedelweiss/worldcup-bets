@@ -62,6 +62,12 @@ export function CollectionQuickLinks() {
       >
         Voir la collection (joueur)
       </Link>
+      <Link
+        href="/admin/card-images"
+        className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+      >
+        Images IA
+      </Link>
     </div>
   );
 }
