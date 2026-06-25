@@ -1,7 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { ImageIcon, Loader2, RefreshCw, Sparkles, Wand2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ImageIcon,
+  Loader2,
+  RefreshCw,
+  Search,
+  Sparkles,
+  Wand2,
+} from "lucide-react";
 import { CardImagePreviewModal } from "@/components/admin/card-image-preview-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +19,8 @@ import { Label } from "@/components/ui/label";
 import { RARITY_LABEL } from "@/lib/cards/styles";
 import type {
   CardImageAdminStats,
+  CardImageListFilter,
+  CardImageListPage,
   CardImageListRow,
 } from "@/lib/cards/card-image-types";
 import { cardImagePublicUrl, resolveJobPreviewUrl } from "@/lib/cards/card-image-urls";
@@ -22,8 +33,6 @@ import {
 } from "@/app/admin/card-images/actions";
 import { cn } from "@/lib/utils";
 
-type Filter = "all" | "missing" | "has_image" | "pending";
-
 const STATUS_LABEL: Record<string, string> = {
   queued: "En file",
   generating: "Génération…",
@@ -35,34 +44,60 @@ const STATUS_LABEL: Record<string, string> = {
 
 export function CardImagesAdminPanel({
   initialStats,
-  initialCards,
-  initialFilter,
+  initialList,
 }: {
   initialStats: CardImageAdminStats;
-  initialCards: CardImageListRow[];
-  initialFilter: Filter;
+  initialList: CardImageListPage;
 }) {
   const [pending, startTransition] = useTransition();
-  const [filter, setFilter] = useState<Filter>(initialFilter);
+  const [filter, setFilter] = useState<CardImageListFilter>(initialList.filter);
+  const [page, setPage] = useState(initialList.page);
+  const [searchInput, setSearchInput] = useState(initialList.search);
+  const [search, setSearch] = useState(initialList.search);
   const [stats, setStats] = useState(initialStats);
-  const [cards, setCards] = useState(initialCards);
+  const [list, setList] = useState(initialList);
   const [error, setError] = useState<string | null>(null);
   const [quotaInput, setQuotaInput] = useState(String(initialStats.quota.limit));
   const [previewRow, setPreviewRow] = useState<CardImageListRow | null>(null);
   const [autoPoll, setAutoPoll] = useState(true);
 
+  const cards = list.cards;
+
   const reload = useCallback(
-    async (nextFilter: Filter = filter) => {
-      const res = await getCardImagesAdminDataAction(nextFilter);
+    async (opts?: {
+      nextFilter?: CardImageListFilter;
+      nextPage?: number;
+      nextSearch?: string;
+    }) => {
+      const res = await getCardImagesAdminDataAction(
+        opts?.nextFilter ?? filter,
+        opts?.nextPage ?? page,
+        list.pageSize,
+        opts?.nextSearch ?? search,
+      );
       if (res.success) {
         setStats(res.stats);
-        setCards(res.cards);
+        setList(res.list);
+        setFilter(res.list.filter);
+        setPage(res.list.page);
+        setSearch(res.list.search);
+        setSearchInput(res.list.search);
       } else {
         setError(res.error);
       }
     },
-    [filter],
+    [filter, page, search, list.pageSize],
   );
+
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      if (searchInput === search) return;
+      startTransition(() => {
+        void reload({ nextSearch: searchInput, nextPage: 1 });
+      });
+    }, 350);
+    return () => window.clearTimeout(id);
+  }, [searchInput, search, reload]);
 
   const hasActiveJobs =
     stats.activeJobs > 0 ||
@@ -88,10 +123,21 @@ export function CardImagesAdminPanel({
     return () => window.clearInterval(id);
   }, [autoPoll, hasActiveJobs, pollJobs]);
 
-  function handleFilterChange(next: Filter) {
+  function handleFilterChange(next: CardImageListFilter) {
     setFilter(next);
+    setPage(1);
     startTransition(async () => {
-      await reload(next);
+      await reload({ nextFilter: next, nextPage: 1 });
+    });
+  }
+
+  function handlePageChange(nextPage: number) {
+    if (nextPage < 1 || (list.totalPages > 0 && nextPage > list.totalPages)) {
+      return;
+    }
+    setPage(nextPage);
+    startTransition(async () => {
+      await reload({ nextPage });
     });
   }
 
@@ -133,6 +179,9 @@ export function CardImagesAdminPanel({
   const previewUrl = previewRow
     ? resolveJobPreviewUrl(previewRow.job)
     : null;
+
+  const rangeStart = list.total === 0 ? 0 : (list.page - 1) * list.pageSize + 1;
+  const rangeEnd = Math.min(list.page * list.pageSize, list.total);
 
   return (
     <div className="space-y-6">
@@ -212,30 +261,52 @@ export function CardImagesAdminPanel({
         </CardContent>
       </Card>
 
-      <div className="flex flex-wrap gap-2">
-        {(
-          [
-            ["missing", "Sans image"],
-            ["pending", "En cours"],
-            ["has_image", "Avec image"],
-            ["all", "Toutes"],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => handleFilterChange(id)}
-            className={cn(
-              "rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors",
-              filter === id
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-        <label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="relative max-w-md flex-1">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Rechercher par nom ou code (ex. Ezzalzouli)…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="h-9 pl-9"
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              ["missing", "Sans image"],
+              ["pending", "En cours"],
+              ["has_image", "Avec image"],
+              ["all", "Toutes"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => handleFilterChange(id)}
+              className={cn(
+                "rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors",
+                filter === id
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+        <span>
+          {list.total === 0
+            ? "Aucun résultat"
+            : `${rangeStart}–${rangeEnd} sur ${list.total} carte${list.total > 1 ? "s" : ""}`}
+          {search ? ` · recherche « ${search} »` : ""}
+        </span>
+        <label className="flex items-center gap-2">
           <input
             type="checkbox"
             checked={autoPoll}
@@ -269,7 +340,9 @@ export function CardImagesAdminPanel({
                   colSpan={5}
                   className="px-3 py-8 text-center text-muted-foreground"
                 >
-                  Aucune carte pour ce filtre.
+                  {search
+                    ? "Aucune carte ne correspond à cette recherche."
+                    : "Aucune carte pour ce filtre."}
                 </td>
               </tr>
             ) : (
@@ -362,6 +435,34 @@ export function CardImagesAdminPanel({
           </tbody>
         </table>
       </div>
+
+      {list.totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={pending || list.page <= 1}
+            onClick={() => handlePageChange(list.page - 1)}
+          >
+            <ChevronLeft className="size-4" />
+            Précédent
+          </Button>
+          <span className="text-sm tabular-nums text-muted-foreground">
+            Page {list.page} / {list.totalPages}
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={pending || list.page >= list.totalPages}
+            onClick={() => handlePageChange(list.page + 1)}
+          >
+            Suivant
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+      )}
 
       {previewRow && previewUrl && (
         <CardImagePreviewModal

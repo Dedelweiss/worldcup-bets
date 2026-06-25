@@ -76,10 +76,13 @@ export function ShopPackGrid({
       {!packDailyQuota.unlimited && (
         <p className="rounded-lg border border-[#b8aa8e] bg-[#f5efe3] px-3 py-2 text-xs font-medium text-[#4a3820]">
           Achat limité à {packDailyQuota.limit} pack
-          {packDailyQuota.limit > 1 ? "s" : ""} par jour —{" "}
-          {packDailyQuota.used}/{packDailyQuota.limit} utilisé
+          {packDailyQuota.limit > 1 ? "s" : ""} par jour en boutique —{" "}
+          {packDailyQuota.used}/{packDailyQuota.limit} achat
+          {packDailyQuota.limit > 1 ? "s" : ""} utilisé
           {packDailyQuota.limit > 1 ? "s" : ""} aujourd&apos;hui.
           {quotaReached && " Revenez demain pour un nouvel achat."}
+          {" "}
+          Les packs gagnés aux paris ne comptent pas dans cette limite.
         </p>
       )}
 

@@ -15,7 +15,6 @@ const CODE_ALIASES: Record<string, string> = {
   DEU: "DE",
   ESP: "ES",
   ITA: "IT",
-  ENG: "GB",
   GBR: "GB",
   POR: "PT",
   NED: "NL",
@@ -67,8 +66,12 @@ const CODE_ALIASES: Record<string, string> = {
   TURKEY: "TR",
   UKR: "UA",
   SRB: "RS",
-  WAL: "GB",
-  SCO: "GB",
+  "GB-ENG": "GB-ENG",
+  "GB-SCT": "GB-SCT",
+  "GB-WAL": "GB-WAL",
+  ENG: "GB-ENG",
+  SCO: "GB-SCT",
+  WAL: "GB-WAL",
 };
 
 /** ISO alpha-2 → palette (couleurs dominantes du drapeau). */
@@ -80,6 +83,9 @@ const TEAM_COLORS: Record<string, TeamColorPalette> = {
   ES: { from: "#c60b1e", via: "#ffc400", to: "#c60b1e" },
   IT: { from: "#009246", via: "#ffffff", to: "#ce2b37" },
   GB: { from: "#012169", via: "#ffffff", to: "#c8102e" },
+  "GB-ENG": { from: "#ffffff", via: "#dc2626", to: "#dc2626" },
+  "GB-SCT": { from: "#003366", via: "#ffffff", to: "#003366" },
+  "GB-WAL": { from: "#dc2626", via: "#15803d", to: "#15803d" },
   PT: { from: "#006600", via: "#ff0000", to: "#ffcc00" },
   NL: { from: "#ae1c28", via: "#ffffff", to: "#21468b" },
   BE: { from: "#000000", via: "#fdda24", to: "#ef3340" },
@@ -131,8 +137,13 @@ const TEAM_COLORS: Record<string, TeamColorPalette> = {
 
 function normalizeCountryCode(code: string | null | undefined): string | null {
   if (!code?.trim()) return null;
-  const raw = code.trim().toUpperCase();
+  const trimmed = code.trim();
+  const raw = trimmed.toUpperCase();
   if (CODE_ALIASES[raw]) return CODE_ALIASES[raw];
+  const lower = trimmed.toLowerCase();
+  if (lower === "gb-eng" || lower === "gb-sct" || lower === "gb-wal") {
+    return lower.toUpperCase();
+  }
   if (raw.length === 2) return raw;
   if (raw.length === 3 && TEAM_COLORS[raw.slice(0, 2)]) return raw.slice(0, 2);
   return raw.length >= 2 ? raw.slice(0, 2) : raw;

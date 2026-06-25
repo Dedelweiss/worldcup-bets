@@ -7,6 +7,8 @@ import type {
   CardImageDailyQuota,
   CardImageJobRow,
   CardImageJobStatus,
+  CardImageListFilter,
+  CardImageListPage,
   CardImageListRow,
 } from "@/lib/cards/card-image-types";
 export type {
@@ -14,6 +16,8 @@ export type {
   CardImageDailyQuota,
   CardImageJobRow,
   CardImageJobStatus,
+  CardImageListFilter,
+  CardImageListPage,
   CardImageListRow,
 } from "@/lib/cards/card-image-types";
 import {
@@ -133,9 +137,18 @@ export async function getCardImageAdminStats(): Promise<CardImageAdminStats> {
 }
 
 export async function listCardImagesForAdmin(
-  filter: "all" | "missing" | "has_image" | "pending" = "missing",
-  limit = 100,
-): Promise<CardImageListRow[]> {
+  options: {
+    filter?: CardImageListFilter;
+    page?: number;
+    pageSize?: number;
+    search?: string;
+  } = {},
+): Promise<CardImageListPage> {
+  const filter = options.filter ?? "missing";
+  const page = Math.max(1, options.page ?? 1);
+  const pageSize = Math.min(100, Math.max(10, options.pageSize ?? 50));
+  const search = options.search?.trim() ?? "";
+
   const supabase = createAdminClient();
 
   const setRes = await supabase
@@ -144,30 +157,106 @@ export async function listCardImagesForAdmin(
     .eq("code", "wc2026")
     .maybeSingle();
 
-  if (!setRes.data?.id) return [];
+  if (!setRes.data?.id) {
+    return {
+      cards: [],
+      total: 0,
+      page,
+      pageSize,
+      totalPages: 0,
+      search,
+      filter,
+    };
+  }
 
-  const baseQuery = supabase
+  let pendingCardIds: string[] | null = null;
+  if (filter === "pending") {
+    const { data: pendingJobs } = await supabase
+      .from("card_image_jobs")
+      .select("card_id")
+      .in("status", ["queued", "generating", "ready"]);
+
+    pendingCardIds = [
+      ...new Set((pendingJobs ?? []).map((j) => j.card_id as string)),
+    ];
+
+    if (pendingCardIds.length === 0) {
+      return {
+        cards: [],
+        total: 0,
+        page: 1,
+        pageSize,
+        totalPages: 0,
+        search,
+        filter,
+      };
+    }
+  }
+
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const baseSelect = supabase
     .from("cards")
     .select(
       "id, code, name, rarity, category, country_code, position, image_path, stats",
+      { count: "exact" },
     )
     .eq("set_id", setRes.data.id)
     .eq("is_active", true)
     .not("name", "is", null)
     .neq("name", "")
-    .order("code")
-    .limit(limit);
+    .order("name")
+    .range(from, to);
 
-  const cardsRes =
-    filter === "missing"
-      ? await baseQuery.or("image_path.is.null,image_path.eq.")
-      : filter === "has_image"
-        ? await baseQuery.not("image_path", "is", null).neq("image_path", "")
-        : await baseQuery;
+  const term =
+    search.length > 0 ? search.replace(/[%_,]/g, " ").trim() : "";
 
-  const { data: cards, error } = cardsRes;
+  let cardsRes;
+  if (filter === "missing" && term) {
+    cardsRes = await baseSelect
+      .or("image_path.is.null,image_path.eq.")
+      .or(`name.ilike.%${term}%,code.ilike.%${term}%`);
+  } else if (filter === "missing") {
+    cardsRes = await baseSelect.or("image_path.is.null,image_path.eq.");
+  } else if (filter === "has_image" && term) {
+    cardsRes = await baseSelect
+      .not("image_path", "is", null)
+      .neq("image_path", "")
+      .or(`name.ilike.%${term}%,code.ilike.%${term}%`);
+  } else if (filter === "has_image") {
+    cardsRes = await baseSelect
+      .not("image_path", "is", null)
+      .neq("image_path", "");
+  } else if (filter === "pending" && pendingCardIds && term) {
+    cardsRes = await baseSelect
+      .in("id", pendingCardIds)
+      .or(`name.ilike.%${term}%,code.ilike.%${term}%`);
+  } else if (filter === "pending" && pendingCardIds) {
+    cardsRes = await baseSelect.in("id", pendingCardIds);
+  } else if (term) {
+    cardsRes = await baseSelect.or(`name.ilike.%${term}%,code.ilike.%${term}%`);
+  } else {
+    cardsRes = await baseSelect;
+  }
+
+  const { data: cards, error, count } = cardsRes;
   if (error) throw new Error(error.message);
-  if (!cards?.length) return [];
+
+  const total = count ?? 0;
+  const totalPages = total > 0 ? Math.ceil(total / pageSize) : 0;
+
+  if (!cards?.length) {
+    return {
+      cards: [],
+      total,
+      page: totalPages > 0 ? Math.min(page, totalPages) : 1,
+      pageSize,
+      totalPages,
+      search,
+      filter,
+    };
+  }
 
   const cardIds = cards.map((c) => c.id as string);
 
@@ -186,7 +275,7 @@ export async function listCardImagesForAdmin(
     }
   }
 
-  let rows: CardImageListRow[] = cards.map((card) => ({
+  const rows: CardImageListRow[] = cards.map((card) => ({
     id: card.id as string,
     code: card.code as string,
     name: card.name as string,
@@ -199,15 +288,15 @@ export async function listCardImagesForAdmin(
     job: latestJobByCard.get(card.id as string) ?? null,
   }));
 
-  if (filter === "pending") {
-    rows = rows.filter(
-      (row) =>
-        row.job &&
-        ["queued", "generating", "ready"].includes(row.job.status),
-    );
-  }
-
-  return rows;
+  return {
+    cards: rows,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    search,
+    filter,
+  };
 }
 
 export async function queueCardImageJob(

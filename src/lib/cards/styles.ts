@@ -53,9 +53,20 @@ export const RARITY_STYLE: Record<
   },
 };
 
-/** Convertit un code ISO alpha-2 en drapeau emoji (regional indicators). */
+/** Drapeaux des nations britanniques (séparées en compétition internationale). */
+const UK_SUBDIVISION_FLAGS: Record<string, string> = {
+  "gb-eng": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+  "gb-sct": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+  "gb-wal": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+};
+
+/** Convertit un code pays en drapeau emoji (regional indicators ou drapeau subdivisions UK). */
 export function flagEmoji(countryCode: string | null): string {
-  if (!countryCode || countryCode.length !== 2) return "🏳️";
+  if (!countryCode) return "🏳️";
+  const key = countryCode.toLowerCase();
+  const ukFlag = UK_SUBDIVISION_FLAGS[key];
+  if (ukFlag) return ukFlag;
+  if (countryCode.length !== 2) return "🏳️";
   const base = 0x1f1e6;
   const cc = countryCode.toUpperCase();
   return String.fromCodePoint(

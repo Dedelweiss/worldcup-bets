@@ -19,7 +19,7 @@ const NATIONS: Nation[] = [
   { tla: "POR", iso2: "pt", name: "Portugal" },
   { tla: "NED", iso2: "nl", name: "Pays-Bas" },
   { tla: "BEL", iso2: "be", name: "Belgique" },
-  { tla: "ENG", iso2: "gb", name: "Angleterre" },
+  { tla: "ENG", iso2: "gb-eng", name: "Angleterre" },
   { tla: "CRO", iso2: "hr", name: "Croatie" },
   { tla: "URU", iso2: "uy", name: "Uruguay" },
   { tla: "ITA", iso2: "it", name: "Italie" },
@@ -56,8 +56,8 @@ const NATIONS: Nation[] = [
   { tla: "AUT", iso2: "at", name: "Autriche" },
   { tla: "TUR", iso2: "tr", name: "Turquie" },
   { tla: "UKR", iso2: "ua", name: "Ukraine" },
-  { tla: "SCO", iso2: "gb", name: "Écosse" },
-  { tla: "WAL", iso2: "gb", name: "Pays de Galles" },
+  { tla: "SCO", iso2: "gb-sct", name: "Écosse" },
+  { tla: "WAL", iso2: "gb-wal", name: "Pays de Galles" },
   { tla: "CRC", iso2: "cr", name: "Costa Rica" },
   { tla: "PAN", iso2: "pa", name: "Panama" },
   { tla: "JAM", iso2: "jm", name: "Jamaïque" },
@@ -74,7 +74,7 @@ const NATIONS: Nation[] = [
 ];
 
 const BY_TLA = new Map(NATIONS.map((n) => [n.tla.toUpperCase(), n]));
-const BY_ISO2 = new Map(NATIONS.map((n) => [n.iso2, n]));
+const BY_COUNTRY_KEY = new Map(NATIONS.map((n) => [n.iso2, n]));
 
 export function tlaToIso2(tla: string | null): string | null {
   if (!tla) return null;
@@ -82,17 +82,20 @@ export function tlaToIso2(tla: string | null): string | null {
 }
 
 /**
- * Code équipe interne (seed WC2026 : FR, US, GB-ENG…) → ISO alpha-2 pour drapeau / maillot.
+ * Code équipe interne (seed WC2026 : FR, US, GB-ENG…) → clé pays pour drapeau / album.
+ * Angleterre, Écosse et Pays de Galles ont des codes distincts (pas de « gb » générique).
  */
 export function ourTeamCodeToIso2(ourCode: string | null): string | null {
   if (!ourCode) return null;
   const key = ourCode.trim().toUpperCase();
 
-  if (key === "GB-ENG" || key === "GB-SCT" || key === "GB-WAL") return "gb";
+  if (key === "GB-ENG") return "gb-eng";
+  if (key === "GB-SCT") return "gb-sct";
+  if (key === "GB-WAL") return "gb-wal";
 
   if (key.length === 2) {
     const lower = key.toLowerCase();
-    if (BY_ISO2.has(lower)) return lower;
+    if (BY_COUNTRY_KEY.has(lower)) return lower;
   }
 
   const tla = footballDataTlaForOurCode(ourCode);
@@ -106,7 +109,8 @@ export function ourTeamCodeToIso2(ourCode: string | null): string | null {
 
 export function iso2ToName(iso2: string | null): string | null {
   if (!iso2) return null;
-  return BY_ISO2.get(iso2)?.name ?? null;
+  const key = iso2.toLowerCase();
+  return BY_COUNTRY_KEY.get(key)?.name ?? null;
 }
 
 /** Couleurs nationales (maillot stylisé) : primaire (corps) + secondaire (col/manches). */
@@ -125,6 +129,9 @@ const NATION_COLORS: Record<string, NationColors> = {
   nl: { primary: "#f97316", secondary: "#f8fafc" },
   be: { primary: "#ef4444", secondary: "#facc15" },
   gb: { primary: "#e5e7eb", secondary: "#dc2626" },
+  "gb-eng": { primary: "#f8fafc", secondary: "#dc2626" },
+  "gb-sct": { primary: "#003366", secondary: "#f8fafc" },
+  "gb-wal": { primary: "#dc2626", secondary: "#15803d" },
   hr: { primary: "#dc2626", secondary: "#f8fafc" },
   uy: { primary: "#38bdf8", secondary: "#f8fafc" },
   it: { primary: "#1d4ed8", secondary: "#f8fafc" },
@@ -183,5 +190,5 @@ const NEUTRAL_COLORS: NationColors = {
 
 export function getNationColors(iso2: string | null): NationColors {
   if (!iso2) return NEUTRAL_COLORS;
-  return NATION_COLORS[iso2] ?? NEUTRAL_COLORS;
+  return NATION_COLORS[iso2.toLowerCase()] ?? NEUTRAL_COLORS;
 }

@@ -51,3 +51,15 @@ export interface CardImageAdminStats {
   quota: CardImageDailyQuota;
   leonardoConfigured: boolean;
 }
+
+export type CardImageListFilter = "all" | "missing" | "has_image" | "pending";
+
+export interface CardImageListPage {
+  cards: CardImageListRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  search: string;
+  filter: CardImageListFilter;
+}

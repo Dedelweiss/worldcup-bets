@@ -13,9 +13,9 @@ export const metadata = { title: "Admin · Images cartes" };
 export default async function AdminCardImagesPage() {
   await requireAdmin();
 
-  const [stats, cards] = await Promise.all([
+  const [stats, list] = await Promise.all([
     getCardImageAdminStats(),
-    listCardImagesForAdmin("missing", 120),
+    listCardImagesForAdmin({ filter: "missing", page: 1, pageSize: 50 }),
   ]);
 
   return (
@@ -37,11 +37,7 @@ export default async function AdminCardImagesPage() {
         </Link>
       </div>
 
-      <CardImagesAdminPanel
-        initialStats={stats}
-        initialCards={cards}
-        initialFilter="missing"
-      />
+      <CardImagesAdminPanel initialStats={stats} initialList={list} />
     </div>
   );
 }

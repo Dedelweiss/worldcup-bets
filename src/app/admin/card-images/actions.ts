@@ -12,7 +12,8 @@ import {
   queueBatchCardImageJobs,
   queueCardImageJob,
   type CardImageAdminStats,
-  type CardImageListRow,
+  type CardImageListFilter,
+  type CardImageListPage,
 } from "@/lib/cards/card-image-jobs";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -24,7 +25,7 @@ export type CardImageDataResult =
   | {
       success: true;
       stats: CardImageAdminStats;
-      cards: CardImageListRow[];
+      list: CardImageListPage;
     }
   | { success: false; error: string };
 
@@ -42,15 +43,18 @@ function mapCardImageError(message: string): string {
 }
 
 export async function getCardImagesAdminDataAction(
-  filter: "all" | "missing" | "has_image" | "pending" = "missing",
+  filter: CardImageListFilter = "missing",
+  page = 1,
+  pageSize = 50,
+  search = "",
 ): Promise<CardImageDataResult> {
   try {
     await requireAdmin();
-    const [stats, cards] = await Promise.all([
+    const [stats, list] = await Promise.all([
       getCardImageAdminStats(),
-      listCardImagesForAdmin(filter, 120),
+      listCardImagesForAdmin({ filter, page, pageSize, search }),
     ]);
-    return { success: true, stats, cards };
+    return { success: true, stats, list };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur inconnue";
     return { success: false, error: mapCardImageError(message) };
