@@ -1,6 +1,5 @@
 import { normalizeCategory, type CardCategory } from "@/lib/cards/card-categories";
 import { iso2ToName } from "@/lib/cards/nations";
-import { getStarTier } from "@/lib/cards/player-stars";
 import { RARITY_LABEL } from "@/lib/cards/styles";
 import type { CardRarity } from "@/lib/cards/types";
 
@@ -27,29 +26,39 @@ const STYLE =
 const GENERIC_HUMAN =
   "Generic stylized figures, abstract faces, no celebrity likeness.";
 
-const JOUEUR_STYLE =
-  "Caricature footballer, loosely recognizable via hairstyle, build, and pose only.";
-
 const AVOID =
   "No FIFA logos, federation crests, sponsors, watermarks, captions, or any readable text anywhere.";
 
-/** Negative prompt Leonardo — renforce l'absence de texte/nom sur l'illustration. */
+/** Negative prompt joueurs — texte interdit sur l'illustration, ressemblance faciale OK. */
 export const LEONARDO_NEGATIVE_PROMPT =
-  "text, words, letters, numbers, digits, typography, font, caption, title, title bar, name banner, label, player name, surname, first name, jersey name, nameplate, shirt number, squad number, watermark, autograph, signature, trading card text, UI overlay, speech bubble, newspaper, scoreboard";
+  "text, letters, words, names printed on card, logos, brand marks, official emblems, watermark, signature, blurry face, distorted hands, low quality, unreadable jersey numbers, real-world team crests, player name banner, typography, caption, title bar, autograph";
 
-const JOUEUR_AVOID =
-  "Blank plain jersey with no writing. No name or number anywhere in the artwork.";
+const JOUEUR_CARD_STYLE =
+  "Vintage collectible trading card portrait, dynamic three-quarter mid-action pose, centered portrait orientation 3:4, retro-modern premium sports card aesthetic.";
 
 function colorHint(countryCode: string | null): string {
   const nation = countryCode ? iso2ToName(countryCode) : null;
-  return nation ? `${nation} team colors` : "Vibrant flat palette";
+  return nation ? `${nation} team colors` : "Vibrant national palette";
+}
+
+function rarityFinish(rarity: CardRarity): string {
+  switch (rarity) {
+    case "legendaire":
+      return "Legendary glossy holographic foil border, gold and silver metallic gradients, ultra-premium finish";
+    case "epique":
+      return "Epic holographic foil border, abstract geometric accents, metallic silver and gold gradients";
+    case "rare":
+      return "Rare glossy foil border, subtle metallic accents";
+    default:
+      return "Classic vintage card finish, vibrant saturated colors";
+  }
 }
 
 function shortRole(position: string | null): string {
   const p = position?.trim();
-  if (!p) return "player";
-  if (p.length <= 24) return p.toLowerCase();
-  return p.slice(0, 21).trimEnd() + "…";
+  if (!p) return "soccer player";
+  if (p.length <= 28) return p.toLowerCase();
+  return p.slice(0, 25).trimEnd() + "…";
 }
 
 function buildObjetSubject(
@@ -101,33 +110,42 @@ function buildNationSubject(card: CardImagePromptInput, nation: string | null): 
   return `${nation ?? card.name} national identity, flag-inspired geometric shapes, no faces or federation logo.`;
 }
 
-/** Indices visuels sans envoyer le nom du joueur à Leonardo (évite le texte sur l'image). */
-function joueurFameCue(name: string, rarity: CardRarity): string {
-  const tier = getStarTier(name);
-  if (tier === "superstar") {
-    return "iconic superstar energy, memorable celebration pose";
-  }
-  if (tier === "star") {
-    return "top international pro, confident match action";
-  }
-  if (rarity === "legendaire") {
-    return "legendary presence, heroic dynamic pose";
-  }
-  return "national squad player, energetic movement";
-}
-
+/**
+ * Portrait joueur : le nom guide la ressemblance faciale dans le modèle,
+ * mais le prompt interdit explicitement tout texte / nom imprimé sur la carte.
+ */
 function buildJoueurSubject(
   card: CardImagePromptInput,
   nation: string | null,
 ): string {
   const role = shortRole(card.position);
   const team = nation ?? "international";
-  const fame = joueurFameCue(card.name, card.rarity);
+  const colors = colorHint(card.country_code);
+
   return [
-    `Stylized ${role} for ${team} team. ${fame}.`,
-    "Dynamic action, plain blank jersey, no logos or writing.",
-    "Comic caricature face, simplified evocative features, artwork only.",
+    `Male ${role} with bold recognizable facial features resembling ${card.name}.`,
+    `${colors} jersey tones, plain kit with no official logos, badges, or sponsor marks.`,
+    "Energetic stadium background, soft bokeh lights, sweeping motion-blur crowd.",
+    `${rarityFinish(card.rarity)}.`,
+    "Cinematic dramatic lighting, sharp facial detail, confident expression, sweat highlights, detailed fabric texture.",
+    "Photorealistic portrait with a stylized illustrative edge, depth of field, high resolution.",
+    "Important: NO text, NO printed player name, NO league or tournament emblems anywhere on the artwork.",
   ].join(" ");
+}
+
+function buildJoueurPrompt(card: CardImagePromptInput): string {
+  const nation = card.country_code
+    ? (iso2ToName(card.country_code) ?? card.country_code.toUpperCase())
+    : null;
+  const rarityLabel = RARITY_LABEL[card.rarity];
+
+  return clampLeonardoPrompt(
+    [
+      JOUEUR_CARD_STYLE,
+      buildJoueurSubject(card, nation),
+      `${rarityLabel} rarity collectible card mood.`,
+    ].join(" "),
+  );
 }
 
 function buildSubject(card: CardImagePromptInput, cat: CardCategory | "autre"): string {
@@ -144,7 +162,6 @@ function buildSubject(card: CardImagePromptInput, cat: CardCategory | "autre"): 
     : null;
 
   if (cat === "nation") return buildNationSubject(card, nation);
-  if (cat === "joueur") return buildJoueurSubject(card, nation);
 
   const fallback = card.stats?.subtitle?.trim() || card.name;
   return `"${card.name}": ${fallback}, vector street-art.`;
@@ -165,20 +182,21 @@ export function clampLeonardoPrompt(
   return `${safe.trimEnd()}.`;
 }
 
-/** Prompt Street Art compact (joueurs : ressemblance stylisée, sans nom sur l'image). */
+/** Prompt Leonardo : joueurs = portrait carte vintage ressemblant au nom ; autres = street-art compact. */
 export function buildCardImagePrompt(card: CardImagePromptInput): string {
   const cat = normalizeCategory(card.category);
-  const isJoueur = cat === "joueur";
-  const rarityLabel = RARITY_LABEL[card.rarity];
+  if (cat === "joueur") {
+    return buildJoueurPrompt(card);
+  }
 
+  const rarityLabel = RARITY_LABEL[card.rarity];
   const parts = [
     STYLE,
-    isJoueur ? JOUEUR_STYLE : GENERIC_HUMAN,
+    GENERIC_HUMAN,
     buildSubject(card, cat),
     `${colorHint(card.country_code)}, ${rarityLabel} rarity.`,
     AVOID,
-    isJoueur ? JOUEUR_AVOID : null,
-  ].filter(Boolean);
+  ];
 
   return clampLeonardoPrompt(parts.join(" "));
 }
