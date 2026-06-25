@@ -1,11 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import type { CardRarity } from "@/lib/cards/types";
-import type { DailyShopData, PackTypeShop, ShopData } from "@/lib/cards/shop-types";
+import type {
+  DailyShopData,
+  PackTypeShop,
+  ShopData,
+  ShopPackDailyQuota,
+} from "@/lib/cards/shop-types";
 
 export async function getShopData(userId: string): Promise<ShopData> {
   const supabase = await createClient();
 
-  const [profileRes, packTypesRes, packCountRes, dailyRes] = await Promise.all([
+  const [profileRes, packTypesRes, packCountRes, dailyRes, quotaRes] =
+    await Promise.all([
     supabase
       .from("profiles")
       .select("pack_coins, card_shards")
@@ -24,6 +30,7 @@ export async function getShopData(userId: string): Promise<ShopData> {
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId),
     supabase.rpc("get_daily_shop", { p_set_code: "wc2026" }),
+    supabase.rpc("get_shop_pack_daily_quota"),
   ]);
 
   const profile = profileRes.data ?? { pack_coins: 0, card_shards: 0 };
@@ -64,11 +71,33 @@ export async function getShopData(userId: string): Promise<ShopData> {
     };
   }
 
+  let packDailyQuota: ShopPackDailyQuota = {
+    limit: 1,
+    used: 0,
+    remaining: 1,
+    unlimited: false,
+    expires_at: new Date().toISOString(),
+  };
+
+  if (quotaRes.error) {
+    console.warn("[shop] get_shop_pack_daily_quota:", quotaRes.error.message);
+  } else if (quotaRes.data && typeof quotaRes.data === "object") {
+    const raw = quotaRes.data as ShopPackDailyQuota;
+    packDailyQuota = {
+      limit: raw.limit ?? 1,
+      used: raw.used ?? 0,
+      remaining: raw.remaining ?? null,
+      unlimited: raw.unlimited ?? raw.limit === 0,
+      expires_at: raw.expires_at ?? new Date().toISOString(),
+    };
+  }
+
   return {
     coins: Number(profile.pack_coins ?? 0),
     shards: profile.card_shards ?? 0,
     packCount: packCountRes.count ?? 0,
     packTypes,
     dailyShop,
+    packDailyQuota,
   };
 }

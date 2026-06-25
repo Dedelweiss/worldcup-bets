@@ -13,17 +13,19 @@ import {
 } from "@/lib/cards/pack-rates";
 import { playSound, primeSound } from "@/lib/cards/sound";
 import { RARITY_LABEL, SHOP_RARITY_CHIP } from "@/lib/cards/styles";
-import type { PackTypeShop } from "@/lib/cards/shop-types";
+import type { PackTypeShop, ShopPackDailyQuota } from "@/lib/cards/shop-types";
 import { cn } from "@/lib/utils";
 
 export function ShopPackGrid({
   packTypes,
   coins,
   shards,
+  packDailyQuota,
 }: {
   packTypes: PackTypeShop[];
   coins: number;
   shards: number;
+  packDailyQuota: ShopPackDailyQuota;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -31,8 +33,11 @@ export function ShopPackGrid({
   const [successId, setSuccessId] = useState<string | null>(null);
   const runningRef = useRef<string | null>(null);
 
+  const quotaReached =
+    !packDailyQuota.unlimited && (packDailyQuota.remaining ?? 0) <= 0;
+
   function handleBuy(pack: PackTypeShop) {
-    if (pending || runningRef.current) return;
+    if (pending || runningRef.current || quotaReached) return;
     const affordable =
       pack.price_currency === "pack_coins"
         ? coins >= pack.price_points
@@ -68,6 +73,16 @@ export function ShopPackGrid({
 
   return (
     <div className="space-y-3">
+      {!packDailyQuota.unlimited && (
+        <p className="rounded-lg border border-[#b8aa8e] bg-[#f5efe3] px-3 py-2 text-xs font-medium text-[#4a3820]">
+          Achat limité à {packDailyQuota.limit} pack
+          {packDailyQuota.limit > 1 ? "s" : ""} par jour —{" "}
+          {packDailyQuota.used}/{packDailyQuota.limit} utilisé
+          {packDailyQuota.limit > 1 ? "s" : ""} aujourd&apos;hui.
+          {quotaReached && " Revenez demain pour un nouvel achat."}
+        </p>
+      )}
+
       {error && (
         <p className="rounded-lg bg-destructive/15 px-3 py-2 text-sm text-destructive" role="alert">
           {error}
@@ -130,8 +145,14 @@ export function ShopPackGrid({
                     currency={pack.price_currency}
                   />
                   <ShopBuyButton
-                    label={affordable ? "Acheter" : "Solde insuffisant"}
-                    disabled={!affordable}
+                    label={
+                      quotaReached
+                        ? "Limite du jour atteinte"
+                        : affordable
+                          ? "Acheter"
+                          : "Solde insuffisant"
+                    }
+                    disabled={!affordable || quotaReached}
                     loading={pending && runningRef.current === pack.id}
                     success={successId === pack.id}
                     onClick={() => handleBuy(pack)}

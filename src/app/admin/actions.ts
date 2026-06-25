@@ -1024,6 +1024,29 @@ export async function setDashboardAnnouncementAction(
   return { success: true };
 }
 
+export async function setShopPackDailyLimitAction(
+  limit: number,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("admin_set_shop_pack_daily_limit", {
+    p_limit: limit,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Exécutez supabase/migrations/106_shop_pack_daily_limit.sql dans Supabase."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  revalidatePath("/admin/collection");
+  revalidatePath("/shop");
+
+  return { success: true };
+}
+
 export async function generateGazetteAction(
   matchId: number,
   overwrite = false,

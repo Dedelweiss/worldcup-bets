@@ -44,12 +44,21 @@ export interface DailyShopData {
   listings: DailyMarketListing[];
 }
 
+export interface ShopPackDailyQuota {
+  limit: number;
+  used: number;
+  remaining: number | null;
+  unlimited: boolean;
+  expires_at: string;
+}
+
 export interface ShopData {
   coins: number;
   shards: number;
   packCount: number;
   packTypes: PackTypeShop[];
   dailyShop: DailyShopData;
+  packDailyQuota: ShopPackDailyQuota;
 }
 
 export interface MarketPurchaseResult {

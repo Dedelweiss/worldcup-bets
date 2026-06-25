@@ -58,6 +58,7 @@ export function ShopClient({ data }: { data: ShopData }) {
             packTypes={data.packTypes}
             coins={data.coins}
             shards={data.shards}
+            packDailyQuota={data.packDailyQuota}
           />
         ) : (
           <ShopMarketGrid

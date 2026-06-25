@@ -5,6 +5,7 @@ import {
 } from "@/components/admin/collection-catalog-panel";
 import { GrantAllCardsPanel } from "@/components/admin/grant-all-cards-panel";
 import { PackCoinsAdminPanel } from "@/components/admin/pack-coins-admin-panel";
+import { ShopPackDailyLimitPanel } from "@/components/admin/shop-pack-daily-limit-panel";
 import { ResetPlayerAlbumPanel } from "@/components/admin/reset-player-album-panel";
 import {
   getCollectionCatalogStats,
@@ -12,15 +13,28 @@ import {
 } from "@/lib/admin/collection";
 import { requireAdmin } from "@/lib/auth-server";
 import { formatPoints } from "@/lib/format";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Admin · Collection" };
+
+async function getShopPackDailyLimit(): Promise<number> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("tournament_config")
+    .select("shop_pack_daily_limit")
+    .eq("id", 1)
+    .maybeSingle();
+
+  return data?.shop_pack_daily_limit ?? 1;
+}
 
 export default async function AdminCollectionPage() {
   await requireAdmin();
 
-  const [stats, players] = await Promise.all([
+  const [stats, players, shopPackDailyLimit] = await Promise.all([
     getCollectionCatalogStats(),
     getCollectionPlayers(),
+    getShopPackDailyLimit(),
   ]);
 
   const totalJetons = players.reduce((sum, p) => sum + p.pack_coins, 0);
@@ -59,7 +73,10 @@ export default async function AdminCollectionPage() {
         <h2 className="font-heading text-lg font-semibold">
           Jetons & éclats
         </h2>
-        <PackCoinsAdminPanel players={players} />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <PackCoinsAdminPanel players={players} />
+          <ShopPackDailyLimitPanel dailyLimit={shopPackDailyLimit} />
+        </div>
       </section>
 
       <section className="space-y-3">

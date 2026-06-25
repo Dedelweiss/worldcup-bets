@@ -30,8 +30,11 @@ function mapShopError(message: string): string {
   if (m.includes("already purchased")) {
     return "Vous avez déjà acheté cette carte aujourd'hui.";
   }
+  if (m.includes("daily pack limit")) {
+    return "Vous avez atteint la limite d'achat de packs pour aujourd'hui.";
+  }
   if (m.includes("could not find the function")) {
-    return "Exécutez supabase/migrations/104_shop.sql dans Supabase.";
+    return "Exécutez supabase/migrations/104_shop.sql et 106_shop_pack_daily_limit.sql dans Supabase.";
   }
   return message;
 }
