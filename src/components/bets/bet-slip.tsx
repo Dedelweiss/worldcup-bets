@@ -643,12 +643,16 @@ export function BetSlip({
                         );
                       })}
                     </div>
+                    <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+                      Points provisoires : ils seront recalculés sur la cote du coup
+                      d&apos;envoi, identique pour tous les joueurs.
+                    </p>
                   </div>
 
                   {pending.hasMatchResult && locked1n2 && locked1n2Points != null && (
                     <div className="space-y-2 rounded-lg bg-muted/40 p-3 text-sm">
                       <div className="flex justify-between gap-2">
-                        <span className="text-muted-foreground">Cote figée</span>
+                        <span className="text-muted-foreground">Cote du pari</span>
                         <span className="font-medium tabular-nums">
                           {formatOdd(locked1n2.odd_at_placement)}
                         </span>

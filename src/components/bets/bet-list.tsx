@@ -330,6 +330,14 @@ function BetCard({ bet }: { bet: BetRow }) {
         </div>
       </div>
     </Link>
+      {bet.status === "pending" &&
+        !isLive &&
+        (bet.bet_type === "match_result" || bet.bet_type === "exact_score") && (
+          <p className="px-4 pb-3 text-[11px] leading-snug text-muted-foreground">
+            Points provisoires : recalculés sur la cote du coup d&apos;envoi,
+            identique pour tous les joueurs.
+          </p>
+        )}
       {cancellable && (
         <div className="border-t border-border/80 bg-muted/20 px-4 py-3">
           <BetCancelButton betId={bet.id} matchId={bet.match_id} />
