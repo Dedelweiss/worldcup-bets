@@ -2,7 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import { MAX_CATALOG_CARDS } from "@/lib/cards/catalog-limits";
 import {
   countActiveCatalogCards,
+  countUserOwnedActiveCards,
   fetchAllActiveCatalogCards,
+  fetchCatalogNumberByCode,
+  fetchUserOwnedActiveCards,
+  type ActiveCatalogRow,
 } from "@/lib/cards/catalog-query";
 import { ourTeamCodeToIso2, iso2ToName } from "@/lib/cards/nations";
 import {
@@ -17,6 +21,7 @@ import type {
   CollectionData,
   InventoryPack,
 } from "@/lib/cards/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const SPECIAL_GROUP_KEY = "_special";
 
@@ -26,7 +31,7 @@ function rarityThenName(a: AlbumCard, b: AlbumCard): number {
 }
 
 /** Regroupe l'album par nation (clé = country_code), cartes sans pays en "Spéciales". */
-function groupByNation(album: AlbumCard[]): AlbumGroup[] {
+export function groupByNation(album: AlbumCard[]): AlbumGroup[] {
   const buckets = new Map<string, AlbumCard[]>();
   for (const card of album) {
     const key = card.country_code ?? SPECIAL_GROUP_KEY;
@@ -59,19 +64,29 @@ function groupByNation(album: AlbumCard[]): AlbumGroup[] {
   return groups;
 }
 
-/**
- * Charge la collection complète d'un joueur.
- *
- * Perf : le catalogue (petit, cachable) est récupéré entièrement, et l'on
- * superpose un petit Set des cartes possédées (une requête indexée sur user_id),
- * plutôt que de joindre des milliers de lignes côté base.
- */
-export async function getCollectionData(
-  userId: string,
-): Promise<CollectionData> {
-  const supabase = await createClient();
+function enrichCatalogRow(
+  card: ActiveCatalogRow,
+  isoByTeamId: Map<number, string>,
+  shirtByPlayerId: Map<number, number>,
+): CardCatalogEntry {
+  const country_code =
+    card.country_code ??
+    (card.team_id ? (isoByTeamId.get(card.team_id) ?? null) : null);
+  const shirtNumber = resolveShirtNumber(
+    card.code,
+    card.stats,
+    shirtByPlayerId,
+  );
+  const stats =
+    shirtNumber != null
+      ? { ...(card.stats ?? {}), shirtNumber }
+      : card.stats;
+  const { team_id: _teamId, ...rest } = card;
+  return { ...rest, country_code, stats } as CardCatalogEntry;
+}
 
-  const [profileRes, teamsRes, ownedRes, inventoryRes] =
+async function loadCollectionContext(supabase: SupabaseClient, userId: string) {
+  const [profileRes, teamsRes, inventoryRes, catalogTotal, ownedCount] =
     await Promise.all([
       supabase
         .from("profiles")
@@ -80,18 +95,13 @@ export async function getCollectionData(
         .single(),
       supabase.from("teams").select("id, code, squad"),
       supabase
-        .from("user_cards")
-        .select("card_id, quantity")
-        .eq("user_id", userId),
-      supabase
         .from("user_packs")
         .select("id, pack_type_id, source, pack_types(name)")
         .eq("user_id", userId)
         .order("created_at"),
+      countActiveCatalogCards(supabase),
+      countUserOwnedActiveCards(supabase, userId),
     ]);
-
-  const catalogRaw = await fetchAllActiveCatalogCards(supabase);
-  const catalogTotal = await countActiveCatalogCards(supabase);
 
   const isoByTeamId = new Map<number, string>();
   const shirtByPlayerId = buildShirtNumberIndex(
@@ -114,48 +124,6 @@ export async function getCollectionData(
     pack_coins: number;
   };
 
-  const catalog = catalogRaw.map((card) => {
-    const country_code =
-      card.country_code ??
-      (card.team_id ? (isoByTeamId.get(card.team_id) ?? null) : null);
-    const shirtNumber = resolveShirtNumber(
-      card.code,
-      card.stats,
-      shirtByPlayerId,
-    );
-    const stats =
-      shirtNumber != null
-        ? { ...(card.stats ?? {}), shirtNumber }
-        : card.stats;
-    const { team_id: _teamId, ...rest } = card;
-    return { ...rest, country_code, stats };
-  }) as CardCatalogEntry[];
-
-  const ownedMap = new Map<string, number>();
-  for (const row of (ownedRes.data ?? []) as {
-    card_id: string;
-    quantity: number;
-  }[]) {
-    ownedMap.set(row.card_id, row.quantity);
-  }
-
-  // Numéro Panini stable : ordre alphabétique par code (indépendant de l'affichage).
-  const numberByCode = new Map<string, number>();
-  [...catalog]
-    .sort((a, b) => a.code.localeCompare(b.code))
-    .forEach((card, i) => numberByCode.set(card.code, i + 1));
-
-  const album: AlbumCard[] = catalog.map((card) => ({
-    ...card,
-    owned: ownedMap.has(card.id),
-    quantity: ownedMap.get(card.id) ?? 0,
-    number: numberByCode.get(card.code) ?? 0,
-  }));
-
-  const groups = groupByNation(album);
-
-  const displayTotal = Math.min(catalogTotal, album.length);
-
   const inventory: InventoryPack[] = (
     (inventoryRes.data ?? []) as {
       id: string;
@@ -164,7 +132,9 @@ export async function getCollectionData(
       pack_types: { name: string } | { name: string }[] | null;
     }[]
   ).map((row) => {
-    const pt = Array.isArray(row.pack_types) ? row.pack_types[0] : row.pack_types;
+    const pt = Array.isArray(row.pack_types)
+      ? row.pack_types[0]
+      : row.pack_types;
     return {
       id: row.id,
       pack_type_id: row.pack_type_id,
@@ -174,13 +144,105 @@ export async function getCollectionData(
   });
 
   return {
-    points: profile.points ?? 0,
-    coins: profile.pack_coins ?? 0,
-    shards: profile.card_shards ?? 0,
-    groups,
+    profile,
+    isoByTeamId,
+    shirtByPlayerId,
     inventory,
-    ownedCount: album.filter((c) => c.owned).length,
-    totalCount: displayTotal > 0 ? displayTotal : catalogTotal,
+    catalogTotal,
+    ownedCount,
+  };
+}
+
+function toAlbumCard(
+  entry: CardCatalogEntry,
+  ownedMap: Map<string, number>,
+  numberByCode: Map<string, number>,
+): AlbumCard {
+  return {
+    ...entry,
+    owned: ownedMap.has(entry.id),
+    quantity: ownedMap.get(entry.id) ?? 0,
+    number: numberByCode.get(entry.code) ?? 0,
+  };
+}
+
+/**
+ * Charge la collection d'un joueur (cartes possédées uniquement pour l'affichage).
+ *
+ * L'album complet (~1000 cartes) est chargé à la demande via getFullAlbumGroups
+ * quand le joueur bascule en vue « album ».
+ */
+export async function getCollectionData(
+  userId: string,
+): Promise<CollectionData> {
+  const supabase = await createClient();
+
+  const [ctx, ownedRows, numberByCode] = await Promise.all([
+    loadCollectionContext(supabase, userId),
+    fetchUserOwnedActiveCards(supabase, userId),
+    fetchCatalogNumberByCode(supabase),
+  ]);
+
+  const album: AlbumCard[] = ownedRows.map(({ card, quantity }) => {
+    const entry = enrichCatalogRow(
+      card,
+      ctx.isoByTeamId,
+      ctx.shirtByPlayerId,
+    );
+    return {
+      ...entry,
+      owned: true,
+      quantity,
+      number: numberByCode.get(entry.code) ?? 0,
+    };
+  });
+
+  const groups = groupByNation(album);
+  const displayTotal = ctx.catalogTotal;
+
+  return {
+    points: ctx.profile.points ?? 0,
+    coins: ctx.profile.pack_coins ?? 0,
+    shards: ctx.profile.card_shards ?? 0,
+    groups,
+    inventory: ctx.inventory,
+    ownedCount: ctx.ownedCount,
+    totalCount: displayTotal > 0 ? displayTotal : ctx.catalogTotal,
     catalogCap: MAX_CATALOG_CARDS,
   };
+}
+
+/** Album complet avec emplacements manquants (chargement à la demande). */
+export async function getFullAlbumGroups(
+  userId: string,
+): Promise<AlbumGroup[]> {
+  const supabase = await createClient();
+
+  const [ctx, catalogRaw, ownedRes, numberByCode] = await Promise.all([
+    loadCollectionContext(supabase, userId),
+    fetchAllActiveCatalogCards(supabase),
+    supabase
+      .from("user_cards")
+      .select("card_id, quantity")
+      .eq("user_id", userId),
+    fetchCatalogNumberByCode(supabase),
+  ]);
+
+  const ownedMap = new Map<string, number>();
+  for (const row of (ownedRes.data ?? []) as {
+    card_id: string;
+    quantity: number;
+  }[]) {
+    ownedMap.set(row.card_id, row.quantity);
+  }
+
+  const catalog = catalogRaw.map((card) =>
+    enrichCatalogRow(card, ctx.isoByTeamId, ctx.shirtByPlayerId),
+  );
+
+  const album = catalog.map((entry) =>
+    toAlbumCard(entry, ownedMap, numberByCode),
+  );
+
+  return groupByNation(album);
 }

@@ -69,6 +69,76 @@ export async function countActiveCatalogCards(
   return Math.min(count ?? 0, MAX_CATALOG_CARDS);
 }
 
+/** Index Panini code → numéro (1-based, ordre alphabétique des codes). */
+export async function fetchCatalogNumberByCode(
+  supabase: SupabaseClient,
+): Promise<Map<string, number>> {
+  const setId = await getWcSetId(supabase);
+  const numberByCode = new Map<string, number>();
+  if (!setId) return numberByCode;
+
+  const expected = await countActiveCatalogCards(supabase);
+  const codes: string[] = [];
+  let from = 0;
+
+  while (codes.length < expected && codes.length < MAX_CATALOG_CARDS) {
+    const { data, error } = await validCatalogQuery(supabase, setId, "code")
+      .order("code")
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw error;
+    if (!data?.length) break;
+
+    for (const row of data as unknown as { code: string }[]) {
+      codes.push(row.code);
+    }
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  codes.sort((a, b) => a.localeCompare(b));
+  codes.forEach((code, i) => numberByCode.set(code, i + 1));
+  return numberByCode;
+}
+
+/** Cartes actives possédées par un joueur (détails complets). */
+export async function fetchUserOwnedActiveCards(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<{ card: ActiveCatalogRow; quantity: number }[]> {
+  const setId = await getWcSetId(supabase);
+  if (!setId) return [];
+
+  const { data, error } = await supabase
+    .from("user_cards")
+    .select(
+      `
+      quantity,
+      cards!inner (
+        id, code, name, rarity, category, country_code, position, image_path, stats, team_id
+      )
+    `,
+    )
+    .eq("user_id", userId)
+    .eq("cards.set_id", setId)
+    .eq("cards.is_active", true)
+    .not("cards.name", "is", null)
+    .neq("cards.name", "");
+
+  if (error) throw error;
+
+  return (data ?? [])
+    .map((row) => {
+      const raw = row.cards as ActiveCatalogRow | ActiveCatalogRow[] | null;
+      const card = Array.isArray(raw) ? raw[0] : raw;
+      if (!card?.name?.trim()) return null;
+      return { card, quantity: row.quantity as number };
+    })
+    .filter((row): row is { card: ActiveCatalogRow; quantity: number } =>
+      row != null,
+    );
+}
+
 /** Charge tout le catalogue valide (pagination stable par code). */
 export async function fetchAllActiveCatalogCards(
   supabase: SupabaseClient,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Coins, Gift, Package, Sparkles } from "lucide-react";
@@ -8,15 +8,24 @@ import { cn } from "@/lib/utils";
 import { CollectionGrid } from "@/components/collection/collection-grid";
 import { MuteToggle } from "@/components/collection/mute-toggle";
 import { PackOpeningOverlay } from "@/components/collection/pack-opening-overlay";
-import { openPackAction } from "@/app/(app)/collection/actions";
+import {
+  fetchFullAlbumAction,
+  openPackAction,
+} from "@/app/(app)/collection/actions";
 import { primeSound } from "@/lib/cards/sound";
-import type { CollectionData } from "@/lib/cards/types";
+import type { AlbumGroup, CollectionData } from "@/lib/cards/types";
+
+type AlbumViewMode = "owned" | "full";
 
 export function CollectionClient({ data }: { data: CollectionData }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showPackOpening, setShowPackOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<AlbumViewMode>("owned");
+  const [fullGroups, setFullGroups] = useState<AlbumGroup[] | null>(null);
+  const [loadingFullAlbum, setLoadingFullAlbum] = useState(false);
+  const [albumError, setAlbumError] = useState<string | null>(null);
 
   const packCount = data.inventory.length;
   const completion =
@@ -32,6 +41,31 @@ export function CollectionClient({ data }: { data: CollectionData }) {
       }
     : { name: "Pack", cardCount: 5 };
 
+  const displayGroups =
+    viewMode === "owned" ? data.groups : (fullGroups ?? data.groups);
+
+  const handleViewModeChange = useCallback(
+    async (mode: AlbumViewMode) => {
+      setViewMode(mode);
+      setAlbumError(null);
+
+      if (mode === "full" && !fullGroups && !loadingFullAlbum) {
+        setLoadingFullAlbum(true);
+        const res = await fetchFullAlbumAction();
+        setLoadingFullAlbum(false);
+
+        if (!res.success) {
+          setAlbumError(res.error);
+          setViewMode("owned");
+          return;
+        }
+
+        setFullGroups(res.groups);
+      }
+    },
+    [fullGroups, loadingFullAlbum],
+  );
+
   function handleOpen() {
     setError(null);
     primeSound();
@@ -40,6 +74,7 @@ export function CollectionClient({ data }: { data: CollectionData }) {
 
   function closeOverlay() {
     setShowPackOpening(false);
+    setFullGroups(null);
     router.refresh();
   }
 
@@ -120,8 +155,54 @@ export function CollectionClient({ data }: { data: CollectionData }) {
 
       {/* Album */}
       <div className="space-y-2">
-        <h2 className="text-sm font-semibold text-muted-foreground">Mon album</h2>
-        <CollectionGrid groups={data.groups} />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-muted-foreground">
+            Mon album
+          </h2>
+          <div className="flex gap-1 rounded-lg border border-border bg-muted/30 p-0.5">
+            {(
+              [
+                ["owned", "Mes cartes"],
+                ["full", "Album complet"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => void handleViewModeChange(id)}
+                disabled={loadingFullAlbum && id === "full"}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                  viewMode === id
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                  loadingFullAlbum &&
+                    id === "full" &&
+                    "cursor-wait opacity-70",
+                )}
+              >
+                {loadingFullAlbum && id === "full" ? "Chargement…" : label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {albumError && (
+          <p
+            className="rounded-lg bg-destructive/15 px-3 py-2 text-sm text-destructive"
+            role="alert"
+          >
+            {albumError}
+          </p>
+        )}
+
+        <CollectionGrid
+          groups={displayGroups}
+          viewMode={viewMode}
+          totalCount={data.totalCount}
+          ownedCount={data.ownedCount}
+          loading={loadingFullAlbum && viewMode === "full"}
+        />
       </div>
 
       {showPackOpening && (

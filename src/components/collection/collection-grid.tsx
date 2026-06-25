@@ -21,7 +21,19 @@ function isRarePlus(rarity: CardRarity): boolean {
   return rarity === "rare" || rarity === "epique" || rarity === "legendaire";
 }
 
-export function CollectionGrid({ groups }: { groups: AlbumGroup[] }) {
+export function CollectionGrid({
+  groups,
+  viewMode,
+  totalCount,
+  ownedCount,
+  loading = false,
+}: {
+  groups: AlbumGroup[];
+  viewMode: "owned" | "full";
+  totalCount: number;
+  ownedCount: number;
+  loading?: boolean;
+}) {
   const allCards = useMemo(
     () => groups.flatMap((g) => g.cards),
     [groups],
@@ -75,9 +87,17 @@ export function CollectionGrid({ groups }: { groups: AlbumGroup[] }) {
   }, [allCards, rarity, category, country]);
 
   const ownedShown = filtered.filter((c) => c.owned).length;
+  const missingShown = filtered.length - ownedShown;
 
   return (
     <div className="space-y-4">
+      {viewMode === "full" && (
+        <p className="text-xs text-muted-foreground">
+          Vue album : les emplacements manquants sont affichés en grisé. Cette
+          vue peut être plus lente sur mobile.
+        </p>
+      )}
+
       <div className="flex flex-wrap gap-2">
         <FilterSelect
           label="Rareté"
@@ -115,13 +135,42 @@ export function CollectionGrid({ groups }: { groups: AlbumGroup[] }) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        {filtered.length} carte{filtered.length > 1 ? "s" : ""} · {ownedShown}{" "}
-        possédée{ownedShown > 1 ? "s" : ""}
+        {viewMode === "owned" ? (
+          <>
+            {filtered.length} carte{filtered.length > 1 ? "s" : ""} possédée
+            {filtered.length > 1 ? "s" : ""}
+            {totalCount > 0 && (
+              <>
+                {" "}
+                · {ownedCount}/{totalCount} au catalogue (
+                {Math.round((ownedCount / totalCount) * 100)}%)
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            {filtered.length} emplacement{filtered.length > 1 ? "s" : ""} ·{" "}
+            {ownedShown} possédée{ownedShown > 1 ? "s" : ""}
+            {missingShown > 0 &&
+              ` · ${missingShown} manquante${missingShown > 1 ? "s" : ""}`}
+          </>
+        )}
       </p>
 
-      {filtered.length === 0 ? (
+      {loading ? (
         <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-          Aucune carte pour ces filtres.
+          Chargement de l&apos;album complet…
+        </p>
+      ) : filtered.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+          {viewMode === "owned" ? (
+            <>
+              Aucune carte possédée pour ces filtres. Ouvrez un pack ou passez en
+              vue « Album complet » pour voir les emplacements manquants.
+            </>
+          ) : (
+            "Aucune carte pour ces filtres."
+          )}
         </p>
       ) : (
         <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">

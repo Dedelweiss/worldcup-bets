@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth-server";
+import { getFullAlbumGroups } from "@/lib/cards/data";
 import { createClient } from "@/lib/supabase/server";
-import type { OpenPackResult } from "@/lib/cards/types";
+import type { AlbumGroup, OpenPackResult } from "@/lib/cards/types";
 
 function mapPackError(message: string): string {
   const m = message.toLowerCase();
@@ -22,6 +23,22 @@ function mapPackError(message: string): string {
 export type OpenPackActionResult =
   | { success: true; result: OpenPackResult }
   | { success: false; error: string };
+
+export type FetchFullAlbumResult =
+  | { success: true; groups: AlbumGroup[] }
+  | { success: false; error: string };
+
+export async function fetchFullAlbumAction(): Promise<FetchFullAlbumResult> {
+  const profile = await requireAuth();
+
+  try {
+    const groups = await getFullAlbumGroups(profile.id);
+    return { success: true, groups };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erreur inconnue";
+    return { success: false, error: message };
+  }
+}
 
 export async function openPackAction(
   packId?: string,
