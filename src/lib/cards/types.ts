@@ -5,6 +5,10 @@ export interface CardStats {
   age?: number | null;
   shirtNumber?: number | null;
   goals?: number | null;
+  icon?: string | null;
+  decade?: string | null;
+  subtitle?: string | null;
+  region?: string | null;
 }
 
 export interface CardCatalogEntry {
@@ -36,14 +40,6 @@ export interface AlbumGroup {
   totalCount: number;
 }
 
-export interface PackType {
-  id: string;
-  code: string;
-  name: string;
-  price_points: number;
-  card_count: number;
-}
-
 export interface InventoryPack {
   id: string;
   pack_type_id: string;
@@ -57,7 +53,10 @@ export interface OpenedCard {
   code: string;
   name: string;
   rarity: CardRarity;
+  category?: string | null;
   country_code: string | null;
+  position?: string | null;
+  stats?: CardStats | null;
   image_path: string | null;
   duplicate: boolean;
 }
@@ -75,7 +74,7 @@ export interface CollectionData {
   shards: number;
   groups: AlbumGroup[];
   inventory: InventoryPack[];
-  packTypes: PackType[];
   ownedCount: number;
   totalCount: number;
+  catalogCap: number;
 }

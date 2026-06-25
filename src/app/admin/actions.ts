@@ -1199,9 +1199,15 @@ export type GeneratePlayerCardsActionResult =
       success: true;
       teams: number;
       cards: number;
+      specialCards: number;
+      skipped: number;
+      invalid: number;
+      catalogTotal: number;
       squadsSynced: number;
       withSquad: number;
       tournamentTeams: number;
+      shirtsEnriched?: number;
+      shirtsRemaining?: number;
       squadError?: string;
     }
   | { success: false; error: string };
@@ -1217,18 +1223,26 @@ export async function generatePlayerCardsAction(): Promise<GeneratePlayerCardsAc
     // 1. Remplir teams.squad si nécessaire (1 requête football-data).
     const squad = await syncTeamSquadsAdminBatch();
     // 2. Générer les cartes à partir des effectifs en cache.
-    const { teams, cards } = await generatePlayerCards();
+    const { teams, cards, specialCards, skipped, invalid, catalogTotal } =
+      await generatePlayerCards();
     // 3. État des effectifs pour diagnostic.
     const status = await getTeamSquadSyncStatus();
 
     revalidatePath("/collection");
+    revalidatePath("/admin/collection");
     return {
       success: true,
       teams,
       cards,
+      specialCards,
+      skipped,
+      invalid,
+      catalogTotal,
       squadsSynced: squad.synced,
       withSquad: status.withSquad,
       tournamentTeams: status.tournamentTeams,
+      shirtsEnriched: squad.shirtsEnriched,
+      shirtsRemaining: squad.shirtsRemaining,
       squadError: squad.error,
     };
   } catch (e) {
@@ -1243,13 +1257,15 @@ export type ResetPackCoinsActionResult =
   | { success: true; count: number }
   | { success: false; error: string };
 
-/** Remet à zéro les jetons d'achat de packs de tous les joueurs (admin). */
-export async function resetPackCoinsAction(): Promise<ResetPackCoinsActionResult> {
+/** Remet à zéro les jetons d'achat de packs (tous les joueurs ou un seul). */
+export async function resetPackCoinsAction(
+  userId?: string,
+): Promise<ResetPackCoinsActionResult> {
   await requireAdmin();
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("admin_reset_pack_coins", {
-    p_user_id: null,
+    p_user_id: userId ?? null,
   });
 
   if (error) {
@@ -1257,5 +1273,211 @@ export async function resetPackCoinsAction(): Promise<ResetPackCoinsActionResult
   }
 
   revalidatePath("/collection");
+  revalidatePath("/shop");
+  revalidatePath("/admin/collection");
   return { success: true, count: (data as number) ?? 0 };
+}
+
+export type ResetCardShardsActionResult =
+  | { success: true; count: number }
+  | { success: false; error: string };
+
+/** Remet à zéro les éclats (tous les joueurs ou un seul). */
+export async function resetCardShardsAction(
+  userId?: string,
+): Promise<ResetCardShardsActionResult> {
+  await requireAdmin();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_reset_card_shards", {
+    p_user_id: userId ?? null,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Fonction admin_reset_card_shards absente. Exécutez supabase/migrations/105_admin_reset_shards.sql."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  revalidatePath("/collection");
+  revalidatePath("/shop");
+  revalidatePath("/admin/collection");
+  return { success: true, count: (data as number) ?? 0 };
+}
+
+export type AdjustCardShardsActionResult =
+  | { success: true; newBalance: number }
+  | { success: false; error: string };
+
+/** Crédite ou débite les éclats d'un joueur (admin). */
+export async function adjustCardShardsAction(
+  formData: FormData,
+): Promise<AdjustCardShardsActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const userId = String(formData.get("userId"));
+  const amount = Number(formData.get("amount"));
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (!userId || Number.isNaN(amount) || amount === 0 || !Number.isInteger(amount)) {
+    return { success: false, error: "Joueur et montant entier requis (non nul)." };
+  }
+
+  const { data, error } = await supabase.rpc("admin_adjust_card_shards", {
+    p_user_id: userId,
+    p_amount: amount,
+    p_reason: reason,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Fonction admin_adjust_card_shards absente. Exécutez supabase/migrations/105_admin_reset_shards.sql."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  revalidatePath("/collection");
+  revalidatePath("/shop");
+  revalidatePath("/admin/collection");
+  return { success: true, newBalance: Number(data) };
+}
+
+export type AdjustPackCoinsActionResult =
+  | { success: true; newBalance: number }
+  | { success: false; error: string };
+
+/** Crédite ou débite les jetons packs d'un joueur (admin). */
+export async function adjustPackCoinsAction(
+  formData: FormData,
+): Promise<AdjustPackCoinsActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const userId = String(formData.get("userId"));
+  const amount = Number(formData.get("amount"));
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (!userId || Number.isNaN(amount) || amount === 0) {
+    return { success: false, error: "Joueur et montant requis (non nul)." };
+  }
+
+  const { data, error } = await supabase.rpc("admin_adjust_pack_coins", {
+    p_user_id: userId,
+    p_amount: amount,
+    p_reason: reason,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Fonction admin_adjust_pack_coins absente. Exécutez supabase/migrations/098_admin_collection.sql."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  revalidatePath("/collection");
+  revalidatePath("/collection");
+  revalidatePath("/shop");
+  revalidatePath("/admin/collection");
+  return { success: true, newBalance: Number(data) };
+}
+
+export type ResetPlayerAlbumActionResult =
+  | {
+      success: true;
+      summary: {
+        cards_removed: number;
+        packs_removed: number;
+        openings_removed: number;
+        coins_reset: boolean;
+      };
+    }
+  | { success: false; error: string };
+
+/** Supprime la collection, packs et historique d'un joueur. */
+export async function resetPlayerAlbumAction(
+  userId: string,
+  resetCoins = false,
+): Promise<ResetPlayerAlbumActionResult> {
+  await requireAdmin();
+
+  if (!userId) {
+    return { success: false, error: "Joueur requis." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_reset_player_album", {
+    p_user_id: userId,
+    p_reset_coins: resetCoins,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Fonction admin_reset_player_album absente. Exécutez supabase/migrations/098_admin_collection.sql."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  revalidatePath("/collection");
+  revalidatePath("/admin/collection");
+  const summary = data as {
+    cards_removed: number;
+    packs_removed: number;
+    openings_removed: number;
+    coins_reset: boolean;
+  };
+  return { success: true, summary };
+}
+
+export type GrantAllCardsActionResult =
+  | {
+      success: true;
+      granted: number;
+      catalogTotal: number;
+      ownedTotal: number;
+    }
+  | { success: false; error: string };
+
+/** Donne toutes les cartes du catalogue à un joueur (test admin). */
+export async function grantAllCardsAction(
+  userId: string,
+): Promise<GrantAllCardsActionResult> {
+  await requireAdmin();
+
+  if (!userId) {
+    return { success: false, error: "Joueur requis." };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_grant_all_cards", {
+    p_user_id: userId,
+  });
+
+  if (error) {
+    const msg = error.message.includes("Could not find the function")
+      ? "Fonction admin_grant_all_cards absente. Exécutez les migrations 102 et 103 dans Supabase."
+      : error.message;
+    return { success: false, error: msg };
+  }
+
+  revalidatePath("/collection");
+  revalidatePath("/admin/collection");
+
+  if (typeof data === "number") {
+    return { success: true, granted: data, catalogTotal: 0, ownedTotal: 0 };
+  }
+
+  const payload = data as {
+    granted?: number;
+    catalog_total?: number;
+    owned_total?: number;
+  };
+
+  return {
+    success: true,
+    granted: Number(payload.granted) || 0,
+    catalogTotal: Number(payload.catalog_total) || 0,
+    ownedTotal: Number(payload.owned_total) || 0,
+  };
 }

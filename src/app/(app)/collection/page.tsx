@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CollectionClient } from "@/components/collection/collection-client";
 import { requireAuth } from "@/lib/auth-server";
 import { getCollectionData } from "@/lib/cards/data";
@@ -13,8 +14,11 @@ export default async function CollectionPage() {
       <div>
         <h1 className="font-heading text-2xl font-bold">Collection</h1>
         <p className="text-sm text-muted-foreground">
-          Ouvre des packs avec tes points et complète ton album. Un prono gagné
-          peut aussi te faire gagner un pack.
+          Complète ton album et ouvre tes packs. Achète-en de nouveaux à la{" "}
+          <Link href="/shop" className="text-primary hover:underline">
+            boutique
+          </Link>
+          . Un prono gagné peut aussi te faire gagner un pack.
         </p>
       </div>
       <CollectionClient data={data} />

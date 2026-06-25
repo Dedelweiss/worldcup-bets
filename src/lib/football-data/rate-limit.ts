@@ -28,3 +28,6 @@ export const FOOTBALL_DATA_MAX_SQUAD_SYNCS_PER_RUN = 1;
 
 /** Lot admin manuel (quota football-data ~10 req/min). */
 export const FOOTBALL_DATA_MAX_SQUAD_SYNCS_ADMIN = 8;
+
+/** Enrichissement numéros maillot via /teams/{id} (1 req / équipe). */
+export const FOOTBALL_DATA_SHIRT_ENRICH_INTERVAL_MS = 6_500;

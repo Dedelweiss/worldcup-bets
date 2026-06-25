@@ -12,4 +12,5 @@ export const appNav: NavItem[] = [
   { href: "/leagues", label: "Ligues" },
   { href: "/bets", label: "Mes paris" },
   { href: "/collection", label: "Collection" },
+  { href: "/shop", label: "Boutique" },
 ];

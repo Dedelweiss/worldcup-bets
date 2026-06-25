@@ -123,7 +123,7 @@ export function primeSound(): void {
   if (audio && audio.state === "suspended") void audio.resume();
 }
 
-export type CardSound = "burst" | "stick" | "shine";
+export type CardSound = "burst" | "stick" | "shine" | "cash";
 
 export function playSound(name: CardSound): void {
   if (isMuted()) return;
@@ -140,6 +140,10 @@ export function playSound(name: CardSound): void {
       break;
     case "shine":
       playTone(audio, 620, 1280, 0.18, 0.06);
+      break;
+    case "cash":
+      playTone(audio, 880, 1320, 0.08, 0.07);
+      playTone(audio, 520, 780, 0.12, 0.05);
       break;
   }
 }

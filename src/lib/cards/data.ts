@@ -1,13 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
+import { MAX_CATALOG_CARDS } from "@/lib/cards/catalog-limits";
+import {
+  countActiveCatalogCards,
+  fetchAllActiveCatalogCards,
+} from "@/lib/cards/catalog-query";
+import { ourTeamCodeToIso2, iso2ToName } from "@/lib/cards/nations";
+import {
+  buildShirtNumberIndex,
+  resolveShirtNumber,
+} from "@/lib/cards/shirt-numbers";
 import { RARITY_ORDER } from "@/lib/cards/styles";
-import { iso2ToName } from "@/lib/cards/nations";
 import type {
   AlbumCard,
   AlbumGroup,
   CardCatalogEntry,
   CollectionData,
   InventoryPack,
-  PackType,
 } from "@/lib/cards/types";
 
 const SPECIAL_GROUP_KEY = "_special";
@@ -63,19 +71,14 @@ export async function getCollectionData(
 ): Promise<CollectionData> {
   const supabase = await createClient();
 
-  const [profileRes, catalogRes, ownedRes, inventoryRes, packTypesRes] =
+  const [profileRes, teamsRes, ownedRes, inventoryRes] =
     await Promise.all([
       supabase
         .from("profiles")
         .select("points, card_shards, pack_coins")
         .eq("id", userId)
         .single(),
-      supabase
-        .from("cards")
-        .select(
-          "id, code, name, rarity, category, country_code, position, image_path, stats",
-        )
-        .order("name"),
+      supabase.from("teams").select("id, code, squad"),
       supabase
         .from("user_cards")
         .select("card_id, quantity")
@@ -85,12 +88,21 @@ export async function getCollectionData(
         .select("id, pack_type_id, source, pack_types(name)")
         .eq("user_id", userId)
         .order("created_at"),
-      supabase
-        .from("pack_types")
-        .select("id, code, name, price_points, card_count")
-        .eq("is_active", true)
-        .order("price_points"),
     ]);
+
+  const catalogRaw = await fetchAllActiveCatalogCards(supabase);
+  const catalogTotal = await countActiveCatalogCards(supabase);
+
+  const isoByTeamId = new Map<number, string>();
+  const shirtByPlayerId = buildShirtNumberIndex(
+    (teamsRes.data ?? []) as {
+      squad: { id: number; shirtNumber: number | null }[] | null;
+    }[],
+  );
+  for (const team of teamsRes.data ?? []) {
+    const iso = ourTeamCodeToIso2(team.code);
+    if (iso) isoByTeamId.set(team.id, iso);
+  }
 
   const profile = (profileRes.data ?? {
     points: 0,
@@ -102,7 +114,22 @@ export async function getCollectionData(
     pack_coins: number;
   };
 
-  const catalog = (catalogRes.data ?? []) as CardCatalogEntry[];
+  const catalog = catalogRaw.map((card) => {
+    const country_code =
+      card.country_code ??
+      (card.team_id ? (isoByTeamId.get(card.team_id) ?? null) : null);
+    const shirtNumber = resolveShirtNumber(
+      card.code,
+      card.stats,
+      shirtByPlayerId,
+    );
+    const stats =
+      shirtNumber != null
+        ? { ...(card.stats ?? {}), shirtNumber }
+        : card.stats;
+    const { team_id: _teamId, ...rest } = card;
+    return { ...rest, country_code, stats };
+  }) as CardCatalogEntry[];
 
   const ownedMap = new Map<string, number>();
   for (const row of (ownedRes.data ?? []) as {
@@ -127,6 +154,8 @@ export async function getCollectionData(
 
   const groups = groupByNation(album);
 
+  const displayTotal = Math.min(catalogTotal, album.length);
+
   const inventory: InventoryPack[] = (
     (inventoryRes.data ?? []) as {
       id: string;
@@ -144,16 +173,14 @@ export async function getCollectionData(
     };
   });
 
-  const packTypes = (packTypesRes.data ?? []) as PackType[];
-
   return {
     points: profile.points ?? 0,
     coins: profile.pack_coins ?? 0,
     shards: profile.card_shards ?? 0,
     groups,
     inventory,
-    packTypes,
     ownedCount: album.filter((c) => c.owned).length,
-    totalCount: album.length,
+    totalCount: displayTotal > 0 ? displayTotal : catalogTotal,
+    catalogCap: MAX_CATALOG_CARDS,
   };
 }

@@ -14,6 +14,14 @@ export const RARITY_LABEL: Record<CardRarity, string> = {
   legendaire: "Légendaire",
 };
 
+/** Puces rareté lisibles sur fond papier (boutique). */
+export const SHOP_RARITY_CHIP: Record<CardRarity, string> = {
+  commune: "border border-zinc-400/80 bg-zinc-100 text-zinc-900",
+  rare: "border border-sky-400/80 bg-sky-50 text-sky-950",
+  epique: "border border-fuchsia-400/80 bg-fuchsia-50 text-fuchsia-950",
+  legendaire: "border border-amber-500/80 bg-amber-50 text-amber-950",
+};
+
 /** Classes Tailwind par rareté (bordure + halo + texte). */
 export const RARITY_STYLE: Record<
   CardRarity,

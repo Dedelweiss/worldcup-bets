@@ -5,7 +5,9 @@ import {
 } from "@/lib/football-data/client";
 import { resolveFootballDataTeamId } from "@/lib/football-data/team-link";
 import {
+  FOOTBALL_DATA_MAX_SQUAD_SYNCS_ADMIN,
   FOOTBALL_DATA_MAX_SQUAD_SYNCS_PER_RUN,
+  FOOTBALL_DATA_SHIRT_ENRICH_INTERVAL_MS,
   FOOTBALL_DATA_SQUAD_SYNC_INTERVAL_MS,
 } from "@/lib/football-data/rate-limit";
 import type {
@@ -20,6 +22,57 @@ interface DbTeamForSquad {
   code: string | null;
   football_data_id: number | null;
   squad_synced_at: string | null;
+}
+
+function extractShirtNumber(
+  person: FootballDataSquadPerson & Record<string, unknown>,
+): number | null {
+  const raw =
+    person.shirtNumber ??
+    (person.shirt as number | string | undefined) ??
+    (person.number as number | string | undefined);
+
+  if (typeof raw === "number" && raw > 0 && raw < 100) return raw;
+  if (typeof raw === "string") {
+    const parsed = Number.parseInt(raw, 10);
+    if (parsed > 0 && parsed < 100) return parsed;
+  }
+  return null;
+}
+
+export function mergeShirtNumbersIntoSquad(
+  existing: TeamSquadPlayer[],
+  detail: TeamSquadPlayer[],
+): TeamSquadPlayer[] {
+  if (!existing.length) return detail;
+  if (!detail.length) return existing;
+
+  const shirtById = new Map<number, number>();
+  for (const player of detail) {
+    if (player.shirtNumber != null && player.shirtNumber > 0) {
+      shirtById.set(player.id, player.shirtNumber);
+    }
+  }
+
+  if (shirtById.size === 0) return existing;
+
+  return existing.map((player) => {
+    const shirt = shirtById.get(player.id);
+    if (shirt == null) return player;
+    return { ...player, shirtNumber: shirt };
+  });
+}
+
+function squadShirtCoverage(squad: TeamSquadPlayer[]): number {
+  if (!squad.length) return 0;
+  const withShirt = squad.filter(
+    (p) => p.shirtNumber != null && p.shirtNumber > 0,
+  ).length;
+  return withShirt / squad.length;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function personDisplayName(person: FootballDataSquadPerson): string {
@@ -52,7 +105,9 @@ export function mapFootballDataSquad(
       id: p.id,
       name: personDisplayName(p),
       position: p.position?.trim() || null,
-      shirtNumber: p.shirtNumber ?? null,
+      shirtNumber: extractShirtNumber(
+        p as FootballDataSquadPerson & Record<string, unknown>,
+      ),
       dateOfBirth: p.dateOfBirth?.slice(0, 10) ?? null,
       nationality: p.nationality?.trim() || null,
     }))
@@ -125,6 +180,8 @@ export type SyncTeamSquadsResult = {
   synced: number;
   apiCalls: number;
   remaining: number;
+  shirtsEnriched?: number;
+  shirtsRemaining?: number;
   error?: string;
 };
 
@@ -284,7 +341,17 @@ export async function syncStaleTeamSquads(options?: {
       const detail = await fetchFootballDataTeamById(team.football_data_id);
       apiCalls += 1;
 
-      const squad = mapFootballDataSquad(detail.squad);
+      const existing = Array.isArray(team.squad)
+        ? (team.squad as TeamSquadPlayer[])
+        : [];
+      const detailSquad = mapFootballDataSquad(detail.squad);
+      const squad =
+        detailSquad.length > 0
+          ? mergeShirtNumbersIntoSquad(
+              existing.length > detailSquad.length ? existing : detailSquad,
+              detailSquad,
+            )
+          : existing;
       const coachName = coachDisplayName(detail.coach);
 
       const { error: updateError } = await supabase
@@ -310,7 +377,117 @@ export async function syncStaleTeamSquads(options?: {
   };
 }
 
-/** Import admin : tous les effectifs en 1 clic (1 req API). */
+/**
+ * L'endpoint bulk /competitions/WC/teams omet souvent les numéros de maillot.
+ * On les récupère via /teams/{id} et on fusionne dans teams.squad.
+ */
+export async function enrichSquadsWithShirtNumbers(options?: {
+  maxTeams?: number;
+}): Promise<{
+  enriched: number;
+  apiCalls: number;
+  remaining: number;
+  error?: string;
+}> {
+  const maxTeams = options?.maxTeams ?? FOOTBALL_DATA_MAX_SQUAD_SYNCS_ADMIN;
+
+  if (!hasFootballDataConfig() || maxTeams <= 0) {
+    return { enriched: 0, apiCalls: 0, remaining: 0 };
+  }
+
+  let supabase;
+  try {
+    supabase = createAdminClient();
+  } catch (e) {
+    return {
+      enriched: 0,
+      apiCalls: 0,
+      remaining: 0,
+      error: e instanceof Error ? e.message : "Admin client unavailable",
+    };
+  }
+
+  const { data: teams, error } = await supabase
+    .from("teams")
+    .select("id, football_data_id, squad")
+    .not("tournament_group_id", "is", null)
+    .not("football_data_id", "is", null);
+
+  if (error || !teams?.length) {
+    return { enriched: 0, apiCalls: 0, remaining: 0, error: error?.message };
+  }
+
+  const candidates = (teams as (DbTeamForSquad & { squad: unknown })[])
+    .map((team) => {
+      const squad = Array.isArray(team.squad)
+        ? (team.squad as TeamSquadPlayer[])
+        : [];
+      return { team, squad, coverage: squadShirtCoverage(squad) };
+    })
+    .filter((row) => row.squad.length > 0 && row.coverage < 0.9)
+    .sort((a, b) => a.coverage - b.coverage);
+
+  if (!candidates.length) {
+    return { enriched: 0, apiCalls: 0, remaining: 0 };
+  }
+
+  let enriched = 0;
+  let apiCalls = 0;
+
+  for (const { team, squad } of candidates.slice(0, maxTeams)) {
+    if (!team.football_data_id) continue;
+
+    try {
+      const detail = await fetchFootballDataTeamById(team.football_data_id);
+      apiCalls += 1;
+
+      const detailSquad = mapFootballDataSquad(detail.squad);
+      const merged = mergeShirtNumbersIntoSquad(squad, detailSquad);
+
+      if (squadShirtCoverage(merged) <= squadShirtCoverage(squad)) {
+        if (apiCalls < maxTeams) {
+          await sleep(FOOTBALL_DATA_SHIRT_ENRICH_INTERVAL_MS);
+        }
+        continue;
+      }
+
+      const { error: updateError } = await supabase
+        .from("teams")
+        .update({
+          squad: merged,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", team.id);
+
+      if (!updateError) enriched += 1;
+    } catch {
+      // ignore single team failure
+    }
+
+    if (apiCalls < maxTeams) {
+      await sleep(FOOTBALL_DATA_SHIRT_ENRICH_INTERVAL_MS);
+    }
+  }
+
+  const remaining = Math.max(0, candidates.length - enriched);
+
+  return { enriched, apiCalls, remaining };
+}
+
+/** Import admin : effectifs bulk + enrichissement numéros (football-data /teams/{id}). */
 export async function syncTeamSquadsAdminBatch(): Promise<SyncTeamSquadsResult> {
-  return syncTeamSquadsFromCompetition();
+  const bulk = await syncTeamSquadsFromCompetition();
+  if (bulk.error) return bulk;
+
+  const shirts = await enrichSquadsWithShirtNumbers({
+    maxTeams: FOOTBALL_DATA_MAX_SQUAD_SYNCS_ADMIN,
+  });
+
+  return {
+    ...bulk,
+    apiCalls: bulk.apiCalls + shirts.apiCalls,
+    shirtsEnriched: shirts.enriched,
+    shirtsRemaining: shirts.remaining,
+    error: shirts.error ?? bulk.error,
+  };
 }

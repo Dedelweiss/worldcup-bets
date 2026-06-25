@@ -1,7 +1,8 @@
+import { footballDataTlaForOurCode } from "@/lib/football-data/team-tla";
+
 /**
  * Correspondance code football-data (TLA 3 lettres) -> ISO alpha-2 + nom français.
  * Sert à afficher le drapeau (libre de droits) et à regrouper l'album par nation.
- * Les codes inconnus retombent sur country_code null (carte sans drapeau).
  */
 interface Nation {
   tla: string;
@@ -61,6 +62,15 @@ const NATIONS: Nation[] = [
   { tla: "PAN", iso2: "pa", name: "Panama" },
   { tla: "JAM", iso2: "jm", name: "Jamaïque" },
   { tla: "NZL", iso2: "nz", name: "Nouvelle-Zélande" },
+  { tla: "CZE", iso2: "cz", name: "Tchéquie" },
+  { tla: "BIH", iso2: "ba", name: "Bosnie-Herzégovine" },
+  { tla: "HAI", iso2: "ht", name: "Haïti" },
+  { tla: "CUW", iso2: "cw", name: "Curaçao" },
+  { tla: "CPV", iso2: "cv", name: "Cap-Vert" },
+  { tla: "IRQ", iso2: "iq", name: "Irak" },
+  { tla: "JOR", iso2: "jo", name: "Jordanie" },
+  { tla: "COD", iso2: "cd", name: "RD Congo" },
+  { tla: "UZB", iso2: "uz", name: "Ouzbékistan" },
 ];
 
 const BY_TLA = new Map(NATIONS.map((n) => [n.tla.toUpperCase(), n]));
@@ -69,6 +79,29 @@ const BY_ISO2 = new Map(NATIONS.map((n) => [n.iso2, n]));
 export function tlaToIso2(tla: string | null): string | null {
   if (!tla) return null;
   return BY_TLA.get(tla.toUpperCase())?.iso2 ?? null;
+}
+
+/**
+ * Code équipe interne (seed WC2026 : FR, US, GB-ENG…) → ISO alpha-2 pour drapeau / maillot.
+ */
+export function ourTeamCodeToIso2(ourCode: string | null): string | null {
+  if (!ourCode) return null;
+  const key = ourCode.trim().toUpperCase();
+
+  if (key === "GB-ENG" || key === "GB-SCT" || key === "GB-WAL") return "gb";
+
+  if (key.length === 2) {
+    const lower = key.toLowerCase();
+    if (BY_ISO2.has(lower)) return lower;
+  }
+
+  const tla = footballDataTlaForOurCode(ourCode);
+  if (tla) {
+    const fromTla = tlaToIso2(tla);
+    if (fromTla) return fromTla;
+  }
+
+  return tlaToIso2(key);
 }
 
 export function iso2ToName(iso2: string | null): string | null {
@@ -119,6 +152,28 @@ const NATION_COLORS: Record<string, NationColors> = {
   co: { primary: "#facc15", secondary: "#1d4ed8" },
   pe: { primary: "#dc2626", secondary: "#f8fafc" },
   cl: { primary: "#dc2626", secondary: "#1d4ed8" },
+  py: { primary: "#dc2626", secondary: "#1d4ed8" },
+  dz: { primary: "#16a34a", secondary: "#f8fafc" },
+  ci: { primary: "#f97316", secondary: "#16a34a" },
+  za: { primary: "#15803d", secondary: "#facc15" },
+  no: { primary: "#dc2626", secondary: "#1e3a8a" },
+  se: { primary: "#facc15", secondary: "#1d4ed8" },
+  at: { primary: "#dc2626", secondary: "#f8fafc" },
+  tr: { primary: "#dc2626", secondary: "#f8fafc" },
+  ua: { primary: "#facc15", secondary: "#1d4ed8" },
+  pa: { primary: "#dc2626", secondary: "#1d4ed8" },
+  jm: { primary: "#facc15", secondary: "#16a34a" },
+  nz: { primary: "#1f2937", secondary: "#f8fafc" },
+  cr: { primary: "#dc2626", secondary: "#1d4ed8" },
+  cz: { primary: "#dc2626", secondary: "#1e3a8a" },
+  ba: { primary: "#1d4ed8", secondary: "#facc15" },
+  ht: { primary: "#1d4ed8", secondary: "#dc2626" },
+  cw: { primary: "#1d4ed8", secondary: "#facc15" },
+  cv: { primary: "#1d4ed8", secondary: "#dc2626" },
+  iq: { primary: "#dc2626", secondary: "#111827" },
+  jo: { primary: "#111827", secondary: "#dc2626" },
+  cd: { primary: "#1d4ed8", secondary: "#facc15" },
+  uz: { primary: "#1d4ed8", secondary: "#f8fafc" },
 };
 
 const NEUTRAL_COLORS: NationColors = {

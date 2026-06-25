@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Layers } from "lucide-react";
 import { generatePlayerCardsAction } from "@/app/admin/actions";
@@ -12,30 +12,48 @@ export function GenerateCardsButton() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const runningRef = useRef(false);
 
   async function handleGenerate() {
+    if (runningRef.current || loading) return;
+    runningRef.current = true;
     setLoading(true);
-    setMessage(null);
+    setMessage("Synchronisation des effectifs et génération en cours…");
     setError(null);
 
-    const result = await generatePlayerCardsAction();
+    try {
+      const result = await generatePlayerCardsAction();
 
-    if (!result.success) {
-      setError(result.error);
-    } else {
+      if (!result.success) {
+        setMessage(null);
+        setError(result.error);
+        return;
+      }
+
       setMessage(
-        `${result.cards} carte(s) joueur · effectifs en cache ${result.withSquad}/${result.tournamentTeams} (sync +${result.squadsSynced})`,
+        `${result.cards} joueur(s) · ${result.specialCards} spéciale(s) · catalogue ${result.catalogTotal}/1000` +
+          (result.skipped > 0 ? ` · ${result.skipped} hors quota` : "") +
+          (result.shirtsEnriched
+            ? ` · numéros +${result.shirtsEnriched} équipe(s)`
+            : "") +
+          (result.shirtsRemaining
+            ? ` · ${result.shirtsRemaining} équipe(s) numéros en attente (relancez)`
+            : "") +
+          ` · effectifs ${result.withSquad}/${result.tournamentTeams}`,
       );
+
       if (result.cards === 0 && result.withSquad === 0) {
         setError(
           result.squadError ??
             "Aucun effectif disponible côté football-data.org. Vérifiez FOOTBALL_DATA_API_KEY et que les équipes sont liées (football_data_id).",
         );
       }
-      router.refresh();
-    }
 
-    setLoading(false);
+      router.refresh();
+    } finally {
+      runningRef.current = false;
+      setLoading(false);
+    }
   }
 
   return (
@@ -49,7 +67,7 @@ export function GenerateCardsButton() {
         className="gap-1.5"
       >
         <Layers className={cn("size-3.5", loading && "animate-pulse")} />
-        Générer les cartes joueurs
+        {loading ? "Génération en cours…" : "Générer les cartes joueurs"}
       </Button>
       {message && <p className="text-xs text-muted-foreground">{message}</p>}
       {error && (
