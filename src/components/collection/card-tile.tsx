@@ -1,23 +1,23 @@
 import { cn } from "@/lib/utils";
 import { flagEmoji, RARITY_LABEL, RARITY_STYLE } from "@/lib/cards/styles";
+import { getNationColors, type NationColors } from "@/lib/cards/nations";
 import { stickerRotation } from "@/lib/cards/sticker";
-import type { CardRarity, AlbumCard } from "@/lib/cards/types";
+import type { AlbumCard } from "@/lib/cards/types";
 
-const RARITY_ACCENT: Record<CardRarity, string> = {
-  commune: "#94a3b8",
-  rare: "#38bdf8",
-  epique: "#c084fc",
-  legendaire: "#fbbf24",
-};
-
-function Jersey({ number, accent }: { number: number | null; accent: string }) {
+function Jersey({
+  number,
+  colors,
+}: {
+  number: number | null;
+  colors: NationColors;
+}) {
   return (
-    <svg viewBox="0 0 100 100" className="h-12 w-12" aria-hidden>
+    <svg viewBox="0 0 100 100" className="h-14 w-14" aria-hidden>
       <path
-        d="M34 16 L14 28 L24 42 L24 84 L76 84 L76 42 L86 28 L66 16 L58 16 L50 24 L42 16 Z"
-        fill="#0f172a"
-        stroke={accent}
-        strokeWidth="3"
+        d="M34 14 L12 28 L22 44 L22 86 L78 86 L78 44 L88 28 L66 14 L58 14 L50 24 L42 14 Z"
+        fill={colors.primary}
+        stroke={colors.secondary}
+        strokeWidth="5"
         strokeLinejoin="round"
       />
       {number != null && (
@@ -26,8 +26,11 @@ function Jersey({ number, accent }: { number: number | null; accent: string }) {
           y="66"
           textAnchor="middle"
           fontSize="30"
-          fontWeight="700"
-          fill="#f8fafc"
+          fontWeight="800"
+          fill="#ffffff"
+          stroke="#0f172a"
+          strokeWidth="4"
+          style={{ paintOrder: "stroke" }}
         >
           {number}
         </text>
@@ -36,11 +39,12 @@ function Jersey({ number, accent }: { number: number | null; accent: string }) {
   );
 }
 
-function StatBadge({ label }: { label: string }) {
+function StatBadge({ value, label }: { value: string | number; label: string }) {
   return (
-    <span className="rounded bg-white/10 px-1.5 py-0.5 text-[8px] font-semibold text-zinc-200">
-      {label}
-    </span>
+    <div className="flex flex-col items-center rounded bg-white/10 px-1.5 py-0.5">
+      <span className="text-[10px] font-bold leading-none text-white">{value}</span>
+      <span className="text-[7px] uppercase leading-tight text-zinc-400">{label}</span>
+    </div>
   );
 }
 
@@ -58,7 +62,7 @@ export function CardTile({ card }: { card: AlbumCard }) {
   }
 
   const style = RARITY_STYLE[card.rarity];
-  const accent = RARITY_ACCENT[card.rarity];
+  const colors = getNationColors(card.country_code);
   const rot = stickerRotation(card.id);
   const isPlayer = card.category === "joueur";
 
@@ -69,59 +73,68 @@ export function CardTile({ card }: { card: AlbumCard }) {
     >
       <div
         className={cn(
-          "relative flex aspect-[3/4] flex-col items-center justify-center gap-1 overflow-hidden rounded-sm border bg-zinc-900 p-2 text-center",
+          "relative flex aspect-[3/4] flex-col overflow-hidden rounded-sm border bg-slate-900",
           style.border,
         )}
       >
-        {/* Drapeau en filigrane d'arrière-plan */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 flex items-center justify-center text-6xl opacity-10"
-        >
-          {flagEmoji(card.country_code)}
-        </span>
+        {/* Bandeau couleur du pays */}
+        <div className="h-1.5 w-full" style={{ backgroundColor: colors.primary }} />
 
         {isPlayer ? (
-          <>
-            <span className="absolute right-1 top-1 text-base leading-none" aria-hidden>
-              {flagEmoji(card.country_code)}
-            </span>
-            <Jersey number={card.stats?.shirtNumber ?? null} accent={accent} />
-            <span className="line-clamp-2 text-xs font-semibold text-white">
-              {card.name}
-            </span>
-            <span className="text-[9px] text-zinc-400">
-              {card.position ?? "Joueur"}
-            </span>
-            <div className="flex flex-wrap items-center justify-center gap-1">
-              {card.stats?.age ? <StatBadge label={`${card.stats.age} ans`} /> : null}
-              {card.stats?.goals ? (
-                <StatBadge label={`${card.stats.goals} buts`} />
-              ) : null}
+          <div className="flex flex-1 flex-col items-center justify-between p-1.5">
+            <div className="flex w-full items-center justify-between">
+              <span className="text-sm leading-none" aria-hidden>
+                {flagEmoji(card.country_code)}
+              </span>
+              <span
+                className="rounded px-1 py-0.5 text-[7px] font-bold uppercase tracking-wide text-white"
+                style={{ backgroundColor: colors.primary }}
+              >
+                {card.position ?? "Joueur"}
+              </span>
             </div>
-          </>
+
+            <Jersey number={card.stats?.shirtNumber ?? null} colors={colors} />
+
+            <div className="w-full">
+              <p className="truncate text-center text-[11px] font-bold text-white">
+                {card.name}
+              </p>
+              <div className="mt-1 flex items-center justify-center gap-1">
+                {card.stats?.age ? (
+                  <StatBadge value={card.stats.age} label="ans" />
+                ) : null}
+                {card.stats?.goals ? (
+                  <StatBadge value={card.stats.goals} label="buts" />
+                ) : null}
+                {card.stats?.shirtNumber ? (
+                  <StatBadge value={`#${card.stats.shirtNumber}`} label="num" />
+                ) : null}
+              </div>
+            </div>
+          </div>
         ) : (
-          <>
+          <div className="flex flex-1 flex-col items-center justify-center gap-1 p-2">
             <span className="text-4xl leading-none" aria-hidden>
               {flagEmoji(card.country_code)}
             </span>
-            <span className="line-clamp-2 text-xs font-semibold text-white">
+            <span className="line-clamp-2 text-center text-xs font-semibold text-white">
               {card.name}
             </span>
-          </>
+          </div>
         )}
 
-        <span
+        <div
           className={cn(
-            "relative rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide",
-            style.chip,
+            "py-0.5 text-center text-[8px] font-bold uppercase tracking-wider",
+            style.text,
           )}
         >
           {RARITY_LABEL[card.rarity]}
-        </span>
+        </div>
       </div>
 
-      <span className="absolute left-1 top-1 rounded-sm bg-white/85 px-1 text-[8px] font-bold text-zinc-600">
+      <span className="absolute left-1.5 top-2.5 rounded-sm bg-white/85 px-1 text-[8px] font-bold text-zinc-700">
         {card.number}
       </span>
       {card.quantity > 1 && (

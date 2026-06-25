@@ -31,14 +31,15 @@ export function PackOpeningOverlay({
   onClose: () => void;
 }) {
   const reduce = useReducedMotion();
+  const [sealed, setSealed] = useState(true);
   const [open, setOpen] = useState(false);
   const [stuck, setStuck] = useState<Set<number>>(new Set());
 
   function tear() {
-    if (open) return;
-    setOpen(true);
+    if (!sealed) return;
     playSound("burst");
     triggerHaptic("celebration");
+    setSealed(false);
   }
 
   function stick(index: number, rarity: CardRarity) {
@@ -70,45 +71,66 @@ export function PackOpeningOverlay({
         aria-modal="true"
         aria-label="Ouverture de pack"
       >
-        {!open ? (
-          /* Pack scellé : on déchire pour ouvrir */
-          <div className="flex flex-col items-center gap-5">
+        {/* Phase 1 : pack scellé, on déchire */}
+        <AnimatePresence onExitComplete={() => setOpen(true)}>
+          {sealed && (
             <motion.div
-              className="relative flex h-64 w-44 flex-col items-center justify-center rounded-2xl border border-white/20"
-              style={{ backgroundColor: "#8b929b" }}
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              key="pack"
+              className="flex flex-col items-center gap-5"
+              exit={{ opacity: 0 }}
             >
-              <div className="absolute inset-x-3 top-3 h-6 rounded-md border-2 border-dashed border-white/40" />
-              <span
-                className="absolute inset-0 rounded-2xl"
-                style={{ backgroundColor: "rgba(255,255,255,0.06)" }}
-                aria-hidden
-              />
-              <span className="px-3 text-center text-sm font-bold uppercase tracking-wider text-white/90">
-                Pack
-              </span>
-              <span className="mt-1 text-xs text-white/70">
-                {cards.length} cartes
-              </span>
-            </motion.div>
+              <motion.div
+                className="relative flex h-64 w-44 flex-col items-center justify-center rounded-2xl border border-white/20"
+                style={{ backgroundColor: "#8b929b" }}
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={
+                  reduce
+                    ? { opacity: 0 }
+                    : {
+                        rotate: [0, -5, 5, -3, 3, 0],
+                        y: -24,
+                        scale: 1.12,
+                        opacity: 0,
+                      }
+                }
+                transition={{ duration: reduce ? 0.15 : 0.5 }}
+              >
+                {/* Bande de déchirure qui s'arrache */}
+                <motion.div
+                  className="absolute inset-x-0 top-0 h-10 rounded-t-2xl border-b-2 border-dashed border-white/50"
+                  style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+                  exit={reduce ? { opacity: 0 } : { y: -70, opacity: 0, rotate: -8 }}
+                  transition={{ duration: 0.4 }}
+                />
+                <span className="px-3 text-center text-sm font-bold uppercase tracking-wider text-white/90">
+                  Pack
+                </span>
+                <span className="mt-1 text-xs text-white/70">
+                  {cards.length} cartes
+                </span>
+              </motion.div>
 
-            <motion.div
-              drag="y"
-              dragConstraints={{ top: 0, bottom: 0 }}
-              dragSnapToOrigin
-              dragElastic={0.5}
-              onTap={tear}
-              onDragEnd={(_e: unknown, info: PanInfo) => {
-                if (info.offset.y < -40) tear();
-              }}
-              style={{ touchAction: "none" }}
-              className="cursor-grab rounded-full bg-lime-500 px-5 py-2.5 text-sm font-bold text-black active:cursor-grabbing"
-            >
-              Glisse vers le haut ou tape pour déchirer
+              <motion.div
+                drag="y"
+                dragConstraints={{ top: 0, bottom: 0 }}
+                dragSnapToOrigin
+                dragElastic={0.5}
+                onTap={tear}
+                onDragEnd={(_e: unknown, info: PanInfo) => {
+                  if (info.offset.y < -40) tear();
+                }}
+                style={{ touchAction: "none" }}
+                className="cursor-grab rounded-full bg-lime-500 px-5 py-2.5 text-sm font-bold text-black active:cursor-grabbing"
+              >
+                Glisse vers le haut ou tape pour déchirer
+              </motion.div>
             </motion.div>
-          </div>
-        ) : (
+          )}
+        </AnimatePresence>
+
+        {/* Phase 2 : cartes révélées + collage */}
+        {open && (
           <>
             <div className="text-center">
               <h2 className="font-heading text-xl font-bold text-[#f5efe2]">
@@ -140,13 +162,13 @@ export function PackOpeningOverlay({
                     }}
                     style={{ touchAction: "none" }}
                     className="cursor-grab rounded-md bg-white p-1 shadow-[0_3px_10px_rgba(0,0,0,0.45)] active:cursor-grabbing"
-                    initial={{ rotateY: 180, opacity: 0, scale: 0.6, y: -28 }}
+                    initial={{ rotateY: 180, opacity: 0, scale: 0.5, y: -40 }}
                     animate={{ rotateY: 0, opacity: 1, scale: 1, y: 0 }}
                     transition={{
                       delay,
                       type: "spring",
-                      stiffness: 300,
-                      damping: 15,
+                      stiffness: 320,
+                      damping: 16,
                     }}
                     onAnimationComplete={() => {
                       if (isRarePlus(card.rarity)) playSound("shine");

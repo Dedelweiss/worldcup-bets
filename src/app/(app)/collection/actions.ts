@@ -11,8 +11,8 @@ export type BuyPackResult =
 
 function mapPackError(message: string): string {
   const m = message.toLowerCase();
-  if (m.includes("not enough points")) {
-    return "Vous n'avez pas assez de points pour ce pack.";
+  if (m.includes("not enough coins") || m.includes("not enough points")) {
+    return "Vous n'avez pas assez de jetons pour ce pack.";
   }
   if (m.includes("pack unavailable")) {
     return "Ce pack n'est plus disponible.";

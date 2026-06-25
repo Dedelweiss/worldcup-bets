@@ -85,7 +85,7 @@ export function CollectionClient({ data }: { data: CollectionData }) {
       {/* Soldes + son */}
       <div className="flex items-stretch gap-2">
         <div className="grid flex-1 grid-cols-3 gap-2">
-          <Stat icon={<Coins className="size-4" />} label="Points" value={data.points} />
+          <Stat icon={<Coins className="size-4" />} label="Jetons" value={data.coins} />
           <Stat
             icon={<Sparkles className="size-4" />}
             label="Éclats"
@@ -147,7 +147,7 @@ export function CollectionClient({ data }: { data: CollectionData }) {
         <h2 className="text-sm font-semibold text-muted-foreground">Boutique</h2>
         <div className="grid gap-2 sm:grid-cols-2">
           {data.packTypes.map((pack) => {
-            const affordable = data.points >= pack.price_points;
+            const affordable = data.coins >= pack.price_points;
             return (
               <div
                 key={pack.id}
@@ -156,7 +156,7 @@ export function CollectionClient({ data }: { data: CollectionData }) {
                 <div>
                   <p className="font-semibold">{pack.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {pack.card_count} cartes · {pack.price_points} pts
+                    {pack.card_count} cartes · {pack.price_points} jetons
                   </p>
                 </div>
                 <button

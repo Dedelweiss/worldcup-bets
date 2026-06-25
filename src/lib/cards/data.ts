@@ -67,7 +67,7 @@ export async function getCollectionData(
     await Promise.all([
       supabase
         .from("profiles")
-        .select("points, card_shards")
+        .select("points, card_shards, pack_coins")
         .eq("id", userId)
         .single(),
       supabase
@@ -92,9 +92,14 @@ export async function getCollectionData(
         .order("price_points"),
     ]);
 
-  const profile = (profileRes.data ?? { points: 0, card_shards: 0 }) as {
+  const profile = (profileRes.data ?? {
+    points: 0,
+    card_shards: 0,
+    pack_coins: 0,
+  }) as {
     points: number;
     card_shards: number;
+    pack_coins: number;
   };
 
   const catalog = (catalogRes.data ?? []) as CardCatalogEntry[];
@@ -143,6 +148,7 @@ export async function getCollectionData(
 
   return {
     points: profile.points ?? 0,
+    coins: profile.pack_coins ?? 0,
     shards: profile.card_shards ?? 0,
     groups,
     inventory,

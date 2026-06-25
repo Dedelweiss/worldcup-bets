@@ -70,6 +70,8 @@ export interface OpenPackResult {
 
 export interface CollectionData {
   points: number;
+  /** Jetons dédiés à l'achat de packs (distincts des points de classement). */
+  coins: number;
   shards: number;
   groups: AlbumGroup[];
   inventory: InventoryPack[];

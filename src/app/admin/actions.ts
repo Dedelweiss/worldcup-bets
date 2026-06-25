@@ -1238,3 +1238,24 @@ export async function generatePlayerCardsAction(): Promise<GeneratePlayerCardsAc
     };
   }
 }
+
+export type ResetPackCoinsActionResult =
+  | { success: true; count: number }
+  | { success: false; error: string };
+
+/** Remet à zéro les jetons d'achat de packs de tous les joueurs (admin). */
+export async function resetPackCoinsAction(): Promise<ResetPackCoinsActionResult> {
+  await requireAdmin();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_reset_pack_coins", {
+    p_user_id: null,
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/collection");
+  return { success: true, count: (data as number) ?? 0 };
+}

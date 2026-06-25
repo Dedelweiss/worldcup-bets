@@ -75,3 +75,58 @@ export function iso2ToName(iso2: string | null): string | null {
   if (!iso2) return null;
   return BY_ISO2.get(iso2)?.name ?? null;
 }
+
+/** Couleurs nationales (maillot stylisé) : primaire (corps) + secondaire (col/manches). */
+export interface NationColors {
+  primary: string;
+  secondary: string;
+}
+
+const NATION_COLORS: Record<string, NationColors> = {
+  fr: { primary: "#1e3a8a", secondary: "#ef4444" },
+  br: { primary: "#facc15", secondary: "#16a34a" },
+  ar: { primary: "#38bdf8", secondary: "#f8fafc" },
+  es: { primary: "#dc2626", secondary: "#facc15" },
+  de: { primary: "#1f2937", secondary: "#facc15" },
+  pt: { primary: "#b91c1c", secondary: "#15803d" },
+  nl: { primary: "#f97316", secondary: "#f8fafc" },
+  be: { primary: "#ef4444", secondary: "#facc15" },
+  gb: { primary: "#e5e7eb", secondary: "#dc2626" },
+  hr: { primary: "#dc2626", secondary: "#f8fafc" },
+  uy: { primary: "#38bdf8", secondary: "#f8fafc" },
+  it: { primary: "#1d4ed8", secondary: "#f8fafc" },
+  mx: { primary: "#15803d", secondary: "#dc2626" },
+  us: { primary: "#1d4ed8", secondary: "#dc2626" },
+  jp: { primary: "#1e3a8a", secondary: "#f8fafc" },
+  sn: { primary: "#15803d", secondary: "#facc15" },
+  ma: { primary: "#b91c1c", secondary: "#15803d" },
+  ch: { primary: "#dc2626", secondary: "#f8fafc" },
+  dk: { primary: "#dc2626", secondary: "#f8fafc" },
+  ca: { primary: "#dc2626", secondary: "#f8fafc" },
+  qa: { primary: "#7f1d1d", secondary: "#f8fafc" },
+  au: { primary: "#facc15", secondary: "#16a34a" },
+  kr: { primary: "#dc2626", secondary: "#1d4ed8" },
+  pl: { primary: "#e5e7eb", secondary: "#dc2626" },
+  rs: { primary: "#dc2626", secondary: "#1e3a8a" },
+  gh: { primary: "#16a34a", secondary: "#facc15" },
+  cm: { primary: "#16a34a", secondary: "#dc2626" },
+  ec: { primary: "#facc15", secondary: "#1d4ed8" },
+  ir: { primary: "#16a34a", secondary: "#dc2626" },
+  tn: { primary: "#dc2626", secondary: "#f8fafc" },
+  sa: { primary: "#15803d", secondary: "#f8fafc" },
+  ng: { primary: "#16a34a", secondary: "#f8fafc" },
+  eg: { primary: "#dc2626", secondary: "#111827" },
+  co: { primary: "#facc15", secondary: "#1d4ed8" },
+  pe: { primary: "#dc2626", secondary: "#f8fafc" },
+  cl: { primary: "#dc2626", secondary: "#1d4ed8" },
+};
+
+const NEUTRAL_COLORS: NationColors = {
+  primary: "#475569",
+  secondary: "#94a3b8",
+};
+
+export function getNationColors(iso2: string | null): NationColors {
+  if (!iso2) return NEUTRAL_COLORS;
+  return NATION_COLORS[iso2] ?? NEUTRAL_COLORS;
+}
