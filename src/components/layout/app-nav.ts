@@ -11,4 +11,5 @@ export const appNav: NavItem[] = [
   { href: "/leaderboard", label: "Classement" },
   { href: "/leagues", label: "Ligues" },
   { href: "/bets", label: "Mes paris" },
+  { href: "/collection", label: "Collection" },
 ];

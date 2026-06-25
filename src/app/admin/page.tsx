@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { AdminMatchesFilters } from "@/components/admin/admin-matches-filters";
 import { AdminMatchesList } from "@/components/admin/admin-matches-list";
 import { FootballDataSyncButton } from "@/components/admin/football-data-sync-button";
+import { GenerateCardsButton } from "@/components/admin/generate-cards-button";
 import { SiteInvitePanel } from "@/components/admin/site-invite-panel";
 import { DashboardAnnouncementPanel } from "@/components/admin/dashboard-announcement-panel";
 import { PrepareWorldCupPanel } from "@/components/admin/prepare-world-cup-panel";
@@ -39,6 +40,7 @@ export default async function AdminPage({
         <h1 className="text-2xl font-bold">Gestion des matchs</h1>
         <div className="flex flex-wrap items-center gap-2">
           <FootballDataSyncButton />
+          <GenerateCardsButton />
           <Link
             href="/admin/teams"
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}

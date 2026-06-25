@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { logAppEvent } from "@/lib/logging/app-logger";
 import { requireAdmin } from "@/lib/auth-server";
+import { generatePlayerCards } from "@/lib/cards/generate-player-cards";
+import {
+  getTeamSquadSyncStatus,
+  syncTeamSquadsAdminBatch,
+} from "@/lib/football-data/sync-team-squads";
 import { generateAndSaveMatchSummary } from "@/lib/ai/generate-match-summary";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -1187,4 +1192,49 @@ export async function prepareWorldCupAction(options: {
     summary: data as Record<string, unknown>,
     syncStats,
   };
+}
+
+export type GeneratePlayerCardsActionResult =
+  | {
+      success: true;
+      teams: number;
+      cards: number;
+      squadsSynced: number;
+      withSquad: number;
+      tournamentTeams: number;
+      squadError?: string;
+    }
+  | { success: false; error: string };
+
+/**
+ * Synchronise d'abord les effectifs (football-data), puis génère les cartes
+ * joueurs depuis teams.squad + buteurs en cache (admin). Autonome en 1 clic.
+ */
+export async function generatePlayerCardsAction(): Promise<GeneratePlayerCardsActionResult> {
+  await requireAdmin();
+
+  try {
+    // 1. Remplir teams.squad si nécessaire (1 requête football-data).
+    const squad = await syncTeamSquadsAdminBatch();
+    // 2. Générer les cartes à partir des effectifs en cache.
+    const { teams, cards } = await generatePlayerCards();
+    // 3. État des effectifs pour diagnostic.
+    const status = await getTeamSquadSyncStatus();
+
+    revalidatePath("/collection");
+    return {
+      success: true,
+      teams,
+      cards,
+      squadsSynced: squad.synced,
+      withSquad: status.withSquad,
+      tournamentTeams: status.tournamentTeams,
+      squadError: squad.error,
+    };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Erreur génération cartes",
+    };
+  }
 }
