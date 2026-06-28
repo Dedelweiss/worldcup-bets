@@ -2,6 +2,7 @@ import { NavLink } from "@/components/layout/nav-link";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { KnockoutRegulationNote } from "@/components/matches/knockout-regulation-note";
 import { MatchCalendarExport } from "@/components/matches/match-calendar-export";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { LiveMatchAnimation } from "@/components/matches/live-match-animation";
@@ -12,6 +13,7 @@ import { MatchKickoffMeta } from "@/components/matches/match-kickoff-meta";
 import { MatchScoreInline } from "@/components/matches/match-score-inline";
 import { cn } from "@/lib/utils";
 import { goldenMatchHeaderClass } from "@/lib/golden-match";
+import { isKnockoutStage } from "@/lib/tournament/constants";
 import { getSiteBaseUrl } from "@/lib/tournament/site-invite-message";
 import type { MatchStatus, MatchWithTeams } from "@/types/database";
 
@@ -42,6 +44,7 @@ export function MatchPageHero({
   const isLive = match.status === "live";
   const isGolden = match.is_golden ?? false;
   const hasScore = match.home_score !== null && match.away_score !== null;
+  const isKnockout = isKnockoutStage(match.stage);
   const showCalendarExport =
     match.status === "scheduled" || match.status === "postponed";
   const matchPageUrl = `${getSiteBaseUrl()}/matches/${match.id}`;
@@ -148,10 +151,11 @@ export function MatchPageHero({
           {showCalendarExport && (
             <MatchCalendarExport match={match} pageUrl={matchPageUrl} />
           )}
-          {match.bet_scope_note && match.stage && match.stage !== "group" && (
-            <p className="w-full rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left text-xs text-amber-100/90 md:text-center">
-              {match.bet_scope_note}
-            </p>
+          {isKnockout && (
+            <KnockoutRegulationNote
+              align="center"
+              className="w-full text-left md:text-center"
+            />
           )}
         </div>
       </div>

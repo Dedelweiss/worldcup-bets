@@ -200,7 +200,8 @@ export function HelpGuide() {
         description="Alternative au résultat simple, un seul des deux par match."
       >
         <p>
-          Saisissez le score final (ex. 2-1). Si vous trouvez le bon vainqueur
+          Saisissez le score à 90 minutes (ex. 2-1). En phase finale, ce score
+          exclut prolongations et tirs au but. Si vous trouvez le bon vainqueur
           (ou le nul) mais pas le score exact, vous gagnez en mode{" "}
           <strong>Tendance</strong> : même barème qu&apos;un pari sur le
           résultat équivalent.

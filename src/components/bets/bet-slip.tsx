@@ -33,6 +33,7 @@ import {
 import { randomClassicScore } from "@/lib/bets/random-score";
 import type { MatchUserPendingBets } from "@/lib/bets/match-user-bets";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
+import { KnockoutRegulationNote } from "@/components/matches/knockout-regulation-note";
 import { MatchOddsSourceBadge } from "@/components/matches/match-odds-source-badge";
 import { TacklePicker } from "@/components/bets/tackle-picker";
 import { goldenMatchCardClass, goldenMatchPoints } from "@/lib/golden-match";
@@ -40,6 +41,7 @@ import { betDisplayPayout, pointsFromOdd, pointsIfWin } from "@/lib/points";
 import type { MatchParticipationPlayer } from "@/lib/bets/match-participation";
 import type { MatchTackleState } from "@/lib/bets/match-tackle-utils";
 import { tackleEligibleRivals } from "@/lib/bets/match-tackle-utils";
+import { isKnockoutStage } from "@/lib/tournament/constants";
 import { cn } from "@/lib/utils";
 import type { MatchResultSelection, MatchWithTeams } from "@/types/database";
 
@@ -73,6 +75,7 @@ export function BetSlip({
   layout = "default",
 }: BetSlipProps) {
   const isProminent = layout === "prominent";
+  const isKnockout = isKnockoutStage(match.stage);
   const router = useRouter();
   const searchParams = useSearchParams();
   const bettingOpen = useClassicBettingOpen(match);
@@ -464,6 +467,8 @@ export function BetSlip({
                   </span>
                 </p>
               </div>
+
+              {isKnockout && <KnockoutRegulationNote />}
 
               {showAdvancedOptions && (!hasClassicBet || canEditClassic) && (
                 <div

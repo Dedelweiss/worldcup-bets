@@ -102,7 +102,7 @@ begin
       3.20,
       2.80,
       v_stage,
-      'Paris sur le résultat à la fin du temps réglementaire uniquement (prolongations et tirs au but exclus).',
+      'Pronostics sur le score à 90 minutes (temps réglementaire). Prolongations et tirs au but exclus — le nul reste possible.',
       2026
     )
     on conflict (id) do update set

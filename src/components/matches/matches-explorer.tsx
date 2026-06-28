@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MatchCard } from "@/components/dashboard/match-card";
 import { MatchesCalendarView } from "@/components/matches/matches-calendar-view";
+import { KnockoutRegulationNote } from "@/components/matches/knockout-regulation-note";
 import {
   MatchesFilterBar,
   type MatchesLayoutMode,
@@ -141,6 +142,8 @@ export function MatchesExplorer({
         onGroupChange={setGroup}
         onBetFilterChange={setBetFilter}
       />
+
+      {filter === "knockout" && <KnockoutRegulationNote />}
 
       {byGroup.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-white/15 bg-zinc-900/30 p-10 text-center text-muted-foreground">

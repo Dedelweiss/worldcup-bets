@@ -37,7 +37,7 @@ export default async function BracketPage() {
           <p className="text-muted-foreground">
             Classements de poule et arbre éliminatoire. Cliquez une équipe pour
             voir sa fiche ; dans la phase finale, cliquez une équipe pour
-            choisir votre vainqueur (temps réglementaire).
+            choisir votre vainqueur (score à 90 minutes).
           </p>
         </div>
         <Link href="/matches?view=group" className="text-sm text-primary hover:underline">

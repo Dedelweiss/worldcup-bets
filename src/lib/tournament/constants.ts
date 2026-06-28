@@ -35,4 +35,10 @@ export const STAGE_LABELS: Record<MatchStage, string> = {
 };
 
 export const DEFAULT_KNOCKOUT_BET_NOTE =
-  "Paris sur le résultat à la fin du temps réglementaire uniquement (prolongations et tirs au but exclus).";
+  "Pronostics sur le score à 90 minutes (temps réglementaire). Prolongations et tirs au but exclus — le nul reste possible.";
+
+export function isKnockoutStage(
+  stage: MatchStage | null | undefined,
+): boolean {
+  return stage != null && stage !== "group";
+}

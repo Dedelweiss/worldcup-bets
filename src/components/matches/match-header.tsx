@@ -2,11 +2,13 @@ import Link from "next/link";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { KnockoutRegulationNote } from "@/components/matches/knockout-regulation-note";
 import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { LiveMatchClock } from "@/components/matches/live-match-clock";
 import { MatchKickoffMeta } from "@/components/matches/match-kickoff-meta";
 import { cn } from "@/lib/utils";
 import { goldenMatchHeaderClass } from "@/lib/golden-match";
+import { isKnockoutStage } from "@/lib/tournament/constants";
 import { tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
 import type { MatchStatus, MatchWithTeams } from "@/types/database";
 
@@ -100,11 +102,7 @@ export function MatchHeader({ match, adminEditHref }: MatchHeaderProps) {
         ) : null}
       </div>
 
-      {match.bet_scope_note && match.stage && match.stage !== "group" && (
-        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100/90">
-          {match.bet_scope_note}
-        </p>
-      )}
+      {isKnockoutStage(match.stage) && <KnockoutRegulationNote />}
     </div>
   );
 }

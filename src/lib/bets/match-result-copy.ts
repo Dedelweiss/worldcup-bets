@@ -8,7 +8,7 @@ export const MATCH_RESULT_COPY = {
   oddsHeading: "Cotes du résultat",
   oddsHeadingCompact: "1 · N · 2",
   knockoutBetNote:
-    "Paris sur le résultat à la fin du temps réglementaire uniquement (prolongations et tirs au but exclus).",
+    "Pronostics sur le score à 90 minutes (temps réglementaire). Prolongations et tirs au but exclus — le nul reste possible.",
   pronosticSaved: "Pronostic enregistré",
   pronosticSavedResult: "Pronostic sur le résultat enregistré",
   yourPronostic: "Votre pronostic sur le résultat",
