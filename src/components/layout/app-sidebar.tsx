@@ -1,26 +1,42 @@
 import { NavLink } from "@/components/layout/nav-link";
 import { AppNavLinks } from "@/components/layout/app-nav-links";
-import { appNav } from "@/components/layout/app-nav";
+import { appNav, f1Nav } from "@/components/layout/app-nav";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { UserMenu } from "@/components/layout/user-menu";
 import type { Profile } from "@/types/database";
+import type { ActiveSport } from "@/lib/sport/constants";
 
 interface AppSidebarProps {
   profile: Profile | null;
+  activeSport?: ActiveSport;
 }
 
-export function AppSidebar({ profile }: AppSidebarProps) {
+export function AppSidebar({
+  profile,
+  activeSport = "football",
+}: AppSidebarProps) {
+  const navItems = activeSport === "f1" ? f1Nav : appNav;
+  const homeHref = activeSport === "f1" ? "/f1" : "/dashboard";
+
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-white/10 bg-zinc-950/95 backdrop-blur-xl md:flex">
       <div className="flex h-16 items-center gap-2 border-b border-white/10 px-5">
         <NavLink
-          href="/dashboard"
+          href={homeHref}
           className="flex min-w-0 items-center gap-2 font-heading text-base font-semibold tracking-tight"
         >
           <SiteLogo size={36} className="size-9" priority />
           <span>
-            WC<span className="text-lime-400">2026</span>
-            <span className="text-zinc-400"> Pool</span>
+            {activeSport === "f1" ? (
+              <>
+                F1<span className="text-lime-400"> Pool</span>
+              </>
+            ) : (
+              <>
+                WC<span className="text-lime-400">2026</span>
+                <span className="text-zinc-400"> Pool</span>
+              </>
+            )}
           </span>
         </NavLink>
       </div>
@@ -30,7 +46,7 @@ export function AppSidebar({ profile }: AppSidebarProps) {
         aria-label="Navigation principale"
       >
         <AppNavLinks
-          items={appNav}
+          items={navItems}
           showAdmin={profile?.role === "admin"}
           variant="sidebar"
         />

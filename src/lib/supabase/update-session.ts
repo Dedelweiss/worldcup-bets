@@ -15,6 +15,7 @@ const PROTECTED_PREFIXES = [
   "/choose-favorite-team",
   "/onboarding",
   "/admin",
+  "/f1",
 ];
 
 const ONBOARDING_ROUTE = "/onboarding";

@@ -1,3 +1,4 @@
+import { SportSwitch } from "@/components/layout/sport-switch";
 import { NavLink } from "@/components/layout/nav-link";
 import { Shield } from "lucide-react";
 import { AppNavLinks } from "@/components/layout/app-nav-links";
@@ -5,36 +6,56 @@ import { HapticLink } from "@/components/ui/haptic-link";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { SiteLogo } from "@/components/layout/site-logo";
 import { UserMenu } from "@/components/layout/user-menu";
-import { appNav } from "@/components/layout/app-nav";
+import { appNav, f1Nav } from "@/components/layout/app-nav";
 import { buttonVariants } from "@/components/ui/button";
 import type { Profile } from "@/types/database";
+import type { ActiveSport } from "@/lib/sport/constants";
 import { cn } from "@/lib/utils";
 
 interface AppHeaderProps {
   profile: Profile | null;
+  activeSport?: ActiveSport;
+  f1Enabled?: boolean;
 }
 
-export function AppHeader({ profile }: AppHeaderProps) {
+export function AppHeader({
+  profile,
+  activeSport = "football",
+  f1Enabled = true,
+}: AppHeaderProps) {
   const isAdmin = profile?.role === "admin";
+  const navItems = activeSport === "f1" ? f1Nav : appNav;
 
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl">
-      <div className="flex h-14 items-center justify-between px-4 md:px-6">
+      <div className="flex h-14 items-center justify-between gap-2 px-4 md:px-6">
         <HapticLink
-          href="/dashboard"
+          href={activeSport === "f1" ? "/f1" : "/dashboard"}
           haptic="light"
           className="flex min-w-0 items-center gap-2 font-heading font-semibold tracking-tight md:hidden"
         >
           <SiteLogo size={32} className="size-8" priority />
           <span className="truncate text-sm">
-            WC<span className="text-lime-400">2026</span> Pool
+            {activeSport === "f1" ? (
+              <>
+                F1 <span className="text-lime-400">Pool</span>
+              </>
+            ) : (
+              <>
+                WC<span className="text-lime-400">2026</span> Pool
+              </>
+            )}
           </span>
         </HapticLink>
 
-        <div className="hidden flex-1 items-center justify-center md:flex">
+        <div className="hidden flex-1 items-center justify-center gap-3 md:flex">
+          <SportSwitch
+            activeSport={activeSport}
+            f1Enabled={f1Enabled}
+          />
           <nav className="flex items-center gap-1 text-sm" aria-label="Raccourcis">
             <AppNavLinks
-              items={appNav.slice(0, 4)}
+              items={navItems.slice(0, 4)}
               showAdmin={profile?.role === "admin"}
               variant="desktop"
             />
@@ -42,6 +63,11 @@ export function AppHeader({ profile }: AppHeaderProps) {
         </div>
 
         <div className="flex min-w-0 items-center gap-1 md:hidden">
+          <SportSwitch
+            activeSport={activeSport}
+            f1Enabled={f1Enabled}
+            className="scale-90"
+          />
           {isAdmin && (
             <HapticLink
               href="/admin"
@@ -56,7 +82,7 @@ export function AppHeader({ profile }: AppHeaderProps) {
               <Shield className="size-4" aria-hidden />
             </HapticLink>
           )}
-          <MobileNav items={appNav} showAdmin={isAdmin} />
+          <MobileNav items={navItems} showAdmin={isAdmin} />
           {profile ? (
             <UserMenu profile={profile} />
           ) : (

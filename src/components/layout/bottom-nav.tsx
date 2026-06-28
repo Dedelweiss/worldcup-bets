@@ -8,6 +8,7 @@ import {
   Home,
   ListTodo,
   Radio,
+  Receipt,
   Shield,
   Trophy,
   User,
@@ -18,12 +19,20 @@ import {
   getPlayerInitials,
 } from "@/lib/profile/player-label";
 import { cn } from "@/lib/utils";
+import type { ActiveSport } from "@/lib/sport/constants";
 
 const tabsBase = [
   { href: "/dashboard", label: "Accueil", icon: Home },
   { href: "/matches", label: "Matchs", icon: ListTodo },
   { href: "/leaderboard", label: "Classement", icon: Trophy },
   { href: "/profile", label: "Profil" },
+] as const;
+
+const f1TabsBase = [
+  { href: "/f1", label: "Calendrier", icon: ListTodo },
+  { href: "/f1/standings", label: "Championnat", icon: Trophy },
+  { href: "/f1/leaderboard", label: "Pool", icon: Home },
+  { href: "/bets", label: "Paris", icon: Receipt },
 ] as const;
 
 const adminTab = {
@@ -65,6 +74,15 @@ function isActive(pathname: string, href: string): boolean {
       pathname === "/matches/quick"
     );
   }
+  if (href === "/f1") {
+    return pathname === "/f1" || /^\/f1\/\d+/.test(pathname);
+  }
+  if (href === "/f1/standings") {
+    return pathname === "/f1/standings";
+  }
+  if (href === "/f1/leaderboard") {
+    return pathname === "/f1/leaderboard";
+  }
   return pathname.startsWith(`${href}/`);
 }
 
@@ -79,6 +97,7 @@ interface BottomNavProps {
   profile?: BottomNavProfile | null;
   /** Paris pending sur matchs live — pastille + raccourci En direct. */
   livePendingCount?: number;
+  activeSport?: ActiveSport;
 }
 
 function NavProfileAvatar({
@@ -161,6 +180,7 @@ function NavTabIcon({
 function resolveTabHref(
   href: string,
   livePendingCount: number,
+  baseTabs: readonly { href: string; label: string }[],
 ): { href: string; ariaLabel: string } {
   if (href === "/matches" && livePendingCount > 0) {
     return {
@@ -168,7 +188,7 @@ function resolveTabHref(
       ariaLabel: `En direct · ${livePendingCount} pari${livePendingCount > 1 ? "s" : ""}`,
     };
   }
-  const tab = tabsBase.find((t) => t.href === href);
+  const tab = baseTabs.find((t) => t.href === href);
   return { href, ariaLabel: tab?.label ?? href };
 }
 
@@ -176,9 +196,11 @@ export function BottomNav({
   showAdmin,
   profile = null,
   livePendingCount = 0,
+  activeSport = "football",
 }: BottomNavProps) {
   const pathname = usePathname();
-  const tabs: NavTab[] = showAdmin ? [...tabsBase, adminTab] : [...tabsBase];
+  const baseTabs = activeSport === "f1" ? f1TabsBase : tabsBase;
+  const tabs: NavTab[] = showAdmin ? [...baseTabs, adminTab] : [...baseTabs];
   const hasLiveShortcut = livePendingCount > 0;
 
   return (
@@ -198,7 +220,7 @@ export function BottomNav({
             {tabs.map((tab) => {
               const { href, label } = tab;
               const isLiveShortcut = href === "/matches" && hasLiveShortcut;
-              const resolved = resolveTabHref(href, livePendingCount);
+              const resolved = resolveTabHref(href, livePendingCount, baseTabs);
               const active =
                 isActive(pathname, href) ||
                 (isLiveShortcut && pathname.startsWith("/bets"));

@@ -92,6 +92,12 @@ export const adminNavGroups: AdminNavGroup[] = [
         icon: Flag,
         description: "Effectifs et vainqueur Coupe du monde",
       },
+      {
+        href: "/admin/f1",
+        label: "Formule 1",
+        icon: Trophy,
+        description: "Sync OpenF1, résultats GP, mode F1",
+      },
     ],
   },
   {

@@ -122,6 +122,8 @@ export interface Profile {
   /** Badges choisis pour l'affichage public (max 5). */
   profile_badge_ids?: string[];
   role?: UserRole;
+  /** Sport actif dans l'UI (football par défaut). */
+  active_sport?: "football" | "f1";
   /** Joueur système (pronostiqueur IA). */
   is_ai?: boolean;
 }

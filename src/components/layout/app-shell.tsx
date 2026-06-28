@@ -3,19 +3,31 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { getProfile, hasSupabaseConfig } from "@/lib/auth-server";
 import { getLiveBetsSnapshot } from "@/lib/live-bets/live-bet-snapshot";
+import { isF1ModeEnabled } from "@/lib/f1/queries";
+import { getActiveSportForUser } from "@/lib/sport/active-sport";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const profile = hasSupabaseConfig ? await getProfile() : null;
-  const livePendingCount =
+  const [livePendingCount, activeSport, f1Enabled] = await Promise.all([
     profile != null
-      ? (await getLiveBetsSnapshot(profile.id)).livePendingCount
-      : 0;
+      ? getLiveBetsSnapshot(profile.id).then((s) => s.livePendingCount)
+      : Promise.resolve(0),
+    getActiveSportForUser(profile?.id),
+    isF1ModeEnabled(),
+  ]);
 
   return (
     <div className="min-h-full bg-zinc-950">
-      <AppSidebar profile={profile} />
+      <AppSidebar
+        profile={profile}
+        activeSport={activeSport}
+      />
       <div className="flex min-h-full min-w-0 flex-col overflow-x-hidden md:pl-64">
-        <AppHeader profile={profile} />
+        <AppHeader
+          profile={profile}
+          activeSport={activeSport}
+          f1Enabled={f1Enabled}
+        />
         <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 overflow-x-hidden px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-8">
           {children}
         </main>
@@ -23,6 +35,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       <BottomNav
         showAdmin={profile?.role === "admin"}
         livePendingCount={livePendingCount}
+        activeSport={activeSport}
         profile={
           profile
             ? {
