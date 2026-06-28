@@ -2,14 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { GitBranch, LayoutList } from "lucide-react";
-import { BracketProjectionNotice } from "@/components/bracket/bracket-projection-notice";
 import { BracketRoundExplorer } from "@/components/bracket/bracket-round-explorer";
 import { BracketTree } from "@/components/bracket/bracket-tree";
 import { cn } from "@/lib/utils";
-import type {
-  BracketProjectionMeta,
-  BracketSlotDisplay,
-} from "@/lib/tournament/bracket-projection";
+import type { BracketSlotDisplay } from "@/lib/tournament/bracket-projection";
 import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
 
 const STORAGE_KEY = "wc2026-bracket-view";
@@ -20,7 +16,6 @@ interface BracketViewShellProps {
   slots: BracketSlotDisplay[];
   betStatuses?: Record<number, UserMatchBetStatus>;
   isAdmin?: boolean;
-  projectionMeta?: BracketProjectionMeta;
 }
 
 function readStoredMode(): BracketViewMode {
@@ -33,7 +28,6 @@ export function BracketViewShell({
   slots,
   betStatuses = {},
   isAdmin,
-  projectionMeta,
 }: BracketViewShellProps) {
   const [mode, setMode] = useState<BracketViewMode>("tours");
 
@@ -50,10 +44,6 @@ export function BracketViewShell({
 
   return (
     <div className="min-w-0 space-y-4">
-      {projectionMeta?.hasGroupData && (
-        <BracketProjectionNotice meta={projectionMeta} />
-      )}
-
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           {mode === "tree"

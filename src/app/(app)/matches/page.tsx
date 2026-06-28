@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import {
   MatchesExplorer,
   type MatchBetFilter,
@@ -25,18 +26,39 @@ export default async function MatchesPage({
 }) {
   const profile = await requireAuth();
   const params = await searchParams;
-  const view = params.view === "knockout" ? "knockout" : "group";
   const groupId = params.group ? Number(params.group) : undefined;
   const betFilter = parseBetFilterParam(params.bets);
+  const explicitView =
+    params.view === "knockout"
+      ? "knockout"
+      : params.view === "group"
+        ? "group"
+        : null;
 
-  const [matches, groups, missingClassic] = await Promise.all([
-    listMatchesForPlayers({
-      filter: view === "knockout" ? "knockout" : "group",
-      groupId: view === "group" ? groupId : undefined,
-    }),
-    getTournamentGroups(),
-    getMatchesWithoutClassicBet(profile.id),
-  ]);
+  const [groupMatches, knockoutMatches, groups, missingClassic] =
+    await Promise.all([
+      listMatchesForPlayers({
+        filter: "group",
+        groupId: explicitView !== "knockout" ? groupId : undefined,
+      }),
+      listMatchesForPlayers({ filter: "knockout" }),
+      getTournamentGroups(),
+      getMatchesWithoutClassicBet(profile.id),
+    ]);
+
+  if (
+    explicitView == null &&
+    groupMatches.length === 0 &&
+    knockoutMatches.length > 0
+  ) {
+    const next = new URLSearchParams();
+    next.set("view", "knockout");
+    if (params.bets) next.set("bets", params.bets);
+    redirect(`/matches?${next.toString()}`);
+  }
+
+  const view = explicitView ?? "group";
+  const matches = view === "knockout" ? knockoutMatches : groupMatches;
 
   const betStatuses =
     matches.length > 0

@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { LayoutGroup, motion } from "framer-motion";
 import {
+  CalendarDays,
   GitBranch,
   LayoutGrid,
+  LayoutList,
   Sparkles,
   Target,
   Trophy,
@@ -15,15 +17,18 @@ import { cn } from "@/lib/utils";
 import type { TournamentGroup } from "@/types/database";
 
 export type MatchBetFilter = "all" | "my-bets" | "fun-pending";
+export type MatchesLayoutMode = "list" | "calendar";
 
 interface MatchesFilterBarProps {
   view: "group" | "knockout";
+  layout: MatchesLayoutMode;
   groupId?: number;
   betFilter: MatchBetFilter;
   groups: TournamentGroup[];
   myBetsCount: number;
   funPendingCount: number;
   onViewChange: (view: "group" | "knockout") => void;
+  onLayoutChange: (layout: MatchesLayoutMode) => void;
   onGroupChange: (groupId: number | null) => void;
   onBetFilterChange: (filter: MatchBetFilter) => void;
 }
@@ -56,14 +61,21 @@ const BET_FILTERS: {
   },
 ];
 
+const LAYOUT_TABS = [
+  { id: "list" as const, label: "Liste", icon: LayoutList },
+  { id: "calendar" as const, label: "Calendrier", icon: CalendarDays },
+];
+
 export function MatchesFilterBar({
   view,
+  layout,
   groupId,
   betFilter,
   groups,
   myBetsCount,
   funPendingCount,
   onViewChange,
+  onLayoutChange,
   onGroupChange,
   onBetFilterChange,
 }: MatchesFilterBarProps) {
@@ -112,7 +124,35 @@ export function MatchesFilterBar({
           </div>
         </LayoutGroup>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div
+            className="inline-flex rounded-xl border border-white/10 bg-zinc-950/80 p-1"
+            role="tablist"
+            aria-label="Mode d'affichage"
+          >
+            {LAYOUT_TABS.map((tab) => {
+              const active = layout === tab.id;
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => onLayoutChange(tab.id)}
+                  className={cn(
+                    "inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-white/10 text-white shadow-sm"
+                      : "text-zinc-400 hover:text-zinc-200",
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" aria-hidden />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
           <Link
             href="/bracket"
             className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"

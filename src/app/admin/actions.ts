@@ -11,6 +11,10 @@ import {
 import { generateAndSaveMatchSummary } from "@/lib/ai/generate-match-summary";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import {
+  propagateKnockoutAdvancement,
+  resetKnockoutAdvancement,
+} from "@/lib/tournament/knockout-advancement";
 import { parseRpcUuid } from "@/lib/leagues/parse-uuid";
 import { DEFAULT_KNOCKOUT_BET_NOTE } from "@/lib/tournament/constants";
 import type { MatchStage, MatchStatus, TacklePhase } from "@/types/database";
@@ -24,6 +28,46 @@ import type {
 export type ActionResult =
   | { success: true; matchId?: number; settlement?: Record<string, unknown> }
   | { success: false; error: string };
+
+async function syncKnockoutBracketAfterSettle(matchId: number) {
+  try {
+    const admin = createAdminClient();
+    await propagateKnockoutAdvancement(admin, matchId);
+  } catch (error) {
+    logAppEvent({
+      level: "warn",
+      source: "admin.knockoutAdvancement",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Propagation phase finale échouée",
+      metadata: { matchId },
+    });
+  }
+}
+
+async function syncKnockoutBracketAfterReopen(matchId: number) {
+  try {
+    const admin = createAdminClient();
+    await resetKnockoutAdvancement(admin, matchId);
+  } catch (error) {
+    logAppEvent({
+      level: "warn",
+      source: "admin.knockoutAdvancement",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Réinitialisation phase finale échouée",
+      metadata: { matchId },
+    });
+  }
+}
+
+function revalidateKnockoutViews(matchId: number) {
+  revalidatePath("/bracket");
+  revalidatePath("/matches");
+  revalidatePath(`/matches/${matchId}`);
+}
 
 /** Champ score vide du formulaire admin → NULL en base (efface le score). */
 function parseOptionalAdminScore(
@@ -428,12 +472,12 @@ export async function correctMatchResultAction(
   }
 
   await triggerAiBetIfLive(matchId, status);
+  await syncKnockoutBracketAfterSettle(matchId);
 
   revalidatePath(`/admin/matches/${matchId}`);
   revalidatePath("/admin");
   revalidatePath("/dashboard");
-  revalidatePath("/matches");
-  revalidatePath(`/matches/${matchId}`);
+  revalidateKnockoutViews(matchId);
   revalidatePath("/leaderboard");
   revalidatePath("/bets");
 
@@ -460,12 +504,14 @@ export async function reopenMatchAction(matchId: number): Promise<ActionResult> 
     return { success: false, error: msg };
   }
 
+  await syncKnockoutBracketAfterReopen(matchId);
+
   revalidatePath(`/admin/matches/${matchId}`);
   revalidatePath("/admin");
   revalidatePath("/dashboard");
   revalidatePath("/leaderboard");
   revalidatePath("/bets");
-  revalidatePath(`/matches/${matchId}`);
+  revalidateKnockoutViews(matchId);
 
   return { success: true, matchId, settlement: data as Record<string, unknown> };
 }
@@ -485,12 +531,14 @@ export async function resettleMatchAction(matchId: number): Promise<ActionResult
     return { success: false, error: msg };
   }
 
+  await syncKnockoutBracketAfterSettle(matchId);
+
   revalidatePath(`/admin/matches/${matchId}`);
   revalidatePath("/admin");
   revalidatePath("/dashboard");
   revalidatePath("/leaderboard");
   revalidatePath("/bets");
-  revalidatePath(`/matches/${matchId}`);
+  revalidateKnockoutViews(matchId);
 
   return { success: true, matchId, settlement: data as Record<string, unknown> };
 }
@@ -522,11 +570,14 @@ export async function settleMatchAction(matchId: number): Promise<ActionResult> 
     userId: profile.id,
   });
 
+  await syncKnockoutBracketAfterSettle(matchId);
+
   revalidatePath(`/admin/matches/${matchId}`);
   revalidatePath("/admin");
   revalidatePath("/dashboard");
   revalidatePath("/leaderboard");
   revalidatePath("/bets");
+  revalidateKnockoutViews(matchId);
   return { success: true, matchId, settlement: data as Record<string, unknown> };
 }
 

@@ -72,6 +72,7 @@ Dans Supabase **SQL Editor**, exécuter **un fichier à la fois** (Run entre cha
 64. `063_leaderboard_avatar_url.sql` (avatars visibles dans le classement / RPC)
 65. `064_ai_chat_relax_rules.sql` (mur des chambrages : règles IA assouplies)
 66. `065_fix_ai_chat_bet_placed_at.sql` (fix evaluate_ai_chat : placed_at sur bets)
+67. `112_knockout_advance_winners.sql` (propagation auto des vainqueurs/perdants en phase finale à la clôture)
 
 ### APIs matchs CDM 2026
 
@@ -107,8 +108,10 @@ select public.recompute_classic_heat(id) from public.profiles;
 1. **Poules (option rapide)** — exécuter `supabase/scripts/seed_wc2026_groups.sql` dans le SQL Editor pour importer les **48 équipes** (groupes A–L, tirage FIFA 2026). Sinon : **`/admin/teams`** manuellement (nom + code ISO flagcdn, ex. `FR`).
 2. **Calendrier poules** — exécuter `supabase/scripts/seed_wc2026_group_matches.sql` pour créer/mettre à jour les **72 matchs** (11–27 juin 2026, horaires UTC). Ré-exécutable ; décommenter le bloc « RESET POULES » si vous les avez supprimés.
 3. **Phase finale** — exécuter `supabase/scripts/seed_wc2026_knockout_matches.sql` pour les **32 matchs** M73–M104 (28 juin – 19 juillet). Équipes « À déterminer » jusqu’aux qualifiés ; lier l’arbre (`/bracket`). Ré-exécutable ; bloc « RESET phase finale » si suppression.
-4. **`/admin/matches/new`** — onglet **Poules** ou **Phase finale** : corriger cotes, date ou équipes.
-5. Joueurs : **`/matches`** (filtres groupes / finale) et **`/bracket`** (arbre qui se remplit).
+4. **Après la phase de groupes** — exécuter `supabase/scripts/update_wc2026_knockout_qualified.sql` pour renseigner les **16 seizièmes** avec les qualifiés officiels et aligner le calendrier (M73–M104). Les huitièmes → finale restent en TBD jusqu’aux vainqueurs.
+5. **Avancement automatique** — exécuter `112_knockout_advance_winners.sql` (trigger SQL) **ou** s’appuyer sur la logique applicative : à chaque clôture d’un match de phase finale, le vainqueur (ou le perdant pour la 3e place) est placé dans le(s) match(s) suivant(s) ; réouverture admin = créneau enfant repasse en TBD.
+6. **`/admin/matches/new`** — onglet **Poules** ou **Phase finale** : corriger cotes, date ou équipes.
+7. Joueurs : **`/matches`** (filtres groupes / finale) et **`/bracket`** (arbre qui se remplit).
 
 ### Ligues privées
 

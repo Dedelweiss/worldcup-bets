@@ -1,22 +1,17 @@
 import { BracketViewShell } from "@/components/bracket/bracket-view-shell";
-import type {
-  BracketProjectionMeta,
-  BracketSlotDisplay,
-} from "@/lib/tournament/bracket-projection";
+import type { BracketSlotDisplay } from "@/lib/tournament/bracket-projection";
 import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
 
 interface BracketViewProps {
   slots: BracketSlotDisplay[];
   betStatuses?: Record<number, UserMatchBetStatus>;
   isAdmin?: boolean;
-  projectionMeta?: BracketProjectionMeta;
 }
 
 export function BracketView({
   slots,
   betStatuses = {},
   isAdmin,
-  projectionMeta,
 }: BracketViewProps) {
   if (slots.length === 0) {
     return (
@@ -32,7 +27,6 @@ export function BracketView({
       slots={slots}
       betStatuses={betStatuses}
       isAdmin={isAdmin}
-      projectionMeta={projectionMeta}
     />
   );
 }

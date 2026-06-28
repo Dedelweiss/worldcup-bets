@@ -3,10 +3,6 @@ import { TournamentTabs } from "@/components/tournament/tournament-tabs";
 import { getUserMatchBetStatuses } from "@/lib/bets/user-match-status-query";
 import { hasSupabaseConfig, requireAuth } from "@/lib/auth-server";
 import { getBracketSlots } from "@/lib/tournament/queries";
-import {
-  applyBracketProjectionToSlots,
-  buildBracketProjection,
-} from "@/lib/tournament/bracket-projection";
 import { getAllGroupStandings } from "@/lib/tournament/standings";
 import { getTournamentStatsPageData } from "@/lib/tournament/tournament-stats-data";
 
@@ -33,9 +29,6 @@ export default async function BracketPage() {
       ? await getUserMatchBetStatuses(profile.id, knockoutMatchIds)
       : {};
 
-  const bracketProjection = buildBracketProjection(standings, slots);
-  const displaySlots = applyBracketProjectionToSlots(slots, bracketProjection);
-
   return (
     <div className="min-w-0 space-y-6 scroll-mt-16 pb-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -54,11 +47,10 @@ export default async function BracketPage() {
 
       <TournamentTabs
         standings={standings}
-        slots={displaySlots}
+        slots={slots}
         betStatuses={betStatuses}
         isAdmin={isAdmin}
         stats={stats}
-        projectionMeta={bracketProjection.meta}
       />
     </div>
   );

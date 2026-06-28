@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
 import type { TournamentStatsPageData } from "@/lib/tournament/tournament-stats-data";
 import type { BracketSlotDisplay } from "@/lib/tournament/bracket-projection";
-import type { BracketProjectionMeta } from "@/lib/tournament/bracket-projection";
 import type { GroupStandings } from "@/lib/tournament/standings";
 
 type Tab = "groups" | "knockout" | "stats";
@@ -19,7 +18,6 @@ interface TournamentTabsProps {
   betStatuses?: Record<number, UserMatchBetStatus>;
   isAdmin?: boolean;
   stats?: TournamentStatsPageData | null;
-  projectionMeta?: BracketProjectionMeta;
 }
 
 export function TournamentTabs({
@@ -28,7 +26,6 @@ export function TournamentTabs({
   betStatuses = {},
   isAdmin,
   stats,
-  projectionMeta,
 }: TournamentTabsProps) {
   const [tab, setTab] = useState<Tab>("groups");
 
@@ -65,7 +62,6 @@ export function TournamentTabs({
           slots={slots}
           betStatuses={betStatuses}
           isAdmin={isAdmin}
-          projectionMeta={projectionMeta}
         />
       ) : stats ? (
         <TournamentStatsView data={stats} />

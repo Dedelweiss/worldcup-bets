@@ -26,6 +26,7 @@ import {
   footballDataSideMatchesOurCode,
   resolveFootballDataTeamId,
 } from "@/lib/football-data/team-link";
+import { propagateKnockoutAdvancement } from "@/lib/tournament/knockout-advancement";
 import type {
   FootballDataMatch,
   FootballDataTeamRef,
@@ -549,6 +550,22 @@ export async function syncFootballDataWc2026(options?: {
             (settleData as { ok: boolean }).ok
           ) {
             settled += 1;
+            try {
+              await propagateKnockoutAdvancement(supabase, local.id);
+            } catch (advanceError) {
+              logAppEvent({
+                level: "warn",
+                source: "sync.football-data",
+                message: `Knockout advancement failed for match ${local.id}`,
+                metadata: {
+                  matchId: local.id,
+                  error:
+                    advanceError instanceof Error
+                      ? advanceError.message
+                      : "unknown",
+                },
+              });
+            }
           }
         }
       }

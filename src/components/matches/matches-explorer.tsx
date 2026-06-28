@@ -1,8 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MatchCard } from "@/components/dashboard/match-card";
-import { MatchesFilterBar } from "@/components/matches/matches-filter-bar";
+import { MatchesCalendarView } from "@/components/matches/matches-calendar-view";
+import {
+  MatchesFilterBar,
+  type MatchesLayoutMode,
+} from "@/components/matches/matches-filter-bar";
 import type { MatchBetFilter } from "@/components/matches/matches-filter-bar";
 import {
   sortMatchesByUserPriority,
@@ -12,6 +17,14 @@ import { STAGE_LABELS } from "@/lib/tournament/constants";
 import type { MatchWithTeams, TournamentGroup } from "@/types/database";
 
 export type { MatchBetFilter };
+
+const LAYOUT_STORAGE_KEY = "wc2026-matches-layout";
+
+function readStoredLayout(): MatchesLayoutMode {
+  if (typeof window === "undefined") return "list";
+  const stored = localStorage.getItem(LAYOUT_STORAGE_KEY);
+  return stored === "calendar" || stored === "list" ? stored : "list";
+}
 
 interface MatchesExplorerProps {
   matches: MatchWithTeams[];
@@ -32,7 +45,24 @@ export function MatchesExplorer({
 }: MatchesExplorerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const filter = searchParams.get("view") === "knockout" ? "knockout" : "group";
+  const [layout, setLayout] = useState<MatchesLayoutMode>("list");
+
+  useEffect(() => {
+    setLayout(readStoredLayout());
+  }, []);
+
+  const setLayoutPersist = (next: MatchesLayoutMode) => {
+    setLayout(next);
+    localStorage.setItem(LAYOUT_STORAGE_KEY, next);
+  };
+
+  const viewParam = searchParams.get("view");
+  const filter =
+    viewParam === "knockout"
+      ? "knockout"
+      : viewParam === "group"
+        ? "group"
+        : initialFilter;
   const groupId = searchParams.get("group")
     ? Number(searchParams.get("group"))
     : initialGroupId;
@@ -100,12 +130,14 @@ export function MatchesExplorer({
     <div className="space-y-6">
       <MatchesFilterBar
         view={filter}
+        layout={layout}
         groupId={groupId}
         betFilter={betFilter}
         groups={groups}
         myBetsCount={myBetsCount}
         funPendingCount={funPendingCount}
         onViewChange={setView}
+        onLayoutChange={setLayoutPersist}
         onGroupChange={setGroup}
         onBetFilterChange={setBetFilter}
       />
@@ -122,6 +154,11 @@ export function MatchesExplorer({
               ? "Aucun pari fun en attente sur vos matchs ici."
               : "Aucun match dans cette sélection."}
         </p>
+      ) : layout === "calendar" ? (
+        <MatchesCalendarView
+          matches={displayMatches}
+          betStatuses={betStatuses}
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {displayMatches.map((match) => (

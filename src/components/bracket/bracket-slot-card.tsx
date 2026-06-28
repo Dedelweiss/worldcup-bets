@@ -9,15 +9,10 @@ import { GoldenMatchBadge } from "@/components/matches/golden-match-badge";
 import { canPlaceBetOnMatch } from "@/lib/bets/can-place-bet-on-match";
 import { formatKickoff, formatKnockoutKickoff } from "@/lib/format";
 import { getKnockoutMatchDisplay } from "@/lib/tournament/knockout-match-display";
-import type { KnockoutMatchDisplay } from "@/lib/tournament/knockout-match-display";
 import { goldenMatchCardClass } from "@/lib/golden-match";
 import type { UserMatchBetStatus } from "@/lib/bets/user-match-status";
 import type { BracketSlotDisplay } from "@/lib/tournament/bracket-projection";
-import type {
-  ProjectedTeam,
-  ProjectedTeamCandidate,
-} from "@/lib/tournament/bracket-projection";
-import { isTbdTeam, TBD_PLACEHOLDER_TEAM, tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
+import { TBD_PLACEHOLDER_TEAM, tbdTeamDisplayName } from "@/lib/tournament/tbd-team";
 
 interface BracketSlotCardProps {
   slot: BracketSlotDisplay;
@@ -83,19 +78,6 @@ export function BracketSlotCard({
 
   const { allowed: bettingOpen } = canPlaceBetOnMatch(m);
   const showPickHint = bettingOpen && !betStatus?.hasExactScore;
-  const projection = slot.projection;
-  const showProjection =
-    projection != null &&
-    m.status !== "finished" &&
-    (isTbdTeam(m.home_team) || isTbdTeam(m.away_team)) &&
-    (projection.home != null ||
-      projection.away != null ||
-      (projection.homeCandidates?.length ?? 0) > 0 ||
-      (projection.awayCandidates?.length ?? 0) > 0);
-  const hasProjectedWinner =
-    projection?.winner != null &&
-    slot.stage === "r32" &&
-    m.status !== "finished";
 
   return (
     <div className="group relative">
@@ -147,40 +129,15 @@ export function BracketSlotCard({
           </div>
         )}
 
-        {hasProjectedWinner && (
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <Badge
-              variant="outline"
-              className="border-sky-500/40 bg-sky-500/10 text-[10px] text-sky-200"
-            >
-              Prévision
-            </Badge>
-            <span className="text-[10px] text-muted-foreground">
-              {slot.stage === "r32"
-                ? "Vainqueur estimé (32es)"
-                : "Vainqueur 32es estimé"}
-            </span>
-          </div>
-        )}
-
         <div className={cn(compact ? "mt-2" : "mt-3")}>
-          {showProjection ? (
-            <ProjectedTeamsBlock
-              match={m}
-              projection={projection}
-              knockoutDisplay={knockoutDisplay}
-              compact={compact}
-            />
-          ) : (
-            <BracketSlotTeamPick
-              match={m}
-              betStatus={betStatus}
-              compact={compact}
-            />
-          )}
+          <BracketSlotTeamPick
+            match={m}
+            betStatus={betStatus}
+            compact={compact}
+          />
         </div>
 
-        {showPickHint && m.status === "scheduled" && !showProjection && (
+        {showPickHint && m.status === "scheduled" && (
           <p className="mt-2 text-center text-[10px] text-muted-foreground">
             Touchez une équipe pour parier
           </p>
@@ -218,174 +175,6 @@ export function BracketSlotCard({
           <Pencil className="size-3" />
           <span className="sr-only sm:not-sr-only sm:text-xs">Edit</span>
         </Link>
-      )}
-    </div>
-  );
-}
-
-function ProjectedTeamsBlock({
-  match,
-  projection,
-  knockoutDisplay,
-  compact,
-}: {
-  match: NonNullable<BracketSlotDisplay["match"]>;
-  projection: NonNullable<BracketSlotDisplay["projection"]>;
-  knockoutDisplay?: KnockoutMatchDisplay | null;
-  compact?: boolean;
-}) {
-  const homeIsTbd = isTbdTeam(match.home_team);
-  const awayIsTbd = isTbdTeam(match.away_team);
-  const homeCandidates =
-    homeIsTbd && projection.homeCandidates?.length
-      ? projection.homeCandidates
-      : null;
-  const awayCandidates =
-    awayIsTbd && projection.awayCandidates?.length
-      ? projection.awayCandidates
-      : null;
-
-  const home = homeIsTbd
-    ? homeCandidates
-      ? null
-      : projection.home
-    : toProjectedTeam(match.home_team);
-  const away = awayIsTbd
-    ? awayCandidates
-      ? null
-      : projection.away
-    : toProjectedTeam(match.away_team);
-
-  return (
-    <div className="space-y-1.5">
-      {homeCandidates ? (
-        <CandidatePoolBlock
-          poolLabel={knockoutDisplay?.home ?? "Équipes possibles"}
-          candidates={homeCandidates}
-          compact={compact}
-        />
-      ) : (
-        <ProjectedTeamLine
-          team={home}
-          projected={homeIsTbd && projection.home != null}
-          compact={compact}
-        />
-      )}
-      <div
-        className="flex items-center justify-center py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70"
-        aria-hidden
-      >
-        vs
-      </div>
-      {awayCandidates ? (
-        <CandidatePoolBlock
-          poolLabel={knockoutDisplay?.away ?? "3e place possible"}
-          candidates={awayCandidates}
-          compact={compact}
-        />
-      ) : (
-        <ProjectedTeamLine
-          team={away}
-          projected={awayIsTbd && projection.away != null}
-          compact={compact}
-        />
-      )}
-    </div>
-  );
-}
-
-function CandidatePoolBlock({
-  poolLabel,
-  candidates,
-  compact,
-}: {
-  poolLabel: string;
-  candidates: ProjectedTeamCandidate[];
-  compact?: boolean;
-}) {
-  return (
-    <div className="rounded-[var(--radius-control)] border border-dashed border-sky-500/35 bg-sky-500/[0.06] px-2 py-2">
-      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-sky-400/90">
-        {poolLabel} ({candidates.length})
-      </p>
-      <div className="space-y-1">
-        {candidates.map((team) => (
-          <ProjectedTeamLine
-            key={`${team.ref}-${team.id}`}
-            team={team}
-            refLabel={team.ref}
-            projected
-            compact={compact}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function toProjectedTeam(
-  team: NonNullable<BracketSlotDisplay["match"]>["home_team"],
-): ProjectedTeam | null {
-  if (isTbdTeam(team)) return null;
-  return {
-    id: team.id,
-    name: team.name,
-    code: team.code,
-    logo_url: team.logo_url,
-  };
-}
-
-function ProjectedTeamLine({
-  team,
-  refLabel,
-  projected,
-  compact,
-}: {
-  team: ProjectedTeam | null;
-  refLabel?: string;
-  projected: boolean;
-  compact?: boolean;
-}) {
-  if (!team) {
-    return (
-      <StaticTeamLine team={TBD_PLACEHOLDER_TEAM} compact={compact} muted />
-    );
-  }
-
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-2",
-        projected
-          ? "border border-dashed border-sky-500/35 bg-sky-500/[0.06]"
-          : "border border-transparent bg-black/15",
-      )}
-    >
-      {refLabel && (
-        <span className="shrink-0 font-mono text-[10px] font-bold tabular-nums text-sky-300/90">
-          {refLabel}
-        </span>
-      )}
-      <TeamFlag
-        name={team.name}
-        code={team.code}
-        logoUrl={team.logo_url}
-        teamId={team.id}
-        size={compact ? 20 : 22}
-      />
-      <span
-        className={cn(
-          "min-w-0 flex-1 truncate font-medium",
-          compact ? "text-xs" : "text-sm",
-          projected && "text-sky-100",
-        )}
-      >
-        {team.name}
-      </span>
-      {projected && !refLabel && (
-        <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-sky-400/90">
-          prev.
-        </span>
       )}
     </div>
   );
