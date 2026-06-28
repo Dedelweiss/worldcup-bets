@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Lock, Target, Zap, Dices, ChevronDown } from "lucide-react";
+import { Lock, Target, Zap, Dices } from "lucide-react";
 import {
   placeBetAction,
   placeExactScoreBetAction,
@@ -113,11 +113,6 @@ export function BetSlip({
   const [error, setError] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
   const [classicBetConfirmed, setClassicBetConfirmed] = useState(false);
-  const [advancedOpen, setAdvancedOpen] = useState(
-    () =>
-      pending.hasMatchResult ||
-      pending.hasExactScore,
-  );
 
   useEffect(() => {
     if (
@@ -241,11 +236,8 @@ export function BetSlip({
   const hasClassicBet =
     pending.hasMatchResult || pending.hasExactScore || classicBetConfirmed;
   const tackleRivals = tackleEligibleRivals(participation, currentUserId);
-  const showAdvancedOptions =
-    advancedOpen || !canEditClassic || hasClassicBet;
-  const canCollapseAdvanced =
-    canEditClassic && !hasClassicBet && bettingOpen;
-  const activeMode: BetMode = showAdvancedOptions ? mode : "1n2";
+  const showAdvancedOptions = true;
+  const activeMode: BetMode = mode;
 
   const has1n2Change =
     selection != null &&
@@ -266,7 +258,7 @@ export function BetSlip({
       if (pending.hasExactScore && next === "1n2") return;
     }
     if (next === "exact") {
-      setAdvancedOpen(true);
+      // no-op — options toujours visibles
     }
     setMode(next);
     setSavedNotice(null);
@@ -691,17 +683,6 @@ export function BetSlip({
                     </p>
                   )}
 
-                  {canCollapseAdvanced && !showAdvancedOptions && (
-                    <button
-                      type="button"
-                      onClick={() => setAdvancedOpen(true)}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/10 py-2.5 text-sm text-muted-foreground transition-colors hover:border-white/20 hover:text-foreground"
-                    >
-                      Score exact, boost et tacle
-                      <ChevronDown className="size-4" aria-hidden />
-                    </button>
-                  )}
-
                   {!canEditClassic && pending.hasMatchResult ? (
                     <Button type="button" className="w-full" disabled>
                       <Lock className="mr-2 size-4" aria-hidden />
@@ -896,17 +877,6 @@ export function BetSlip({
                     <p className="text-sm text-destructive" role="alert">
                       {error}
                     </p>
-                  )}
-
-                  {canCollapseAdvanced && !showAdvancedOptions && (
-                    <button
-                      type="button"
-                      onClick={() => setAdvancedOpen(true)}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/10 py-2.5 text-sm text-muted-foreground transition-colors hover:border-white/20 hover:text-foreground"
-                    >
-                      Score exact, boost et tacle
-                      <ChevronDown className="size-4" aria-hidden />
-                    </button>
                   )}
 
                   {!canEditClassic && pending.hasExactScore ? (

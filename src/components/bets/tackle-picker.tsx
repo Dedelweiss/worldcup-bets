@@ -92,7 +92,6 @@ export function TacklePicker({
   tackleState,
 }: TacklePickerProps) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -117,7 +116,6 @@ export function TacklePicker({
       return;
     }
 
-    setOpen(false);
     router.refresh();
   }
 
@@ -275,42 +273,26 @@ export function TacklePicker({
 
   return (
     <div className="relative z-10 space-y-2">
-      <Button
-        type="button"
-        variant="outline"
-        className="h-9 w-full gap-2 border-lime-400/40 text-lime-300 hover:bg-lime-400/10"
-        disabled={loading}
-        aria-expanded={open}
-        onClick={() => setOpen((prev) => !prev)}
-      >
-        <Swords className="size-4" />
-        Tacle Glissé — choisir un rival
-        <ChevronDown
-          className={cn(
-            "ml-auto size-4 transition-transform",
-            open && "rotate-180",
-          )}
-        />
-      </Button>
-
-      {open && (
-        <div className="rounded-xl border border-border/80 bg-popover p-3 text-popover-foreground shadow-lg shadow-primary/10">
-          <p className="mb-2 text-xs font-medium text-muted-foreground">
-            {tackleRulesSummary()}
+      <p className="flex items-center gap-2 text-sm font-medium text-lime-300">
+        <Swords className="size-4 shrink-0" />
+        Tacle Glissé
+      </p>
+      <div className="rounded-xl border border-border/80 bg-popover p-3 text-popover-foreground shadow-lg shadow-primary/10">
+        <p className="mb-2 text-xs font-medium text-muted-foreground">
+          {tackleRulesSummary()}
+        </p>
+        {rivals.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Aucun autre parieur sur ce match pour l&apos;instant. Reviens quand
+            un rival aura posé son pronostic.
           </p>
-          {rivals.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Aucun autre parieur sur ce match pour l&apos;instant. Reviens quand
-              un rival aura posé son pronostic.
-            </p>
-          ) : (
-            <RivalList rivals={rivals} loading={loading} onSelect={handlePlace} />
-          )}
-          {error && (
-            <p className="mt-2 text-xs text-destructive">{error}</p>
-          )}
-        </div>
-      )}
+        ) : (
+          <RivalList rivals={rivals} loading={loading} onSelect={handlePlace} />
+        )}
+        {error && (
+          <p className="mt-2 text-xs text-destructive">{error}</p>
+        )}
+      </div>
     </div>
   );
 }
