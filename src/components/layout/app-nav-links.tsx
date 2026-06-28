@@ -5,6 +5,7 @@ import { Shield } from "lucide-react";
 import { NavLink } from "@/components/layout/nav-link";
 import { NavFunBadge } from "@/components/layout/nav-fun-badge";
 import { bindHapticClick } from "@/lib/haptics";
+import { isNavItemActive } from "@/lib/sport/nav-active";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "@/components/layout/app-nav";
 
@@ -24,12 +25,7 @@ export function AppNavLinks({
   const pathname = usePathname();
 
   function isActive(href: string): boolean {
-    if (pathname === href) return true;
-    if (href === "/dashboard") return false;
-    if (href === "/matches") {
-      return pathname === "/matches" || pathname.startsWith("/matches?");
-    }
-    return pathname.startsWith(`${href}/`);
+    return isNavItemActive(pathname, href);
   }
 
   const linkClass =

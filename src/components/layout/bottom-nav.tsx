@@ -18,6 +18,7 @@ import { bindHapticClick } from "@/lib/haptics";
 import {
   getPlayerInitials,
 } from "@/lib/profile/player-label";
+import { isNavItemActive } from "@/lib/sport/nav-active";
 import { cn } from "@/lib/utils";
 import type { ActiveSport } from "@/lib/sport/constants";
 
@@ -62,28 +63,7 @@ const INDICATOR_SPRING = {
 };
 
 function isActive(pathname: string, href: string): boolean {
-  if (pathname === href) return true;
-  if (href === "/admin") {
-    return pathname === "/admin" || pathname.startsWith("/admin/");
-  }
-  if (href === "/matches") {
-    return (
-      pathname === "/matches" ||
-      pathname.startsWith("/matches/") ||
-      pathname.startsWith("/matches?") ||
-      pathname === "/matches/quick"
-    );
-  }
-  if (href === "/f1") {
-    return pathname === "/f1" || /^\/f1\/\d+/.test(pathname);
-  }
-  if (href === "/f1/standings") {
-    return pathname === "/f1/standings";
-  }
-  if (href === "/f1/leaderboard") {
-    return pathname === "/f1/leaderboard";
-  }
-  return pathname.startsWith(`${href}/`);
+  return isNavItemActive(pathname, href);
 }
 
 interface BottomNavProfile {

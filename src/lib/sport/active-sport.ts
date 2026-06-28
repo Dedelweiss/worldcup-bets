@@ -15,9 +15,8 @@ export async function getActiveSportFromCookie(): Promise<ActiveSport> {
 export async function resolveActiveSport(
   profileSport?: ActiveSport | null,
 ): Promise<ActiveSport> {
-  const cookieSport = await getActiveSportFromCookie();
   if (profileSport) return profileSport;
-  return cookieSport;
+  return getActiveSportFromCookie();
 }
 
 export async function getActiveSportForUser(
